@@ -57,7 +57,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
     let data_port = data_listener.local_addr()?.port();
     println!("[data] listening on port {data_port}");
 
-    // session id & seed generation (future use)
+    // session id & seed generation
     let session_id: u64 = rand_u64();
     let seed: u64 = rand_u64();
 

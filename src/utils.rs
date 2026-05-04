@@ -1,5 +1,7 @@
 //! collection of utility functions
 
+use rand_core::{RngCore, OsRng};
+
 pub fn human_bps(bps: f64) -> String {
     const K: f64 = 1_000.0;
     const M: f64 = 1_000_000.0;
@@ -35,7 +37,5 @@ pub fn human_bytes(b: u64) -> String {
 }
 
 pub fn rand_u64() -> u64 {
-    use std::collections::hash_map::RandomState;
-    use std::hash::{BuildHasher, Hasher};
-    RandomState::new().build_hasher().finish()
+    OsRng.next_u64()
 }
