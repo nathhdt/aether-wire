@@ -57,7 +57,11 @@ pub fn print_results(role: &str, stats: &[StreamStats], is_sender: bool) {
 
     for s in stats {
         let secs = s.duration_ns as f64 / 1_000_000_000.0;
-        let bytes = if is_sender { s.bytes_sent } else { s.bytes_received };
+        let bytes = if is_sender {
+            s.bytes_sent
+        } else {
+            s.bytes_received
+        };
         let bitrate = if secs > 0.0 {
             (bytes as f64) * 8.0 / secs
         } else {
@@ -66,7 +70,10 @@ pub fn print_results(role: &str, stats: &[StreamStats], is_sender: bool) {
 
         println!(
             "  stream {:>2} — {} {} — {}",
-            s.stream_id, label, human_bytes(bytes), human_bps(bitrate),
+            s.stream_id,
+            label,
+            human_bytes(bytes),
+            human_bps(bitrate),
         );
 
         total_bytes += bytes;
@@ -85,7 +92,9 @@ pub fn print_results(role: &str, stats: &[StreamStats], is_sender: bool) {
         println!("  ────────────────────────────────────────");
         println!(
             "  total    — {} {} — {}",
-            label, human_bytes(total_bytes), human_bps(total_bps),
+            label,
+            human_bytes(total_bytes),
+            human_bps(total_bps),
         );
     }
 }

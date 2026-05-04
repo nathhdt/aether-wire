@@ -10,7 +10,7 @@ use std::time::Instant;
 use crate::cli::ClientArgs;
 use crate::payload;
 use crate::proto::{Hello, Message, PROTO_VERSION, SessionStats, StreamStats};
-use crate::utils::{print_results};
+use crate::utils::print_results;
 use crate::wire;
 
 /// runs the client, connects to a server, and benchmarks the wire
@@ -60,7 +60,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
         let handle = std::thread::spawn(move || -> Result<StreamStats> {
             // data channel session establishment
             let mut data_sock = TcpStream::connect(data_addr)?;
-            println!("[data] connected to {data_addr}");
+            println!("[data] stream connected to {data_addr}");
 
             // counters
             let mut b_sent: u64 = 0;

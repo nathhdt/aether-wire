@@ -7,7 +7,7 @@ use std::time::Instant;
 
 use crate::cli::ServeArgs;
 use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, StreamStats};
-use crate::utils::{rand_u64, print_results};
+use crate::utils::{print_results, rand_u64};
 use crate::wire;
 
 /// runs the server, listens for a connection, and benchmarks the wire
@@ -34,17 +34,15 @@ pub fn run(args: ServeArgs) -> Result<()> {
         }
     };
 
-    // checks protocol version
+    // checks hello protocol version
     if hello.version != PROTO_VERSION {
-        let incompatible_version_msg = format!(
+        let msg = format!(
             "incompatible version : client={}, server={}",
             hello.version, PROTO_VERSION
         );
-        let _ = wire::send_message(
-            &mut ctrl_sock,
-            &Message::Error(incompatible_version_msg.clone()),
-        );
-        bail!("[ctrl] {incompatible_version_msg}");
+
+        let _ = wire::send_message(&mut ctrl_sock, &Message::Error(msg.clone()));
+        bail!("[ctrl] {msg}");
     }
 
     println!(
