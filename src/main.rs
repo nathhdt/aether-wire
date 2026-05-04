@@ -3,8 +3,10 @@ use clap::Parser;
 
 mod cli;
 mod client;
+mod proto;
 mod server;
 mod utils;
+mod wire;
 
 fn main() -> Result<()> {
     let cli = cli::Cli::parse();

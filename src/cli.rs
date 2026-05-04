@@ -1,3 +1,5 @@
+//! command line interface logic & subcommand definitions
+
 use clap::{Args, Parser, Subcommand};
 use std::net::Ipv4Addr;
 use std::time::Duration;

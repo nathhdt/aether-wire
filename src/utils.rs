@@ -1,3 +1,5 @@
+//! collection of utility modules & functions
+
 pub fn human_bps(bps: f64) -> String {
     const K: f64 = 1_000.0;
     const M: f64 = 1_000_000.0;
@@ -30,4 +32,10 @@ pub fn human_bytes(b: u64) -> String {
     } else {
         format!("{b} B")
     }
+}
+
+pub fn rand_u64() -> u64 {
+    use std::collections::hash_map::RandomState;
+    use std::hash::{BuildHasher, Hasher};
+    RandomState::new().build_hasher().finish()
 }
