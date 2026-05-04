@@ -91,7 +91,7 @@ pub fn print_results(role: &str, stats: &[StreamStats], is_sender: bool) {
         };
         println!("  ────────────────────────────────────────");
         println!(
-            "  total    — {} {} — {}",
+            "  total     — {} {} — {}",
             label,
             human_bytes(total_bytes),
             human_bps(total_bps),
