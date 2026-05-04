@@ -6,6 +6,7 @@ use std::net::{IpAddr, Shutdown, SocketAddr, TcpStream};
 use std::time::Instant;
 
 use crate::cli::ClientArgs;
+use crate::payload;
 use crate::proto::{Hello, Message, PROTO_VERSION, SessionStats};
 use crate::utils::{human_bps, human_bytes};
 use crate::wire;
@@ -36,24 +37,35 @@ pub fn run(args: ClientArgs) -> Result<()> {
         session.session_id, session.data_port, session.seed
     );
 
+    // payload build
+    let stream_id: u32 = 0; // will change when multiple-stream tests will come
+    let buf = payload::make_buffer(payload::stream_seed(session.seed, stream_id));
+
     // data channel session establishment
     let data_addr = SocketAddr::new(IpAddr::V4(args.server), session.data_port);
     let mut data_sock = TcpStream::connect(data_addr)?;
     println!("[data] connected to {data_addr}, benchmark in progress...");
 
-    // fixed payload, ChaCha8 will come later
-    let payload = vec![0xA5u8; 64 * 1024];
-
-    // timer
+    // counters
     let start = Instant::now();
     let deadline = start + args.time;
     let mut bytes_sent: u64 = 0;
 
+    // buffer cursor
+    let mut cursor: usize = 0;
+
     // send loop
     while Instant::now() < deadline {
-        match data_sock.write(&payload) {
+        let slice = &buf[cursor..];
+        match data_sock.write(slice) {
             Ok(0) => break,
-            Ok(n) => bytes_sent += n as u64,
+            Ok(n) => {
+                bytes_sent += n as u64;
+                cursor += n;
+                if cursor >= buf.len() {
+                    cursor = 0;
+                }
+            }
             Err(e) if e.kind() == ErrorKind::Interrupted => continue, // EINTR
             Err(e) => return Err(e.into()),
         }

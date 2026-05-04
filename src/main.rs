@@ -3,6 +3,7 @@ use clap::Parser;
 
 mod cli;
 mod client;
+mod payload;
 mod proto;
 mod server;
 mod utils;
