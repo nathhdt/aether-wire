@@ -20,7 +20,7 @@ pub fn make_buffer(seed: u64) -> Vec<u8> {
 
 /// derives a per-stream seed from a session seed
 #[inline]
-pub fn stream_seed(session_seed: u64, stream_id: u32) -> u64 {
+pub fn stream_seed(session_seed: u64, stream_id: u16) -> u64 {
     // stream seed generation using golden ratio constant for good bit mixing
     session_seed ^ (stream_id as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
 }

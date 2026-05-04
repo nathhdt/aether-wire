@@ -6,7 +6,7 @@ use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
 use crate::cli::ServeArgs;
-use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats};
+use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, StreamStats};
 use crate::utils::{human_bps, human_bytes, rand_u64};
 use crate::wire;
 
@@ -48,8 +48,8 @@ pub fn run(args: ServeArgs) -> Result<()> {
     }
 
     println!(
-        "[ctrl] hello received, requested duration : {}s",
-        hello.duration_secs
+        "[ctrl] hello received - {} stream(s), {}s",
+        hello.n_streams, hello.duration_secs
     );
 
     // data channel session establishment
@@ -72,45 +72,93 @@ pub fn run(args: ServeArgs) -> Result<()> {
     )?;
     println!("[ctrl] informed the client the session (id: {session_id}) can start");
 
-    // waits for a client
-    let (mut data_sock, data_client) = data_listener.accept()?;
-    println!("[data] established connection from {data_client}, benchmark in progress...");
+    // sets up threads for multi-stream benchmark
+    let mut handles = Vec::with_capacity(hello.n_streams as usize);
 
-    // starts receiving data
-    let (bytes_received, duration_ns) = receive_data(&mut data_sock)?;
-    println!("[data] done");
+    // threads launch
+    for stream_id in 0..hello.n_streams {
+        let (mut data_sock, client) = data_listener.accept()?;
+        println!("[data] stream {stream_id} connected from {client}");
 
-    // sends server statistics
-    let stats = SessionStats {
-        bytes_received,
-        duration_ns,
-    };
-    wire::send_message(&mut ctrl_sock, &Message::SessionStats(stats))?;
+        let handle = std::thread::spawn(move || -> Result<StreamStats> {
+            receive_data(stream_id, &mut data_sock)
+        });
+        handles.push(handle);
+    }
+
+    println!(
+        "[data] all {} stream(s) connected, benchmark in progress...",
+        hello.n_streams
+    );
+
+    // joins threads and collects stats
+    let mut streams: Vec<StreamStats> = Vec::with_capacity(handles.len());
+    for handle in handles {
+        match handle.join() {
+            Ok(Ok(s)) => streams.push(s),
+            Ok(Err(e)) => bail!("[data] stream failed: {e:#}"),
+            Err(_) => bail!("[data] stream thread panicked"),
+        }
+    }
+
+    streams.sort_by_key(|s| s.stream_id);
+    println!("[data] all streams done");
+
+    // sends stats back to the client
+    wire::send_message(
+        &mut ctrl_sock,
+        &Message::SessionStats(SessionStats {
+            streams: streams.clone(),
+        }),
+    )?;
     println!("[ctrl] session statistics sent to the client");
 
-    // server statistics processing
-    let secs = duration_ns as f64 / 1_000_000_000.0;
-    let bitrate = if secs > 0.0 {
-        (bytes_received as f64) * 8.0 / secs
-    } else {
-        0.0
-    };
-
     // result print
+    println!();
     println!("======= receiver (server) =======");
-    println!("duration : {secs:.2}s");
-    println!(
-        "received : {} ({} bytes)",
-        human_bytes(bytes_received),
-        bytes_received
-    );
-    println!("bitrate  : {}", human_bps(bitrate));
+
+    let mut total_bytes: u64 = 0;
+    let mut max_ns: u64 = 0;
+
+    for s in &streams {
+        let secs = s.duration_ns as f64 / 1_000_000_000.0;
+        let bitrate = if secs > 0.0 {
+            (s.bytes_received as f64) * 8.0 / secs
+        } else {
+            0.0
+        };
+        println!(
+            "  stream {:>2} — received {} — {}",
+            s.stream_id,
+            human_bytes(s.bytes_received),
+            human_bps(bitrate),
+        );
+        total_bytes += s.bytes_received;
+        if s.duration_ns > max_ns {
+            max_ns = s.duration_ns;
+        }
+    }
+
+    if streams.len() > 1 {
+        let secs = max_ns as f64 / 1_000_000_000.0;
+        let bps = if secs > 0.0 {
+            (total_bytes as f64) * 8.0 / secs
+        } else {
+            0.0
+        };
+        println!("  ────────────────────────────────────────");
+        println!(
+            "  total    — received {} — {}",
+            human_bytes(total_bytes),
+            human_bps(bps)
+        );
+    }
 
     Ok(())
 }
 
 /// reads received data until client FIN
-fn receive_data(sock: &mut TcpStream) -> Result<(u64, u64)> {
+fn receive_data(stream_id: u16, sock: &mut TcpStream) -> Result<StreamStats> {
     let mut buf = vec![0u8; 256 * 1024];
     let mut bytes: u64 = 0;
 
@@ -139,5 +187,10 @@ fn receive_data(sock: &mut TcpStream) -> Result<(u64, u64)> {
         None => 0,
     };
 
-    Ok((bytes, duration_ns))
+    Ok(StreamStats {
+        stream_id,
+        bytes_sent: 0,
+        bytes_received: bytes,
+        duration_ns,
+    })
 }

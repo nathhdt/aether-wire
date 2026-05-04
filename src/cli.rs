@@ -40,4 +40,7 @@ pub struct ClientArgs {
 
     #[arg(short = 't', long, default_value = "10s", value_parser = humantime::parse_duration)]
     pub time: Duration,
+
+    #[arg(short = 'n', long, default_value_t = 1)]
+    pub n_streams: u16,
 }

@@ -1,6 +1,6 @@
 //! collection of utility functions
 
-use rand_core::{RngCore, OsRng};
+use rand_core::{OsRng, RngCore};
 
 pub fn human_bps(bps: f64) -> String {
     const K: f64 = 1_000.0;
