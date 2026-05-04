@@ -46,7 +46,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
     }
 
     println!(
-        "[ctrl] hello received - {} stream(s), {}s",
+        "[ctrl] hello received ({} stream(s), {}s)",
         hello.n_streams, hello.duration_secs
     );
 
@@ -74,12 +74,18 @@ pub fn run(args: ServeArgs) -> Result<()> {
     let mut handles = Vec::with_capacity(hello.n_streams as usize);
 
     // threads launch
-    for stream_id in 0..hello.n_streams {
+    for _ in 0..hello.n_streams {
         let (mut data_sock, client) = data_listener.accept()?;
+
+        // reads client's stream ID
+        let mut id_bytes = [0u8; 2];
+        data_sock.read_exact(&mut id_bytes)?;
+        let stream_id = u16::from_be_bytes(id_bytes);
+
         println!("[data] stream {stream_id} connected from {client}");
 
         let handle = std::thread::spawn(move || -> Result<StreamStats> {
-            receive_data(stream_id, &mut data_sock)
+            receive_data(stream_id, data_sock)
         });
         handles.push(handle);
     }
@@ -118,7 +124,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
 }
 
 /// reads received data until client FIN
-fn receive_data(stream_id: u16, sock: &mut TcpStream) -> Result<StreamStats> {
+fn receive_data(stream_id: u16, mut sock: TcpStream) -> Result<StreamStats> {
     let mut buf = vec![0u8; 256 * 1024];
     let mut bytes: u64 = 0;
 

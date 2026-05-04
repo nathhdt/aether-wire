@@ -27,7 +27,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
         n_streams: args.n_streams,
     });
     wire::send_message(&mut ctrl_sock, &hello)?;
-    println!("[ctrl] hello message sent");
+    println!("[ctrl] hello sent");
 
     // waits for server answer
     let session = match wire::read_message(&mut ctrl_sock)? {
@@ -36,7 +36,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
         other => bail!("[ctrl] unknown error from server : {other:?}"),
     };
     println!(
-        "[ctrl] session {} - data port : {} - seed : {}",
+        "[ctrl] session {} can start (data port: {}, seed: {})",
         session.session_id, session.data_port, session.seed
     );
 
@@ -60,7 +60,10 @@ pub fn run(args: ClientArgs) -> Result<()> {
         let handle = std::thread::spawn(move || -> Result<StreamStats> {
             // data channel session establishment
             let mut data_sock = TcpStream::connect(data_addr)?;
-            println!("[data] stream connected to {data_addr}");
+            println!("[data] stream {stream_id} connected to {data_addr}");
+
+            // stream_id send through the wire - before any benchmark starts
+            data_sock.write_all(&stream_id.to_be_bytes())?;
 
             // counters
             let mut b_sent: u64 = 0;
@@ -92,8 +95,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
             let duration_ns = start.elapsed().as_nanos() as u64;
 
             // ends data channel session (sends FIN)
-            data_sock.shutdown(Shutdown::Write)?;
-            println!("[data] done ({data_addr})");
+            data_sock.shutdown(Shutdown::Write)?;            
 
             Ok(StreamStats {
                 stream_id,
@@ -111,13 +113,15 @@ pub fn run(args: ClientArgs) -> Result<()> {
 
     // timer launch
     let time_start = Instant::now();
-    println!("[data] all streams connected, benchmark in progress...");
+    println!("[data] all {} stream(s) connected, benchmark in progress...", args.n_streams);
 
     // waits for benchmark
     std::thread::sleep(args.time);
 
     // signals end of benchmark for all threads
     stop.store(true, Ordering::Relaxed);
+
+    println!("[data] all streams done");
 
     // gets statistics from threads
     let mut client_stats: Vec<StreamStats> = Vec::with_capacity(handles.len());
@@ -134,7 +138,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
 
     client_stats.sort_by_key(|s| s.stream_id);
 
-    println!("[data] benchmark done ({:.2}s)", time_elapsed.as_secs_f64());
+    println!("[ctrl] benchmark done ({:.2}s)", time_elapsed.as_secs_f64());
 
     // server statistics retrieval
     let server_stats: SessionStats = match wire::read_message(&mut ctrl_sock)? {
