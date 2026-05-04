@@ -1,4 +1,4 @@
-//! collection of utility modules & functions
+//! collection of utility functions
 
 pub fn human_bps(bps: f64) -> String {
     const K: f64 = 1_000.0;
