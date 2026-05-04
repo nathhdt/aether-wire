@@ -7,7 +7,7 @@ use std::time::Instant;
 
 use crate::cli::ServeArgs;
 use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, StreamStats};
-use crate::utils::{human_bps, human_bytes, rand_u64};
+use crate::utils::{rand_u64, print_results};
 use crate::wire;
 
 /// runs the server, listens for a connection, and benchmarks the wire
@@ -114,45 +114,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
     println!("[ctrl] session statistics sent to the client");
 
     // result print
-    println!();
-    println!("======= receiver (server) =======");
-
-    let mut total_bytes: u64 = 0;
-    let mut max_ns: u64 = 0;
-
-    for s in &streams {
-        let secs = s.duration_ns as f64 / 1_000_000_000.0;
-        let bitrate = if secs > 0.0 {
-            (s.bytes_received as f64) * 8.0 / secs
-        } else {
-            0.0
-        };
-        println!(
-            "  stream {:>2} — received {} — {}",
-            s.stream_id,
-            human_bytes(s.bytes_received),
-            human_bps(bitrate),
-        );
-        total_bytes += s.bytes_received;
-        if s.duration_ns > max_ns {
-            max_ns = s.duration_ns;
-        }
-    }
-
-    if streams.len() > 1 {
-        let secs = max_ns as f64 / 1_000_000_000.0;
-        let bps = if secs > 0.0 {
-            (total_bytes as f64) * 8.0 / secs
-        } else {
-            0.0
-        };
-        println!("  ────────────────────────────────────────");
-        println!(
-            "  total    — received {} — {}",
-            human_bytes(total_bytes),
-            human_bps(bps)
-        );
-    }
+    print_results("receiver (server)", &streams, false);
 
     Ok(())
 }
