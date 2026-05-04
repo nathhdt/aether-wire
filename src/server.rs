@@ -100,7 +100,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
     println!("======= receiver (server) =======");
     println!("duration : {secs:.2}s");
     println!(
-        "sent     : {} ({} bytes)",
+        "received : {} ({} bytes)",
         human_bytes(bytes_received),
         bytes_received
     );
