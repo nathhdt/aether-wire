@@ -25,9 +25,9 @@ pub fn run(args: ClientArgs) -> Result<()> {
         version: PROTO_VERSION,
         duration_secs: args.time.as_secs(),
         n_streams: args.n_streams,
+        verify_integrity: args.verify,
     });
     wire::send_message(&mut ctrl_sock, &hello)?;
-    println!("[ctrl] hello sent");
 
     // waits for server answer
     let session = match wire::read_message(&mut ctrl_sock)? {
@@ -36,7 +36,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
         other => bail!("[ctrl] unknown error from server : {other:?}"),
     };
     println!(
-        "[ctrl] session {} can start (data port: {}, seed: {})",
+        "[ctrl] session can start (id: {}, data port: {}, seed: {})",
         session.session_id, session.data_port, session.seed
     );
 
@@ -95,7 +95,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
             let duration_ns = start.elapsed().as_nanos() as u64;
 
             // ends data channel session (sends FIN)
-            data_sock.shutdown(Shutdown::Write)?;            
+            data_sock.shutdown(Shutdown::Write)?;
 
             Ok(StreamStats {
                 stream_id,
@@ -113,7 +113,10 @@ pub fn run(args: ClientArgs) -> Result<()> {
 
     // timer launch
     let time_start = Instant::now();
-    println!("[data] all {} stream(s) connected, benchmark in progress...", args.n_streams);
+    println!(
+        "[data] all {} stream(s) connected, benchmark in progress...",
+        args.n_streams
+    );
 
     // waits for benchmark
     std::thread::sleep(args.time);

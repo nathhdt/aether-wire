@@ -19,7 +19,6 @@ pub fn run(args: ServeArgs) -> Result<()> {
 
     // accepts only one session
     let (mut ctrl_sock, ctrl_client) = ctrl_listener.accept()?;
-    println!("[ctrl] accepted connection from {ctrl_client}");
 
     // reads hello message
     let hello: Hello = match wire::read_message(&mut ctrl_sock)? {
@@ -46,9 +45,15 @@ pub fn run(args: ServeArgs) -> Result<()> {
     }
 
     println!(
-        "[ctrl] hello received ({} stream(s), {}s)",
-        hello.n_streams, hello.duration_secs
+        "[ctrl] client {} asked for a benchmark ({} stream(s), {}s)",
+        ctrl_client, hello.n_streams, hello.duration_secs
     );
+
+    if hello.verify_integrity {
+        println!(
+            "[ctrl] client requested server-side buffer verification, this may impact performance"
+        );
+    }
 
     // data channel session establishment
     let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(args.bind), 0))?;
@@ -84,8 +89,11 @@ pub fn run(args: ServeArgs) -> Result<()> {
 
         println!("[data] stream {stream_id} connected from {client}");
 
+        let verify = hello.verify_integrity;
+        let session_seed = seed;
+
         let handle = std::thread::spawn(move || -> Result<StreamStats> {
-            receive_data(stream_id, data_sock)
+            receive_data(stream_id, session_seed, verify, data_sock)
         });
         handles.push(handle);
     }
@@ -124,9 +132,26 @@ pub fn run(args: ServeArgs) -> Result<()> {
 }
 
 /// reads received data until client FIN
-fn receive_data(stream_id: u16, mut sock: TcpStream) -> Result<StreamStats> {
+fn receive_data(
+    stream_id: u16,
+    session_seed: u64,
+    verify: bool,
+    mut sock: TcpStream,
+) -> Result<StreamStats> {
+    // receiving buffer
     let mut buf = vec![0u8; 256 * 1024];
     let mut bytes: u64 = 0;
+
+    // generates expected buffer (--verify)
+    let expected_buffer = if verify {
+        Some(crate::payload::make_buffer(crate::payload::stream_seed(
+            session_seed,
+            stream_id,
+        )))
+    } else {
+        None
+    };
+    let mut cursor: usize = 0;
 
     // timer
     let mut first: Option<Instant> = None;
@@ -141,6 +166,30 @@ fn receive_data(stream_id: u16, mut sock: TcpStream) -> Result<StreamStats> {
                     first = Some(Instant::now());
                 }
                 last = Instant::now();
+
+                // integrity verification if asked (--verify)
+                if let Some(ref exp) = expected_buffer {
+                    for (i, &received) in buf.iter().enumerate().take(n) {
+                        let expected_byte = exp[cursor];
+
+                        if received != expected_byte {
+                            bail!(
+                                "[data] stream {}: integrity check failed at byte {} (offset in buffer: {}): expected 0x{:02x}, got 0x{:02x}",
+                                stream_id,
+                                bytes + i as u64,
+                                cursor,
+                                expected_byte,
+                                received
+                            );
+                        }
+
+                        cursor += 1;
+                        if cursor >= exp.len() {
+                            cursor = 0;
+                        }
+                    }
+                }
+
                 bytes += n as u64;
             }
             Err(e) if e.kind() == ErrorKind::Interrupted => continue, // EINTR

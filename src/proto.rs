@@ -11,6 +11,7 @@ pub struct Hello {
     pub version: u8,
     pub duration_secs: u64,
     pub n_streams: u16,
+    pub verify_integrity: bool,
 }
 
 /// server answer to client hello message
