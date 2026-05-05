@@ -32,6 +32,10 @@ pub struct ServeArgs {
     /// port to listen on
     #[arg(short = 'p', long)]
     pub port: u16,
+
+    /// exit after serving one benchmark session
+    #[arg(long)]
+    pub once: bool,
 }
 
 /// client arguments

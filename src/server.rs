@@ -17,116 +17,128 @@ pub fn run(args: ServeArgs) -> Result<()> {
     let ctrl_listener = TcpListener::bind(ctrl_addr)?;
     println!("[ctrl] server listening on {ctrl_addr}");
 
-    // accepts only one session
-    let (mut ctrl_sock, ctrl_client) = ctrl_listener.accept()?;
+    // server loop
+    loop {
+        println!("[ctrl] waiting for client...");
 
-    // reads hello message
-    let hello: Hello = match wire::read_message(&mut ctrl_sock)? {
-        Message::Hello(h) => h,
-        other => {
-            // informs client that hello message is expected
-            let _ = wire::send_message(
-                &mut ctrl_sock,
-                &Message::Error("expected hello message".into()),
+        // accepts only one session
+        let (mut ctrl_sock, ctrl_client) = ctrl_listener.accept()?;
+
+        // reads hello message
+        let hello: Hello = match wire::read_message(&mut ctrl_sock)? {
+            Message::Hello(h) => h,
+            other => {
+                // informs client that hello message is expected
+                let _ = wire::send_message(
+                    &mut ctrl_sock,
+                    &Message::Error("expected hello message".into()),
+                );
+                bail!("unexpected first message : {other:?}");
+            }
+        };
+
+        // checks hello protocol version
+        if hello.version != PROTO_VERSION {
+            let msg = format!(
+                "incompatible version : client={}, server={}",
+                hello.version, PROTO_VERSION
             );
-            bail!("unexpected first message : {other:?}");
+
+            let _ = wire::send_message(&mut ctrl_sock, &Message::Error(msg.clone()));
+            bail!("[ctrl] {msg}");
         }
-    };
 
-    // checks hello protocol version
-    if hello.version != PROTO_VERSION {
-        let msg = format!(
-            "incompatible version : client={}, server={}",
-            hello.version, PROTO_VERSION
-        );
-
-        let _ = wire::send_message(&mut ctrl_sock, &Message::Error(msg.clone()));
-        bail!("[ctrl] {msg}");
-    }
-
-    println!(
-        "[ctrl] client {} asked for a benchmark ({} stream(s), {}s)",
-        ctrl_client, hello.n_streams, hello.duration_secs
-    );
-
-    if hello.verify_integrity {
         println!(
-            "[ctrl] client requested server-side buffer verification, this may impact performance"
+            "[ctrl] client {} asked for a benchmark ({} stream(s), {}s)",
+            ctrl_client, hello.n_streams, hello.duration_secs
         );
-    }
 
-    // data channel session establishment
-    let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(args.bind), 0))?;
-    let data_port = data_listener.local_addr()?.port();
-    println!("[data] listening on port {data_port}");
+        if hello.verify_integrity {
+            println!(
+                "[ctrl] client requested server-side buffer verification, this may impact performance"
+            );
+        }
 
-    // session id & seed generation
-    let session_id: u64 = rand_u64();
-    let seed: u64 = rand_u64();
+        // data channel session establishment
+        let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(args.bind), 0))?;
+        let data_port = data_listener.local_addr()?.port();
+        println!("[data] listening on port {data_port}");
 
-    // informs the client the session can start
-    wire::send_message(
-        &mut ctrl_sock,
-        &Message::SessionStart(SessionStart {
-            session_id,
-            seed,
-            data_port,
-        }),
-    )?;
-    println!("[ctrl] informed the client the session (id: {session_id}) can start");
+        // session id & seed generation
+        let session_id: u64 = rand_u64();
+        let seed: u64 = rand_u64();
 
-    // sets up threads for multi-stream benchmark
-    let mut handles = Vec::with_capacity(hello.n_streams as usize);
+        // informs the client the session can start
+        wire::send_message(
+            &mut ctrl_sock,
+            &Message::SessionStart(SessionStart {
+                session_id,
+                seed,
+                data_port,
+            }),
+        )?;
+        println!("[ctrl] informed the client the session (id: {session_id}) can start");
 
-    // threads launch
-    for _ in 0..hello.n_streams {
-        let (mut data_sock, client) = data_listener.accept()?;
+        // sets up threads for multi-stream benchmark
+        let mut handles = Vec::with_capacity(hello.n_streams as usize);
 
-        // reads client's stream ID
-        let mut id_bytes = [0u8; 2];
-        data_sock.read_exact(&mut id_bytes)?;
-        let stream_id = u16::from_be_bytes(id_bytes);
+        // threads launch
+        for _ in 0..hello.n_streams {
+            let (mut data_sock, client) = data_listener.accept()?;
 
-        println!("[data] stream {stream_id} connected from {client}");
+            // reads client's stream ID
+            let mut id_bytes = [0u8; 2];
+            data_sock.read_exact(&mut id_bytes)?;
+            let stream_id = u16::from_be_bytes(id_bytes);
 
-        let verify = hello.verify_integrity;
-        let session_seed = seed;
+            println!("[data] stream {stream_id} connected from {client}");
 
-        let handle = std::thread::spawn(move || -> Result<StreamStats> {
-            receive_data(stream_id, session_seed, verify, data_sock)
-        });
-        handles.push(handle);
-    }
+            let verify = hello.verify_integrity;
+            let session_seed = seed;
 
-    println!(
-        "[data] all {} stream(s) connected, benchmark in progress...",
-        hello.n_streams
-    );
+            let handle = std::thread::spawn(move || -> Result<StreamStats> {
+                receive_data(stream_id, session_seed, verify, data_sock)
+            });
+            handles.push(handle);
+        }
 
-    // joins threads and collects stats
-    let mut streams: Vec<StreamStats> = Vec::with_capacity(handles.len());
-    for handle in handles {
-        match handle.join() {
-            Ok(Ok(s)) => streams.push(s),
-            Ok(Err(e)) => bail!("[data] stream failed: {e:#}"),
-            Err(_) => bail!("[data] stream thread panicked"),
+        println!(
+            "[data] all {} stream(s) connected, benchmark in progress...",
+            hello.n_streams
+        );
+
+        // joins threads and collects stats
+        let mut streams: Vec<StreamStats> = Vec::with_capacity(handles.len());
+        for handle in handles {
+            match handle.join() {
+                Ok(Ok(s)) => streams.push(s),
+                Ok(Err(e)) => bail!("[data] stream failed: {e:#}"),
+                Err(_) => bail!("[data] stream thread panicked"),
+            }
+        }
+
+        streams.sort_by_key(|s| s.stream_id);
+        println!("[data] all streams done");
+
+        // sends stats back to the client
+        wire::send_message(
+            &mut ctrl_sock,
+            &Message::SessionStats(SessionStats {
+                streams: streams.clone(),
+            }),
+        )?;
+        println!("[ctrl] session statistics sent to the client");
+
+        // result print
+        print_results("receiver (server)", &streams, false);
+        
+        println!("\n[ctrl] session complete");
+
+        if args.once {
+            println!("[ctrl] --once flag set, exiting");
+            break;
         }
     }
-
-    streams.sort_by_key(|s| s.stream_id);
-    println!("[data] all streams done");
-
-    // sends stats back to the client
-    wire::send_message(
-        &mut ctrl_sock,
-        &Message::SessionStats(SessionStats {
-            streams: streams.clone(),
-        }),
-    )?;
-    println!("[ctrl] session statistics sent to the client");
-
-    // result print
-    print_results("receiver (server)", &streams, false);
 
     Ok(())
 }
