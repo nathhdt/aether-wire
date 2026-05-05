@@ -2,7 +2,7 @@
 
 use rand_core::{OsRng, RngCore};
 
-use crate::proto::StreamStats;
+use crate::proto::TcpStreamStats;
 
 /// converts bytes per second data measure to human-readable format
 pub fn human_bps(bps: f64) -> String {
@@ -46,7 +46,7 @@ pub fn rand_u64() -> u64 {
 }
 
 /// prints per-stream stats and total for multi-stream benchmarks
-pub fn print_results(role: &str, stats: &[StreamStats], is_sender: bool) {
+pub fn print_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) {
     let label = if is_sender { "sent    " } else { "received" };
 
     println!();

@@ -1,4 +1,4 @@
-//! aether-wire client
+//! aether-wire TCP client
 
 use anyhow::{Result, bail};
 use std::io::{ErrorKind, Write};
@@ -7,14 +7,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Barrier};
 use std::time::Instant;
 
-use crate::cli::ClientArgs;
+use crate::cli::Ipv4TcpClientArgs;
 use crate::payload;
-use crate::proto::{Hello, Message, PROTO_VERSION, SessionStats, StreamStats};
+use crate::proto::{Hello, Message, PROTO_VERSION, Protocol, SessionStats, TcpStreamStats};
 use crate::utils::print_results;
 use crate::wire;
 
-/// runs the client, connects to a server, and benchmarks the wire
-pub fn run(args: ClientArgs) -> Result<()> {
+/// runs the TCP client, connects to a server, and benchmarks the wire
+pub fn run(args: Ipv4TcpClientArgs) -> Result<()> {
     // control channel session establishment
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.server), args.port);
     let mut ctrl_sock = TcpStream::connect(ctrl_addr)?;
@@ -23,6 +23,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
     // hello message
     let hello = Message::Hello(Hello {
         version: PROTO_VERSION,
+        protocol: Protocol::Tcp,
         duration_secs: args.time.as_secs(),
         n_streams: args.n_streams,
         verify_integrity: args.verify,
@@ -37,7 +38,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
     };
     println!(
         "[ctrl] session can start (id: {}, data port: {}, seed: {})",
-        session.session_id, session.data_port, session.seed
+        session.session_id, session.data_ports[0], session.seed
     );
 
     // sets up thread elements for multi-stream benchmark
@@ -46,7 +47,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
     let mut handles = Vec::with_capacity(args.n_streams as usize);
 
     // prepares socket specifications
-    let data_addr = SocketAddr::new(IpAddr::V4(args.server), session.data_port);
+    let data_addr = SocketAddr::new(IpAddr::V4(args.server), session.data_ports[0]);
 
     // threads launch
     for stream_id in 0..args.n_streams {
@@ -57,7 +58,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
         let buf = payload::make_buffer(payload::stream_seed(session.seed, stream_id));
 
         // thread spawn
-        let handle = std::thread::spawn(move || -> Result<StreamStats> {
+        let handle = std::thread::spawn(move || -> Result<TcpStreamStats> {
             // data channel session establishment
             let mut data_sock = TcpStream::connect(data_addr)?;
             println!("[data] stream {stream_id} connected to {data_addr}");
@@ -97,7 +98,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
             // ends data channel session (sends FIN)
             data_sock.shutdown(Shutdown::Write)?;
 
-            Ok(StreamStats {
+            Ok(TcpStreamStats {
                 stream_id,
                 bytes_sent: b_sent,
                 bytes_received: 0,
@@ -127,7 +128,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
     println!("[data] all streams done");
 
     // gets statistics from threads
-    let mut client_stats: Vec<StreamStats> = Vec::with_capacity(handles.len());
+    let mut client_stats: Vec<TcpStreamStats> = Vec::with_capacity(handles.len());
     for handle in handles {
         match handle.join() {
             Ok(Ok(s)) => client_stats.push(s),
@@ -144,8 +145,8 @@ pub fn run(args: ClientArgs) -> Result<()> {
     println!("[ctrl] benchmark done ({:.2}s)", time_elapsed.as_secs_f64());
 
     // server statistics retrieval
-    let server_stats: SessionStats = match wire::read_message(&mut ctrl_sock)? {
-        Message::SessionStats(s) => s,
+    let server_stats: Vec<TcpStreamStats> = match wire::read_message(&mut ctrl_sock)? {
+        Message::SessionStats(SessionStats::Tcp(s)) => s,
         Message::Error(e) => bail!("server error: {e}"),
         other => bail!("unexpected message: {other:?}"),
     };
@@ -153,7 +154,7 @@ pub fn run(args: ClientArgs) -> Result<()> {
 
     // result print
     print_results("sender (client)", &client_stats, true);
-    print_results("receiver (server)", &server_stats.streams, false);
+    print_results("receiver (server)", &server_stats, false);
 
     Ok(())
 }
