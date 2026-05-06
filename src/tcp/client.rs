@@ -3,16 +3,18 @@
 use anyhow::{Result, bail};
 use std::io::{ErrorKind, Write};
 use std::net::{IpAddr, Shutdown, SocketAddr, TcpStream};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Barrier};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use crate::cli::Ipv4TcpClientArgs;
-use crate::payload;
-use crate::proto::{Hello, Message, PROTO_VERSION, Protocol, SessionStats, TcpStreamStats};
-use crate::tcp_utils::get_mss;
-use crate::utils::print_results;
-use crate::wire;
+use crate::control::proto::{
+    Hello, Message, PROTO_VERSION, Protocol, SessionStats, TcpStreamStats,
+};
+use crate::control::wire;
+use crate::tcp::maxseg::get_mss;
+use crate::utils::payload;
+use crate::utils::report::print_results;
 
 /// runs the TCP client, connects to a server, and benchmarks the wire
 pub fn run(args: Ipv4TcpClientArgs) -> Result<()> {

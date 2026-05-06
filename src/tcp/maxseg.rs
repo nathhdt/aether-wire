@@ -1,4 +1,4 @@
-//! collection of utility functions for TCP-based code
+//! TCP_MAXSEG
 
 use anyhow::{Result, bail};
 use std::net::TcpStream;

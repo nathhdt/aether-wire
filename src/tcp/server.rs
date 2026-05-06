@@ -6,10 +6,14 @@ use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
 use crate::cli::Ipv4TcpServerArgs;
-use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, TcpStreamStats};
-use crate::tcp_utils::get_mss;
-use crate::utils::{print_results, rand_u64};
-use crate::wire;
+use crate::control::proto::{
+    Hello, Message, PROTO_VERSION, SessionStart, SessionStats, TcpStreamStats,
+};
+use crate::control::wire;
+use crate::tcp::maxseg::get_mss;
+use crate::utils::payload::{make_buffer, stream_seed};
+use crate::utils::random::rand_u64;
+use crate::utils::report::print_results;
 
 /// runs the TCP server, listens for a connection, and benchmarks the wire
 pub fn run(args: Ipv4TcpServerArgs) -> Result<()> {
@@ -158,10 +162,7 @@ fn receive_data(
 
     // generates expected buffer (--verify)
     let expected_buffer = if verify {
-        Some(crate::payload::make_buffer(crate::payload::stream_seed(
-            session_seed,
-            stream_id,
-        )))
+        Some(make_buffer(stream_seed(session_seed, stream_id)))
     } else {
         None
     };
