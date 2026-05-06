@@ -15,9 +15,9 @@ principles:
 
 ### parallel streams model
 
-with **N streams**:
-- client opens **N TCP sockets**
-- server runs **1 listener** + **N accepted connections**
+with **n streams**:
+- client opens **n TCP sockets**
+- server runs **1 listener** + **n accepted connections**
 - each stream independent
 
 ### test boundaries
@@ -48,10 +48,10 @@ sent at connection start. identifies stream for the entire session.
 ├──────────────────────────┤
 │ sender_timestamp_ns: u64 │  8 bytes
 ├──────────────────────────┤
-│ payload: ChaCha8         │  N bytes (typically 1472)
+│ payload: ChaCha8         │  n bytes
 └──────────────────────────┘
 
-total: 16 + N bytes
+total: 16 + n bytes
 overhead: ~1%
 ```
 
