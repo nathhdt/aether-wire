@@ -10,6 +10,7 @@ use std::time::Instant;
 use crate::cli::Ipv4TcpClientArgs;
 use crate::payload;
 use crate::proto::{Hello, Message, PROTO_VERSION, Protocol, SessionStats, TcpStreamStats};
+use crate::tcp_utils::get_mss;
 use crate::utils::print_results;
 use crate::wire;
 
@@ -61,7 +62,11 @@ pub fn run(args: Ipv4TcpClientArgs) -> Result<()> {
         let handle = std::thread::spawn(move || -> Result<TcpStreamStats> {
             // data channel session establishment
             let mut data_sock = TcpStream::connect(data_addr)?;
-            println!("[data] stream {stream_id} connected to {data_addr}");
+
+            // reads session MSS
+            let mss = get_mss(&data_sock)?;
+
+            println!("[data] stream {stream_id} connected to {data_addr}, MSS = {mss}");
 
             // stream_id send through the wire - before any benchmark starts
             data_sock.write_all(&stream_id.to_be_bytes())?;

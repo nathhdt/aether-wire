@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use crate::cli::Ipv4TcpServerArgs;
 use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, TcpStreamStats};
+use crate::tcp_utils::get_mss;
 use crate::utils::{print_results, rand_u64};
 use crate::wire;
 
@@ -91,7 +92,10 @@ pub fn run(args: Ipv4TcpServerArgs) -> Result<()> {
             data_sock.read_exact(&mut id_bytes)?;
             let stream_id = u16::from_be_bytes(id_bytes);
 
-            println!("[data] stream {stream_id} connected from {client}");
+            // reads session MSS
+            let mss = get_mss(&data_sock)?;
+
+            println!("[data] stream {stream_id} connected from {client}, MSS = {mss}");
 
             let verify = hello.verify_integrity;
             let session_seed = seed;

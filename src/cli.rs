@@ -190,16 +190,18 @@ fn parse_bandwidth(s: &str) -> Result<u64, String> {
 
 /// validates the provided server IPv4 is an actual reachable host (e.g., not a broadcast address)
 fn validate_server_ipv4(s: &str) -> Result<Ipv4Addr, String> {
-    let ip: Ipv4Addr = s.parse().map_err(|_| format!("{s} is not a valid IPv4 address"))?;
+    let ip: Ipv4Addr = s
+        .parse()
+        .map_err(|_| format!("{s} is not a valid IPv4 address"))?;
 
     if ip.is_unspecified() {
         return Err("0.0.0.0 is not a valid host address".into());
     }
-    
+
     if ip.is_multicast() {
         return Err("multicast addresses are not valid hosts".into());
     }
-    
+
     if ip.octets() == [255, 255, 255, 255] {
         return Err("broadcast addresses is not a valid host".into());
     }

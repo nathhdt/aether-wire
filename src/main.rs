@@ -10,6 +10,7 @@ mod ipv4_udp_client;
 mod ipv4_udp_server;
 mod payload;
 mod proto;
+mod tcp_utils;
 mod utils;
 mod wire;
 

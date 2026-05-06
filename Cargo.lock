@@ -10,9 +10,11 @@ dependencies = [
  "bincode",
  "clap",
  "humantime",
+ "libc",
  "rand_chacha",
  "rand_core",
  "serde",
+ "windows-sys",
 ]
 
 [[package]]
