@@ -74,7 +74,7 @@ pub struct Ipv4TcpServerArgs {
 #[derive(Args, Clone, Debug)]
 pub struct Ipv4TcpClientArgs {
     /// server IPv4 address to connect to
-    #[arg(short = 's', long)]
+    #[arg(short = 's', long, value_parser = validate_server_ipv4)]
     pub server: Ipv4Addr,
 
     /// server port number
@@ -114,7 +114,7 @@ pub struct Ipv4UdpServerArgs {
 #[derive(Args, Clone, Debug)]
 pub struct Ipv4UdpClientArgs {
     /// server IPv4 address to connect to
-    #[arg(short = 's', long)]
+    #[arg(short = 's', long, value_parser = validate_server_ipv4)]
     pub server: Ipv4Addr,
 
     /// server port number
@@ -186,4 +186,23 @@ fn parse_bandwidth(s: &str) -> Result<u64, String> {
     value
         .checked_mul(multiplier)
         .ok_or_else(|| format!("bandwidth too large: {}", original))
+}
+
+/// validates the provided server IPv4 is an actual reachable host (e.g., not a broadcast address)
+fn validate_server_ipv4(s: &str) -> Result<Ipv4Addr, String> {
+    let ip: Ipv4Addr = s.parse().map_err(|_| format!("{s} is not a valid IPv4 address"))?;
+
+    if ip.is_unspecified() {
+        return Err("0.0.0.0 is not a valid host address".into());
+    }
+    
+    if ip.is_multicast() {
+        return Err("multicast addresses are not valid hosts".into());
+    }
+    
+    if ip.octets() == [255, 255, 255, 255] {
+        return Err("broadcast addresses is not a valid host".into());
+    }
+
+    Ok(ip)
 }
