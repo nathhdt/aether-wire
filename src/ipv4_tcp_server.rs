@@ -1,17 +1,17 @@
-//! aether-wire server
+//! aether-wire TCP server
 
 use anyhow::{Result, bail};
 use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
-use crate::cli::ServeArgs;
-use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, StreamStats};
+use crate::cli::Ipv4TcpServerArgs;
+use crate::proto::{Hello, Message, PROTO_VERSION, SessionStart, SessionStats, TcpStreamStats};
 use crate::utils::{print_results, rand_u64};
 use crate::wire;
 
-/// runs the server, listens for a connection, and benchmarks the wire
-pub fn run(args: ServeArgs) -> Result<()> {
+/// runs the TCP server, listens for a connection, and benchmarks the wire
+pub fn run(args: Ipv4TcpServerArgs) -> Result<()> {
     // listens to the control channel session port
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.bind), args.port);
     let ctrl_listener = TcpListener::bind(ctrl_addr)?;
@@ -74,10 +74,10 @@ pub fn run(args: ServeArgs) -> Result<()> {
             &Message::SessionStart(SessionStart {
                 session_id,
                 seed,
-                data_port,
+                data_ports: vec![data_port],
             }),
         )?;
-        println!("[ctrl] informed the client the session (id: {session_id}) can start");
+        println!("[ctrl] informed the client the session can start (id: {session_id})");
 
         // sets up threads for multi-stream benchmark
         let mut handles = Vec::with_capacity(hello.n_streams as usize);
@@ -96,7 +96,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
             let verify = hello.verify_integrity;
             let session_seed = seed;
 
-            let handle = std::thread::spawn(move || -> Result<StreamStats> {
+            let handle = std::thread::spawn(move || -> Result<TcpStreamStats> {
                 receive_data(stream_id, session_seed, verify, data_sock)
             });
             handles.push(handle);
@@ -108,7 +108,7 @@ pub fn run(args: ServeArgs) -> Result<()> {
         );
 
         // joins threads and collects stats
-        let mut streams: Vec<StreamStats> = Vec::with_capacity(handles.len());
+        let mut streams: Vec<TcpStreamStats> = Vec::with_capacity(handles.len());
         for handle in handles {
             match handle.join() {
                 Ok(Ok(s)) => streams.push(s),
@@ -123,15 +123,13 @@ pub fn run(args: ServeArgs) -> Result<()> {
         // sends stats back to the client
         wire::send_message(
             &mut ctrl_sock,
-            &Message::SessionStats(SessionStats {
-                streams: streams.clone(),
-            }),
+            &Message::SessionStats(SessionStats::Tcp(streams.clone())),
         )?;
         println!("[ctrl] session statistics sent to the client");
 
         // result print
         print_results("receiver (server)", &streams, false);
-        
+
         println!("\n[ctrl] session complete");
 
         if args.once {
@@ -149,7 +147,7 @@ fn receive_data(
     session_seed: u64,
     verify: bool,
     mut sock: TcpStream,
-) -> Result<StreamStats> {
+) -> Result<TcpStreamStats> {
     // receiving buffer
     let mut buf = vec![0u8; 256 * 1024];
     let mut bytes: u64 = 0;
@@ -214,7 +212,7 @@ fn receive_data(
         None => 0,
     };
 
-    Ok(StreamStats {
+    Ok(TcpStreamStats {
         stream_id,
         bytes_sent: 0,
         bytes_received: bytes,
