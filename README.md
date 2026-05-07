@@ -4,25 +4,45 @@ native cross-platform E2E network performance and benchmarking tool
 
 ## overview
 
-**aether-wire** is a lightweight, native cross-platform tool built in Rust for measuring end-to-end (E2E) network performance. it provides **low-level benchmarking capabilities** for TCP (currently IPv4), targeting developers and network engineers who need precise control over network behavior.
+**aether-wire** is a lightweight, native cross-platform tool built in Rust for measuring end-to-end (E2E) network performance. it provides two modes: a **raw TCP benchmark** for quick throughput measurement, and a **full link qualification** pipeline that automatically profiles a network path (throughput, MTU, jitter, bufferbloat, packet loss).
 
 this project is under development.
 
-## example usage - TCP test
+## quick start
 
-### start a TCP server
-
-```bash
-aw server ipv4 tcp -p 9000
-```
-
-### run a simple TCP client benchmark
+### run a server
 
 ```bash
-aw client ipv4 tcp -s 192.168.1.11 -p 9000 -t 10s -n 4
+aw server -p 9000
 ```
 
-the client will open multiple (`n = 4`) concurrent TCP connections and send data for a fixed duration (`t = 10s`) to measure throughput under load.
+### run a TCP benchmark
+
+```bash
+aw client benchmark -s 192.168.1.11 -p 9000 -t 10s -n 4
+```
+
+### run a full link qualification
+
+```bash
+aw client qualify -s 192.168.1.11 -p 9000
+```
+
+## modes
+
+### benchmark
+
+raw TCP throughput measurement. can open parallel streams (`-n 4`), sends data for a fixed duration (`-t 10s`), reports throughput. no optimization, measures the wire as-is.
+
+### qualify
+
+automated multi-step link qualification pipeline:
+
+- **baseline performance**: establishment of reference throughput via single and multi-stream TCP probes.
+- **physical footprint**: path MTU discovery and encapsulation signatures (e.g., IPsec, GRE, ...)
+- **stability analysis**: jitter and ROWD measurement
+- **saturation limits**: ramp-up stress testing to locate packet loss thresholds and bufferbloat
+- **automated diagnostics**: human-readable performance profiling and JSON exports
 
 ## documentation
 
