@@ -81,6 +81,15 @@ pub struct BenchmarkArgs {
     pub direction: DirectionArgs,
 }
 
+impl BenchmarkArgs {
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.verify && self.n_streams > 1 {
+            anyhow::bail!("--verify can only be used with a single stream");
+        }
+        Ok(())
+    }
+}
+
 /// direction arguments
 #[derive(Args, Clone, Debug)]
 #[group(required = false, multiple = false)]

@@ -1,13 +1,13 @@
 //! server TCP session handler
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
 use crate::cli::ServerArgs;
 use crate::protocol::messages::{
-    PROTO_VERSION, BenchmarkConfig, Direction, Hello, Message, SessionStart, SessionStats,
+    BenchmarkConfig, Direction, Hello, Message, PROTO_VERSION, SessionStart, SessionStats,
     SessionType,
 };
 use crate::protocol::stats::TcpStreamStats;
@@ -65,7 +65,7 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
                 println!("[ctrl] client requested qualify mode (not yet implemented)");
                 wire::send_message(
                     &mut ctrl_sock,
-                    &Message::Error("qualify mode not yet implemented".into())
+                    &Message::Error("qualify mode not yet implemented".into()),
                 )?;
                 Ok(())
             }
@@ -100,9 +100,7 @@ fn handle_benchmark_session(
     );
 
     if config.verify_integrity {
-        println!(
-            "[ctrl] client requested server-side buffer verification, this may impact performance"
-        );
+        println!("[ctrl] client requested server-side buffer verification (--verify)");
     }
 
     // data channel session establishment
@@ -231,19 +229,23 @@ fn receive_data(
 ) -> Result<TcpStreamStats> {
     // receiving buffer
     let mut buf = vec![0u8; 256 * 1024];
-    let mut bytes: u64 = 0;
 
-    // generates expected buffer (--verify)
-    let expected_buffer = if verify {
-        Some(make_buffer(stream_seed(session_seed, stream_id)))
+    // smart verification
+    const MAX_VERIFY_BUFFER: usize = 1024 * 1024 * 1024; // 1 GB hard limit
+
+    let mut received_data = if verify {
+        // pre-allocate 1 GB to avoid initial reallocations
+        let mut v = Vec::new();
+        v.reserve_exact(MAX_VERIFY_BUFFER);
+        Some(v)
     } else {
         None
     };
-    let mut cursor: usize = 0;
 
-    // timer
+    // counters
     let mut first: Option<Instant> = None;
     let mut last = Instant::now();
+    let mut bytes_received: u64 = 0;
 
     // receiving loop
     loop {
@@ -255,30 +257,16 @@ fn receive_data(
                 }
                 last = Instant::now();
 
-                // integrity verification if asked (--verify)
-                if let Some(ref exp) = expected_buffer {
-                    for (i, &received) in buf.iter().enumerate().take(n) {
-                        let expected_byte = exp[cursor];
+                bytes_received += n as u64;
 
-                        if received != expected_byte {
-                            bail!(
-                                "[data] stream {}: integrity check failed at byte {} (offset in buffer: {}): expected 0x{:02x}, got 0x{:02x}",
-                                stream_id,
-                                bytes + i as u64,
-                                cursor,
-                                expected_byte,
-                                received
-                            );
-                        }
-
-                        cursor += 1;
-                        if cursor >= exp.len() {
-                            cursor = 0;
-                        }
-                    }
+                // store data up to 1GB limit
+                if let Some(ref mut data) = received_data
+                    && data.len() < MAX_VERIFY_BUFFER
+                {
+                    let remaining = MAX_VERIFY_BUFFER - data.len();
+                    let to_store = n.min(remaining);
+                    data.extend_from_slice(&buf[..to_store]);
                 }
-
-                bytes += n as u64;
             }
             Err(e) if e.kind() == ErrorKind::Interrupted => continue, // EINTR
             Err(e) => return Err(e.into()),
@@ -290,10 +278,56 @@ fn receive_data(
         None => 0,
     };
 
+    // post-benchmark validation: verify only the stored data
+    if let Some(received) = received_data {
+        let verified_gb = received.len() as f64 / MAX_VERIFY_BUFFER as f64;
+        let total_gb = bytes_received as f64 / MAX_VERIFY_BUFFER as f64;
+
+        if received.len() < bytes_received as usize {
+            println!(
+                "[data] stream {stream_id}: verifying first {verified_gb:.2} GiB of {total_gb:.2} GiB total..."
+            );
+        } else {
+            println!("[data] stream {stream_id}: verifying {verified_gb:.2} GiB...");
+        }
+
+        let expected = make_buffer(stream_seed(session_seed, stream_id));
+        let expected_len = expected.len();
+
+        // parallel verification by chunks
+        use rayon::prelude::*;
+
+        let verification_result: Result<()> = received
+            .par_chunks(expected_len)
+            .enumerate()
+            .try_for_each(|(chunk_idx, chunk)| {
+                let base_offset = chunk_idx * expected_len;
+                // compare chunk against expected pattern
+                if chunk != &expected[..chunk.len()] {
+                    // find exact mismatch byte
+                    for i in 0..chunk.len() {
+                        if chunk[i] != expected[i] {
+                            bail!(
+                                "[data] stream {}: integrity check failed at byte {}. expected 0x{:02x}, got 0x{:02x}",
+                                stream_id,
+                                base_offset + i,
+                                expected[i],
+                                chunk[i]
+                            );
+                        }
+                    }
+                }
+                Ok(())
+            });
+
+        verification_result?;
+        println!("[data] stream {stream_id}: integrity check passed");
+    }
+
     Ok(TcpStreamStats {
         stream_id,
         bytes_sent: 0,
-        bytes_received: bytes,
+        bytes_received,
         duration_ns,
     })
 }

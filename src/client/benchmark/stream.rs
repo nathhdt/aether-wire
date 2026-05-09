@@ -46,8 +46,6 @@ pub fn run_tcp_benchmark(
     // waits for all threads to be ready
     barrier.wait();
 
-    // timer launch
-    let time_start = Instant::now();
     println!(
         "[data] all {} stream(s) connected, benchmark in progress...",
         n_streams
@@ -71,12 +69,7 @@ pub fn run_tcp_benchmark(
         }
     }
 
-    // stops timer
-    let time_elapsed = time_start.elapsed();
-
     client_stats.sort_by_key(|s| s.stream_id);
-
-    println!("[ctrl] benchmark done ({:.2}s)", time_elapsed.as_secs_f64());
 
     Ok(client_stats)
 }

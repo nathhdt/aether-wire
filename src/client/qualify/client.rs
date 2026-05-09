@@ -4,14 +4,14 @@ use anyhow::Result;
 
 /// client qualify arguments structure
 #[derive(Debug, Clone)]
-pub struct QualifyArgs {
+pub struct QualifyParameters {
     pub server: std::net::Ipv4Addr,
     pub port: u16,
     pub export_json: bool,
 }
 
 /// runs the qualification pipeline
-pub fn run(args: QualifyArgs) -> Result<()> {
+pub fn run(args: QualifyParameters) -> Result<()> {
     println!("[qualify] starting link qualification pipeline");
     println!("[qualify] target: {}:{}", args.server, args.port);
 

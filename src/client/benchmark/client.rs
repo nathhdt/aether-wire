@@ -12,7 +12,7 @@ use crate::protocol::wire;
 use crate::utils::report::print_results;
 
 /// client benchmark arguments structure
-pub struct BenchmarkArgs {
+pub struct BenchmarkParameters {
     pub server: std::net::Ipv4Addr,
     pub port: u16,
     pub duration: std::time::Duration,
@@ -22,7 +22,7 @@ pub struct BenchmarkArgs {
 }
 
 /// runs the TCP client, connects to a server, and benchmarks the wire
-pub fn run(args: BenchmarkArgs) -> Result<()> {
+pub fn run(args: BenchmarkParameters) -> Result<()> {
     // control channel session establishment
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.server), args.port);
     let mut ctrl_sock = TcpStream::connect(ctrl_addr)?;
@@ -68,7 +68,7 @@ pub fn run(args: BenchmarkArgs) -> Result<()> {
             Direction::Reverse | Direction::Both | Direction::Bidirectional => {
                 // TODO: implement download, both, bidirectional
                 println!("[ctrl] direction {:?} not yet implemented", args.direction);
-                return Ok(())
+                return Ok(());
             }
         };
 

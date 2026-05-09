@@ -24,21 +24,23 @@ fn main() -> Result<()> {
 
         cli::Command::Client(client_cmd) => match client_cmd {
             cli::ClientCommand::Benchmark(args) => {
-                // CLI args to benchmark args
-                let benchmark_args = client::benchmark::client::BenchmarkArgs {
-                    server: args.server,
-                    port: args.port,
-                    duration: args.time,
-                    n_streams: args.n_streams,
-                    verify_integrity: args.verify,
-                    direction: args.direction.to_direction(),
-                };
-                client::benchmark::client::run(benchmark_args)
+                args.validate()?;
+                // CLI args to benchmark parameters
+                let benchmark_parameters: client::benchmark::client::BenchmarkParameters =
+                    client::benchmark::client::BenchmarkParameters {
+                        server: args.server,
+                        port: args.port,
+                        duration: args.time,
+                        n_streams: args.n_streams,
+                        verify_integrity: args.verify,
+                        direction: args.direction.to_direction(),
+                    };
+                client::benchmark::client::run(benchmark_parameters)
             }
 
             cli::ClientCommand::Qualify(args) => {
                 // CLI args to qualify args
-                let qualify_args = client::qualify::client::QualifyArgs {
+                let qualify_args = client::qualify::client::QualifyParameters {
                     server: args.server,
                     port: args.port,
                     export_json: args.json,

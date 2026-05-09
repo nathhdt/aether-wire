@@ -138,6 +138,8 @@ reveals:
 
 enables payload integrity verification. payloads generated with ChaCha8 are verified on receiver side.
 
+**limitations**: single stream only (`-n 1`), verifies first 1 GB of transfer.
+
 detects:
 - corrupted transfers
 - payload mutations
@@ -148,7 +150,3 @@ detects:
 ```bash
 aw client benchmark -s 192.168.1.11 -p 9000 --verify
 ```
-
-### performance impact
-
-increases CPU usage on both sides. **may reduce measured throughput** at high speeds.
