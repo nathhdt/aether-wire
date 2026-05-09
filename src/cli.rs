@@ -25,6 +25,9 @@ pub enum Command {
     /// run client operations
     #[command(subcommand)]
     Client(ClientCommand),
+
+    /// open TUI
+    Tui,
 }
 
 /// server arguments

@@ -11,11 +11,7 @@ pub fn print_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) {
     const HEADER_WIDTH: usize = 53;
     const SEPARATOR_WIDTH: usize = 50;
 
-    let direction = if is_sender {
-        "sent"
-    } else {
-        "received"
-    };
+    let direction = if is_sender { "sent" } else { "received" };
 
     let title = format!(" {} ", role);
     let pad = HEADER_WIDTH.saturating_sub(title.len());
@@ -71,10 +67,7 @@ pub fn print_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) {
             0.0
         };
 
-        info_noprefix!(
-            "      {CYAN}{}{RESET}",
-            "─".repeat(SEPARATOR_WIDTH)
-        );
+        info_noprefix!("      {CYAN}{}{RESET}", "─".repeat(SEPARATOR_WIDTH));
 
         info_noprefix!(
             "      {BOLD}{GREEN}total     {CYAN}│ {:>8} │ {:>12} │ {:>12}{NO_BOLD}",

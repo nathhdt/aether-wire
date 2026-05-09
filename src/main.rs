@@ -6,12 +6,14 @@ mod client;
 mod protocol;
 mod server;
 mod transport;
+mod tui;
 mod utils;
 
 fn main() -> Result<()> {
     let cli = cli::Cli::parse();
 
     match cli.command {
+        // server command
         cli::Command::Server(args) => {
             // CLI args to server args
             let server_args = cli::ServerArgs {
@@ -22,6 +24,7 @@ fn main() -> Result<()> {
             server::run(server_args)
         }
 
+        // client command
         cli::Command::Client(client_cmd) => match client_cmd {
             cli::ClientCommand::Benchmark(args) => {
                 args.validate()?;
@@ -47,6 +50,9 @@ fn main() -> Result<()> {
                 };
                 client::qualify::client::run(qualify_parameters)
             }
-        },
+        }
+
+        // TUI command
+        cli::Command::Tui => tui::app::run(),
     }
 }
