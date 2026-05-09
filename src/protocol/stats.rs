@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct TcpStreamStats {
     pub stream_id: u16,
     pub bytes_sent: u64,
-    pub bytes_recv: u64,
+    pub bytes_received: u64,
     pub duration_ns: u64,
 }
 
@@ -16,7 +16,7 @@ pub struct TcpStreamStats {
 pub struct UdpStreamStats {
     pub stream_id: u16,
     pub bytes_sent: u64,
-    pub bytes_recv: u64,
+    pub bytes_received: u64,
     pub packets_sent: u64,
     pub packets_recv: u64,
     pub packets_lost: u64,

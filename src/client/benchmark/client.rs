@@ -67,7 +67,8 @@ pub fn run(args: BenchmarkArgs) -> Result<()> {
             }
             Direction::Reverse | Direction::Both | Direction::Bidirectional => {
                 // TODO: implement download, both, bidirectional
-                bail!("direction {:?} not yet implemented", args.direction);
+                println!("[ctrl] direction {:?} not yet implemented", args.direction);
+                return Ok(())
             }
         };
 

@@ -135,7 +135,7 @@ fn run_single_stream(
     Ok(TcpStreamStats {
         stream_id,
         bytes_sent: b_sent,
-        bytes_recv: 0,
+        bytes_received: 0,
         duration_ns,
     })
 }

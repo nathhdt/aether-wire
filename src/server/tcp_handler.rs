@@ -1,13 +1,13 @@
-//! TCP session handler for the unified server
+//! server TCP session handler
 
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
 use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
 use crate::cli::ServerArgs;
 use crate::protocol::messages::{
-    BenchmarkConfig, Direction, Hello, Message, PROTO_VERSION, SessionStart, SessionStats,
+    PROTO_VERSION, BenchmarkConfig, Direction, Hello, Message, SessionStart, SessionStats,
     SessionType,
 };
 use crate::protocol::stats::TcpStreamStats;
@@ -39,7 +39,8 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
                     &mut ctrl_sock,
                     &Message::Error("expected hello message".into()),
                 );
-                bail!("unexpected first message : {other:?}");
+                println!("unexpected first message : {other:?}");
+                continue;
             }
         };
 
@@ -51,21 +52,27 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
             );
 
             let _ = wire::send_message(&mut ctrl_sock, &Message::Error(msg.clone()));
-            bail!("[ctrl] {msg}");
+            println!("[ctrl] {msg}");
+            continue;
         }
 
         // dispatch based on session type
-        match hello.session_type {
+        let session_result = match hello.session_type {
             SessionType::Benchmark(config) => {
-                handle_benchmark_session(ctrl_sock, ctrl_client, config, &args)?;
+                handle_benchmark_session(ctrl_sock, ctrl_client, config, &args)
             }
             SessionType::Qualify => {
                 println!("[ctrl] client requested qualify mode (not yet implemented)");
-                let _ = wire::send_message(
+                wire::send_message(
                     &mut ctrl_sock,
-                    &Message::Error("qualify mode not yet implemented".into()),
-                );
+                    &Message::Error("qualify mode not yet implemented".into())
+                )?;
+                Ok(())
             }
+        };
+
+        if let Err(e) = session_result {
+            println!("[ctrl] session error: {e:#}");
         }
 
         if args.once {
@@ -286,7 +293,7 @@ fn receive_data(
     Ok(TcpStreamStats {
         stream_id,
         bytes_sent: 0,
-        bytes_recv: bytes,
+        bytes_received: bytes,
         duration_ns,
     })
 }

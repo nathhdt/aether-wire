@@ -18,7 +18,7 @@ pub fn print_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) {
         let bytes = if is_sender {
             s.bytes_sent
         } else {
-            s.bytes_recv
+            s.bytes_received
         };
         let bitrate = if secs > 0.0 {
             (bytes as f64) * 8.0 / secs
