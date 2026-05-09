@@ -5,7 +5,6 @@ use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
-use crate::cli::ServerArgs;
 use crate::protocol::messages::{
     BenchmarkConfig, Direction, Hello, Message, PROTO_VERSION, SessionStart, SessionStats,
     SessionType,
@@ -17,10 +16,17 @@ use crate::utils::random::rand_u64;
 use crate::utils::report::print_results;
 use crate::{bail_error, error, info, warn};
 
+/// server arguments structure
+pub struct ServerParameters {
+    pub bind: std::net::Ipv4Addr,
+    pub port: u16,
+    pub once: bool,
+}
+
 /// runs the TCP server
-pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
+pub fn run_tcp_server(params: ServerParameters) -> Result<()> {
     // listens to the control channel session port
-    let ctrl_addr = SocketAddr::new(IpAddr::V4(args.bind), args.port);
+    let ctrl_addr = SocketAddr::new(IpAddr::V4(params.bind), params.port);
     let ctrl_listener = TcpListener::bind(ctrl_addr)?;
     info!("ctrl", "server listening on {ctrl_addr}");
 
@@ -60,7 +66,7 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
         // dispatch based on session type
         let session_result = match hello.session_type {
             SessionType::Benchmark(config) => {
-                handle_benchmark_session(ctrl_sock, ctrl_client, config, &args)
+                handle_benchmark_session(ctrl_sock, ctrl_client, config, &params)
             }
             SessionType::Qualify => {
                 warn!(
@@ -79,7 +85,7 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
             error!("ctrl", "session error: {e:#}");
         }
 
-        if args.once {
+        if params.once {
             warn!("ctrl", "--once flag set, exiting");
             break;
         }
@@ -93,7 +99,7 @@ fn handle_benchmark_session(
     mut ctrl_sock: TcpStream,
     ctrl_client: SocketAddr,
     config: BenchmarkConfig,
-    args: &ServerArgs,
+    params: &ServerParameters,
 ) -> Result<()> {
     info!(
         "ctrl",
@@ -112,7 +118,7 @@ fn handle_benchmark_session(
     }
 
     // data channel session establishment
-    let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(args.bind), 0))?;
+    let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(params.bind), 0))?;
     let data_port = data_listener.local_addr()?.port();
     info!("data", "listening on port {data_port}");
 

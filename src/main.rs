@@ -15,13 +15,12 @@ fn main() -> Result<()> {
     match cli.command {
         // server command
         cli::Command::Server(args) => {
-            // CLI args to server args
-            let server_args = cli::ServerArgs {
+            let server_params = server::tcp_handler::ServerParameters {
                 bind: args.bind,
                 port: args.port,
                 once: args.once,
             };
-            server::run(server_args)
+            server::run(server_params)
         }
 
         // client command
@@ -50,7 +49,7 @@ fn main() -> Result<()> {
                 };
                 client::qualify::client::run(qualify_parameters)
             }
-        }
+        },
 
         // TUI command
         cli::Command::Tui => tui::app::run(),
