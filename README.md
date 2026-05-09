@@ -44,6 +44,12 @@ automated multi-step link qualification pipeline:
 - **saturation limits**: ramp-up stress testing to locate packet loss thresholds and bufferbloat
 - **automated diagnostics**: human-readable performance profiling and JSON exports
 
+## platform support
+
+**tested and working:**
+-  macOS 12.0+
+- ⊞ Windows 10+
+
 ## documentation
 
 - [CLI reference](./docs/cli-reference.md)
