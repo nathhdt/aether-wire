@@ -27,9 +27,9 @@
 
 ### step 1 - TCP probe
 
-- [ ] single stream throughput test
-- [ ] multi stream throughput test
-- [ ] $V_{ref}$ (reference throughput) calculation
+- [x] single stream throughput test
+- [x] multi stream throughput test
+- [x] $V_{ref}$ (reference throughput) calculation
 
 ### step 2 - MTU sweep
 

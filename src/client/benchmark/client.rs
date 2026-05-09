@@ -21,12 +21,17 @@ pub struct BenchmarkParameters {
     pub direction: Direction,
 }
 
-/// runs the TCP client, connects to a server, and benchmarks the wire
-pub fn run(args: BenchmarkParameters) -> Result<()> {
+/// benchmark result containing upload and download statistics
+pub type BenchmarkResult = (
+    Option<Vec<TcpStreamStats>>,
+    Option<Vec<TcpStreamStats>>,
+);
+
+/// internal benchmark execution, returns stats without printing
+fn run_internal(args: BenchmarkParameters) -> Result<BenchmarkResult> {
     // control channel session establishment
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.server), args.port);
     let mut ctrl_sock = TcpStream::connect(ctrl_addr)?;
-    println!("[ctrl] connected to {ctrl_addr}");
 
     // hello message with protocol
     let hello = Message::Hello(Hello {
@@ -46,33 +51,24 @@ pub fn run(args: BenchmarkParameters) -> Result<()> {
         Message::Error(e) => bail!("[ctrl] server declined session establishment : {e}"),
         other => bail!("[ctrl] unknown error from server : {other:?}"),
     };
-    println!(
-        "[ctrl] session can start (id: {}, data port: {}, seed: {})",
-        session.session_id, session.data_ports[0], session.seed
-    );
-    println!("[ctrl] direction: {}", args.direction.description());
 
     // run the benchmark based on direction
-    let (upload_stats, download_stats): (Option<Vec<TcpStreamStats>>, Option<Vec<TcpStreamStats>>) =
-        match args.direction {
-            Direction::Default => {
-                let stats = stream::run_tcp_benchmark(
-                    args.server,
-                    session.data_ports[0],
-                    args.n_streams,
-                    session.seed,
-                    args.duration,
-                )?;
-                (Some(stats), None)
-            }
-            Direction::Reverse | Direction::Both | Direction::Bidirectional => {
-                // TODO: implement download, both, bidirectional
-                println!("[ctrl] direction {:?} not yet implemented", args.direction);
-                return Ok(());
-            }
-        };
-
-    println!("[ctrl] benchmark done");
+    let (upload_stats, _download_stats): BenchmarkResult = match args.direction {
+        Direction::Default => {
+            let stats = stream::run_tcp_benchmark(
+                args.server,
+                session.data_ports[0],
+                args.n_streams,
+                session.seed,
+                args.duration,
+            )?;
+            (Some(stats), None)
+        }
+        Direction::Reverse | Direction::Both | Direction::Bidirectional => {
+            // TODO: implement download, both, bidirectional
+            bail!("direction {:?} not yet implemented", args.direction);
+        }
+    };
 
     // server statistics retrieval
     let server_stats = match wire::read_message(&mut ctrl_sock)? {
@@ -80,18 +76,31 @@ pub fn run(args: BenchmarkParameters) -> Result<()> {
         Message::Error(e) => bail!("server error: {e}"),
         other => bail!("unexpected message: {other:?}"),
     };
+
+    Ok((upload_stats, server_stats.0))
+}
+
+/// runs the TCP client, connects to a server, and benchmarks the wire
+pub fn run(args: BenchmarkParameters) -> Result<()> {
+    println!("[ctrl] connected to {}:{}", args.server, args.port);
+    println!("[ctrl] direction: {}", args.direction.description());
+
+    // runs benchmark and gets stats
+    let (upload_stats, server_stats) = run_internal(args)?;
+
+    println!("[ctrl] benchmark done");
     println!("[ctrl] session statistics received from the server");
 
     // result print
-    if let (Some(client_up), Some(server_up)) = (&upload_stats, &server_stats.0) {
+    if let (Some(client_up), Some(server_up)) = (&upload_stats, &server_stats) {
         print_results("sender (client)", client_up, true);
         print_results("receiver (server)", server_up, false);
     }
 
-    if let (Some(client_down), Some(server_down)) = (&download_stats, &server_stats.1) {
-        print_results("receiver (client)", client_down, false);
-        print_results("sender (server)", server_down, true);
-    }
-
     Ok(())
+}
+
+/// runs benchmark without printing results (for qualify mode)
+pub fn run_silent(args: BenchmarkParameters) -> Result<BenchmarkResult> {
+    run_internal(args)
 }

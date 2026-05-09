@@ -2,6 +2,8 @@
 
 use anyhow::Result;
 
+use crate::client::qualify::tcp_probe;
+
 /// client qualify arguments structure
 #[derive(Debug, Clone)]
 pub struct QualifyParameters {
@@ -13,21 +15,32 @@ pub struct QualifyParameters {
 /// runs the qualification pipeline
 pub fn run(args: QualifyParameters) -> Result<()> {
     println!("[qualify] starting link qualification pipeline");
-    println!("[qualify] target: {}:{}", args.server, args.port);
+    println!("[qualify] target: {}:{}\n", args.server, args.port);
+
+    // step 1: TCP probe
+    let vref = tcp_probe::tcp_probe(args.server, args.port)?;
+
+    // TODO: step 2: MTU sweep
+    println!("[qualify] step 2: MTU sweep (not yet implemented)");
+
+    // TODO: step 3: health check
+    println!("[qualify] step 3: health check (not yet implemented)");
+
+    // TODO: step 4: stress test
+    println!("[qualify] step 4: stress test (not yet implemented)");
+
+    // TODO: step 5: report
+    println!("[qualify] step 5: report (not yet implemented)");
+
+    // TODO: step 6: diagnostic
+    println!("[qualify] step 6: diagnostic (not yet implemented)");
 
     if args.export_json {
-        println!("[qualify] JSON export asked");
+        println!("[qualify] JSON export will be implemented in step 6");
     }
 
-    // TODO: implement the 6-step qualification pipeline:
-    // step 1: TCP probe (establish Vref)
-    // step 2: MTU sweep (discover path MTU)
-    // step 3: health check (UDP CBR at 80% Vref)
-    // step 4: stress test (UDP ramp 80-110% Vref)
-    // step 5: report (display results)
-    // step 6: diagnostic (automated analysis)
-
-    println!("[qualify] qualification pipeline not yet implemented");
+    println!("\n[qualify] qualification pipeline complete");
+    println!("[qualify] reference throughput (Vref): {:.2} Gbit/s", vref / 1_000_000_000.0);
 
     Ok(())
 }

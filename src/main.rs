@@ -40,12 +40,12 @@ fn main() -> Result<()> {
 
             cli::ClientCommand::Qualify(args) => {
                 // CLI args to qualify args
-                let qualify_args = client::qualify::client::QualifyParameters {
+                let qualify_parameters = client::qualify::client::QualifyParameters {
                     server: args.server,
                     port: args.port,
                     export_json: args.json,
                 };
-                client::qualify::client::run(qualify_args)
+                client::qualify::client::run(qualify_parameters)
             }
         },
     }
