@@ -47,8 +47,8 @@ automated multi-step link qualification pipeline:
 ## platform support
 
 **tested and working:**
--  macOS 12.0+
-- ⊞ Windows 10+
+- macOS 12.0+
+- Windows 10+
 
 ## documentation
 
