@@ -1,8 +1,9 @@
 //! sends messages to the control channel session
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::io::{Read, Write};
 
+use crate::bail_error;
 use crate::protocol::messages::Message;
 
 // maximum message size
@@ -14,7 +15,7 @@ pub fn send_message<W: Write>(stream: &mut W, msg: &Message) -> Result<()> {
     let payload = bincode::serialize(msg)?;
 
     if payload.len() as u32 > MAX_MSG_SIZE {
-        bail!("message too large : {} bytes", payload.len());
+        bail_error!("ctrl", "message too large : {} bytes", payload.len());
     }
 
     // encoded payload length (RFC 1700)
@@ -36,7 +37,7 @@ pub fn read_message<R: Read>(stream: &mut R) -> Result<Message> {
     let len = u32::from_be_bytes(len_bytes); // big endian
 
     if len > MAX_MSG_SIZE {
-        bail!("announced message too large : {} bytes", len);
+        bail_error!("ctrl", "announced message too large : {} bytes", len);
     }
 
     // payload buffer

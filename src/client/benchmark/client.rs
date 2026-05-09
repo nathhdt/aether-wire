@@ -1,6 +1,6 @@
 //! aether-wire benchmark mode client
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::net::{IpAddr, SocketAddr, TcpStream};
 
 use crate::client::benchmark::stream;
@@ -10,6 +10,7 @@ use crate::protocol::messages::{
 use crate::protocol::stats::TcpStreamStats;
 use crate::protocol::wire;
 use crate::utils::report::print_results;
+use crate::{bail_error, info};
 
 /// client benchmark arguments structure
 pub struct BenchmarkParameters {
@@ -22,10 +23,7 @@ pub struct BenchmarkParameters {
 }
 
 /// benchmark result containing upload and download statistics
-pub type BenchmarkResult = (
-    Option<Vec<TcpStreamStats>>,
-    Option<Vec<TcpStreamStats>>,
-);
+pub type BenchmarkResult = (Option<Vec<TcpStreamStats>>, Option<Vec<TcpStreamStats>>);
 
 /// internal benchmark execution, returns stats without printing
 fn run_internal(args: BenchmarkParameters) -> Result<BenchmarkResult> {
@@ -48,8 +46,8 @@ fn run_internal(args: BenchmarkParameters) -> Result<BenchmarkResult> {
     // waits for server answer
     let session = match wire::read_message(&mut ctrl_sock)? {
         Message::SessionStart(s) => s,
-        Message::Error(e) => bail!("[ctrl] server declined session establishment : {e}"),
-        other => bail!("[ctrl] unknown error from server : {other:?}"),
+        Message::Error(e) => bail_error!("ctrl", "server declined session establishment : {e}"),
+        other => bail_error!("ctrl", "unknown error from server : {other:?}"),
     };
 
     // run the benchmark based on direction
@@ -66,15 +64,15 @@ fn run_internal(args: BenchmarkParameters) -> Result<BenchmarkResult> {
         }
         Direction::Reverse | Direction::Both | Direction::Bidirectional => {
             // TODO: implement download, both, bidirectional
-            bail!("direction {:?} not yet implemented", args.direction);
+            bail_error!("aw", "direction {:?} not yet implemented", args.direction);
         }
     };
 
     // server statistics retrieval
     let server_stats = match wire::read_message(&mut ctrl_sock)? {
         Message::SessionStats(SessionStats::Benchmark { upload, download }) => (upload, download),
-        Message::Error(e) => bail!("server error: {e}"),
-        other => bail!("unexpected message: {other:?}"),
+        Message::Error(e) => bail_error!("ctrl", "server error: {e}"),
+        other => bail_error!("ctrl", "unexpected message: {other:?}"),
     };
 
     Ok((upload_stats, server_stats.0))
@@ -82,14 +80,14 @@ fn run_internal(args: BenchmarkParameters) -> Result<BenchmarkResult> {
 
 /// runs the TCP client, connects to a server, and benchmarks the wire
 pub fn run(args: BenchmarkParameters) -> Result<()> {
-    println!("[ctrl] connected to {}:{}", args.server, args.port);
-    println!("[ctrl] direction: {}", args.direction.description());
+    info!("ctrl", "connected to {}:{}", args.server, args.port);
+    info!("ctrl", "direction: {}", args.direction.description());
 
     // runs benchmark and gets stats
     let (upload_stats, server_stats) = run_internal(args)?;
 
-    println!("[ctrl] benchmark done");
-    println!("[ctrl] session statistics received from the server");
+    info!("ctrl", "benchmark done");
+    info!("ctrl", "session statistics received from the server");
 
     // result print
     if let (Some(client_up), Some(server_up)) = (&upload_stats, &server_stats) {

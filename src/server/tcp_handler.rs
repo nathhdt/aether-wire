@@ -1,6 +1,6 @@
 //! server TCP session handler
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
@@ -15,17 +15,18 @@ use crate::protocol::wire;
 use crate::utils::payload::{make_buffer, stream_seed};
 use crate::utils::random::rand_u64;
 use crate::utils::report::print_results;
+use crate::{bail_error, error, info, warn};
 
 /// runs the TCP server
 pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
     // listens to the control channel session port
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.bind), args.port);
     let ctrl_listener = TcpListener::bind(ctrl_addr)?;
-    println!("[ctrl] server listening on {ctrl_addr}");
+    info!("ctrl", "server listening on {ctrl_addr}");
 
     // server loop
     loop {
-        println!("[ctrl] waiting for client...");
+        info!("ctrl", "waiting for client...");
 
         // accepts only one session
         let (mut ctrl_sock, ctrl_client) = ctrl_listener.accept()?;
@@ -39,7 +40,7 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
                     &mut ctrl_sock,
                     &Message::Error("expected hello message".into()),
                 );
-                println!("unexpected first message : {other:?}");
+                error!("ctrl", "unexpected first message : {other:?}");
                 continue;
             }
         };
@@ -52,7 +53,7 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
             );
 
             let _ = wire::send_message(&mut ctrl_sock, &Message::Error(msg.clone()));
-            println!("[ctrl] {msg}");
+            error!("ctrl", "{}", msg);
             continue;
         }
 
@@ -62,7 +63,10 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
                 handle_benchmark_session(ctrl_sock, ctrl_client, config, &args)
             }
             SessionType::Qualify => {
-                println!("[ctrl] client requested qualify mode (not yet implemented)");
+                warn!(
+                    "ctrl",
+                    "client requested qualify mode (not yet implemented)"
+                );
                 wire::send_message(
                     &mut ctrl_sock,
                     &Message::Error("qualify mode not yet implemented".into()),
@@ -72,11 +76,11 @@ pub fn run_tcp_server(args: ServerArgs) -> Result<()> {
         };
 
         if let Err(e) = session_result {
-            println!("[ctrl] session error: {e:#}");
+            error!("ctrl", "session error: {e:#}");
         }
 
         if args.once {
-            println!("[ctrl] --once flag set, exiting");
+            warn!("ctrl", "--once flag set, exiting");
             break;
         }
     }
@@ -91,8 +95,9 @@ fn handle_benchmark_session(
     config: BenchmarkConfig,
     args: &ServerArgs,
 ) -> Result<()> {
-    println!(
-        "[ctrl] client {} asked for a TCP benchmark ({} stream(s), {}s, direction: {})",
+    info!(
+        "ctrl",
+        "client {} asked for a TCP benchmark ({} stream(s), {}s, direction: {})",
         ctrl_client,
         config.n_streams,
         config.duration_secs,
@@ -100,13 +105,16 @@ fn handle_benchmark_session(
     );
 
     if config.verify_integrity {
-        println!("[ctrl] client requested server-side buffer verification (--verify)");
+        warn!(
+            "ctrl",
+            "client requested server-side buffer verification (--verify)"
+        );
     }
 
     // data channel session establishment
     let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(args.bind), 0))?;
     let data_port = data_listener.local_addr()?.port();
-    println!("[data] listening on port {data_port}");
+    info!("data", "listening on port {data_port}");
 
     // session id & seed generation
     let session_id: u64 = rand_u64();
@@ -121,7 +129,10 @@ fn handle_benchmark_session(
             data_ports: vec![data_port],
         }),
     )?;
-    println!("[ctrl] informed the client the session can start (id: {session_id})");
+    info!(
+        "ctrl",
+        "informed the client the session can start (id: {session_id})"
+    );
 
     // handle based on direction
     let (upload_stats, download_stats): (Option<Vec<TcpStreamStats>>, Option<Vec<TcpStreamStats>>) =
@@ -144,11 +155,15 @@ fn handle_benchmark_session(
                         config.direction
                     )),
                 );
-                bail!("direction {:?} not yet implemented", config.direction);
+                bail_error!(
+                    "ctrl",
+                    "direction {:?} not yet implemented",
+                    config.direction
+                );
             }
         };
 
-    println!("[data] all streams done");
+    info!("data", "all streams done");
 
     // sends stats back to the client
     wire::send_message(
@@ -158,7 +173,7 @@ fn handle_benchmark_session(
             download: download_stats.clone(),
         }),
     )?;
-    println!("[ctrl] session statistics sent to the client");
+    info!("ctrl", "session statistics sent to the client");
 
     // result print
     if let Some(ref stats) = upload_stats {
@@ -168,7 +183,7 @@ fn handle_benchmark_session(
         print_results("sender (server)", stats, true);
     }
 
-    println!("\n[ctrl] session complete");
+    info!("ctrl", "session complete");
 
     Ok(())
 }
@@ -191,7 +206,7 @@ fn receive_upload_streams(
         data_sock.read_exact(&mut id_bytes)?;
         let stream_id = u16::from_be_bytes(id_bytes);
 
-        println!("[data] stream {stream_id} connected from {client}");
+        info!("data", "stream {stream_id} connected from {client}");
 
         let session_seed = seed;
 
@@ -201,9 +216,9 @@ fn receive_upload_streams(
         handles.push(handle);
     }
 
-    println!(
-        "[data] all {} stream(s) connected, benchmark in progress...",
-        n_streams
+    warn!(
+        "data",
+        "all {} stream(s) connected, benchmark in progress...", n_streams
     );
 
     // joins threads and collects stats
@@ -211,8 +226,8 @@ fn receive_upload_streams(
     for handle in handles {
         match handle.join() {
             Ok(Ok(s)) => streams.push(s),
-            Ok(Err(e)) => bail!("[data] stream failed: {e:#}"),
-            Err(_) => bail!("[data] stream thread panicked"),
+            Ok(Err(e)) => bail_error!("data", "stream failed: {e:#}"),
+            Err(_) => bail_error!("data", "stream thread panicked"),
         }
     }
 
@@ -230,7 +245,7 @@ fn receive_data(
     // receiving buffer
     let mut buf = vec![0u8; 256 * 1024];
 
-    // smart verification
+    // buffer verification
     const MAX_VERIFY_BUFFER: usize = 1024 * 1024 * 1024; // 1 GB hard limit
 
     let mut received_data = if verify {
@@ -284,11 +299,15 @@ fn receive_data(
         let total_gb = bytes_received as f64 / MAX_VERIFY_BUFFER as f64;
 
         if received.len() < bytes_received as usize {
-            println!(
-                "[data] stream {stream_id}: verifying first {verified_gb:.2} GiB of {total_gb:.2} GiB total..."
+            warn!(
+                "data",
+                "stream {stream_id}: verifying first {verified_gb:.2} GiB of {total_gb:.2} GiB total..."
             );
         } else {
-            println!("[data] stream {stream_id}: verifying {verified_gb:.2} GiB...");
+            warn!(
+                "data",
+                "stream {stream_id}: verifying {verified_gb:.2} GiB..."
+            );
         }
 
         let expected = make_buffer(stream_seed(session_seed, stream_id));
@@ -307,8 +326,9 @@ fn receive_data(
                     // find exact mismatch byte
                     for i in 0..chunk.len() {
                         if chunk[i] != expected[i] {
-                            bail!(
-                                "[data] stream {}: integrity check failed at byte {}. expected 0x{:02x}, got 0x{:02x}",
+                            bail_error!(
+                                "data",
+                                "stream {}: integrity check failed at byte {}. expected 0x{:02x}, got 0x{:02x}",
                                 stream_id,
                                 base_offset + i,
                                 expected[i],
@@ -321,7 +341,7 @@ fn receive_data(
             });
 
         verification_result?;
-        println!("[data] stream {stream_id}: integrity check passed");
+        info!("data", "stream {stream_id}: integrity check passed");
     }
 
     Ok(TcpStreamStats {

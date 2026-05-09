@@ -5,16 +5,17 @@ use std::net::Ipv4Addr;
 use std::time::Duration;
 
 use crate::client::benchmark::client::{BenchmarkParameters, run_silent};
+use crate::info;
 use crate::protocol::messages::Direction;
 use crate::protocol::stats::TcpStreamStats;
 use crate::utils::format::human_bps;
 
 /// runs TCP probe to establish reference throughput (Vref)
 pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
-    println!("[qualify] step 1: TCP probe");
+    info!("qualify", "step 1: TCP probe");
 
     // test 1: single stream
-    println!("[qualify]   running single stream test (15s)...");
+    info!("qualify", "  running single stream test (15s)...");
     let single_params = BenchmarkParameters {
         server,
         port,
@@ -25,17 +26,17 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
     };
 
     let (_, single_server_stats) = run_silent(single_params)?;
-    let throughput_single = calculate_throughput(
-        &single_server_stats.expect("server should return stats"),
-    )?;
+    let throughput_single =
+        calculate_throughput(&single_server_stats.expect("server should return stats"))?;
 
-    println!(
-        "[qualify]   single stream: {}",
+    info!(
+        "qualify",
+        "  single stream: {}",
         human_bps(throughput_single)
     );
 
     // test 2: multi stream
-    println!("[qualify]   running multi stream test (4 streams, 15s)...");
+    info!("qualify", "  running multi stream test (4 streams, 15s)...");
     let multi_params = BenchmarkParameters {
         server,
         port,
@@ -46,23 +47,20 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
     };
 
     let (_, multi_server_stats) = run_silent(multi_params)?;
-    let throughput_multi = calculate_throughput(
-        &multi_server_stats.expect("server should return stats"),
-    )?;
+    let throughput_multi =
+        calculate_throughput(&multi_server_stats.expect("server should return stats"))?;
 
-    println!(
-        "[qualify]   multi stream: {}",
-        human_bps(throughput_multi)
-    );
+    info!("qualify", "  multi stream: {}", human_bps(throughput_multi));
 
     // Vref calculation
     let vref = throughput_single.max(throughput_multi);
 
-    println!(
-        "[qualify]   Vref = {} (reference throughput established)",
+    info!(
+        "qualify",
+        "  Vref = {} (reference throughput established)",
         human_bps(vref)
     );
-    println!("[qualify] step 1 complete\n");
+    info!("qualify", "step 1 complete");
 
     Ok(vref)
 }

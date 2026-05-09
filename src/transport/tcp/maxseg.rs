@@ -1,7 +1,9 @@
 //! TCP_MAXSEG
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::net::TcpStream;
+
+use crate::bail_error;
 
 /// returns the current TCP_MAXSEG (or MSS) for a specific TCP stream
 pub fn get_tcp_maxseg(socket: &TcpStream) -> Result<u16> {
@@ -32,7 +34,7 @@ mod platform {
         };
 
         if ret != 0 {
-            bail!("[aw] getsockopt(TCP_MAXSEG) failed");
+            bail_error!("aw", "getsockopt(TCP_MAXSEG) failed");
         }
 
         Ok(u16::try_from(mss)?)
@@ -64,7 +66,7 @@ mod platform {
         };
 
         if ret != 0 {
-            bail!("[aw] getsockopt(TCP_MAXSEG) failed");
+            bail_error!("aw", "getsockopt(TCP_MAXSEG) failed");
         }
 
         Ok(u16::try_from(mss)?)

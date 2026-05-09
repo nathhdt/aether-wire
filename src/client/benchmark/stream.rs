@@ -1,6 +1,6 @@
 //! TCP stream management for benchmark mode
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use std::io::{ErrorKind, Write};
 use std::net::{IpAddr, Shutdown, SocketAddr, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use crate::protocol::stats::TcpStreamStats;
 use crate::transport::tcp::maxseg::get_tcp_maxseg;
 use crate::utils::payload;
+use crate::{bail_error, info, warn};
 
 /// runs a multi-stream TCP benchmark
 pub fn run_tcp_benchmark(
@@ -46,9 +47,9 @@ pub fn run_tcp_benchmark(
     // waits for all threads to be ready
     barrier.wait();
 
-    println!(
-        "[data] all {} stream(s) connected, benchmark in progress...",
-        n_streams
+    warn!(
+        "data",
+        "all {} stream(s) connected, benchmark in progress...", n_streams
     );
 
     // waits for benchmark
@@ -57,15 +58,15 @@ pub fn run_tcp_benchmark(
     // signals end of benchmark for all threads
     stop.store(true, Ordering::Relaxed);
 
-    println!("[data] all streams done");
+    info!("data", "all streams done");
 
     // gets statistics from threads
     let mut client_stats: Vec<TcpStreamStats> = Vec::with_capacity(handles.len());
     for handle in handles {
         match handle.join() {
             Ok(Ok(s)) => client_stats.push(s),
-            Ok(Err(e)) => bail!("[data] stream failed: {e:#}"),
-            Err(_) => bail!("[data] stream thread panicked"),
+            Ok(Err(e)) => bail_error!("data", "stream failed: {e:#}"),
+            Err(_) => bail_error!("data", "stream thread panicked"),
         }
     }
 
@@ -88,7 +89,10 @@ fn run_single_stream(
     // TCP_MAXSEG info
     let mss = get_tcp_maxseg(&data_sock)?;
 
-    println!("[data] stream {stream_id} connected to {data_addr}, MSS = {mss}");
+    info!(
+        "data",
+        "stream {stream_id} connected to {data_addr}, MSS = {mss}"
+    );
 
     // stream_id send through the wire before any benchmark starts
     data_sock.write_all(&stream_id.to_be_bytes())?;
@@ -116,7 +120,7 @@ fn run_single_stream(
                 }
             }
             Err(e) if e.kind() == ErrorKind::Interrupted => continue, // EINTR
-            Err(e) => bail!("stream {}: {}", stream_id, e),
+            Err(e) => bail_error!("data", "stream {}: {}", stream_id, e),
         }
     }
 
