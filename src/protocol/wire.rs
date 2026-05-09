@@ -3,7 +3,7 @@
 use anyhow::{Result, bail};
 use std::io::{Read, Write};
 
-use crate::control::proto::Message;
+use crate::protocol::messages::Message;
 
 // maximum message size
 const MAX_MSG_SIZE: u32 = 1024 * 1024;

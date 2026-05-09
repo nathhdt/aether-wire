@@ -1,6 +1,6 @@
 //! utilities to print benchmark results
 
-use crate::control::proto::TcpStreamStats;
+use crate::protocol::stats::TcpStreamStats;
 use crate::utils::format::{human_bps, human_bytes};
 
 /// prints per-stream stats and total for multi-stream benchmarks
@@ -18,7 +18,7 @@ pub fn print_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) {
         let bytes = if is_sender {
             s.bytes_sent
         } else {
-            s.bytes_received
+            s.bytes_recv
         };
         let bitrate = if secs > 0.0 {
             (bytes as f64) * 8.0 / secs

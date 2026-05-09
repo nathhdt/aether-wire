@@ -3,8 +3,8 @@
 use anyhow::{Result, bail};
 use std::net::TcpStream;
 
-/// returns the current MSS for a specific TCP stream
-pub fn get_mss(socket: &TcpStream) -> Result<u16> {
+/// returns the current TCP_MAXSEG (or MSS) for a specific TCP stream
+pub fn get_tcp_maxseg(socket: &TcpStream) -> Result<u16> {
     platform::tcp_maxseg(socket)
 }
 
@@ -12,6 +12,7 @@ pub fn get_mss(socket: &TcpStream) -> Result<u16> {
 #[cfg(unix)]
 mod platform {
     use super::*;
+
     use std::os::fd::AsRawFd;
 
     pub fn tcp_maxseg(socket: &TcpStream) -> Result<u16> {
@@ -42,6 +43,7 @@ mod platform {
 #[cfg(windows)]
 mod platform {
     use super::*;
+
     use std::os::windows::io::AsRawSocket;
     use windows_sys::Win32::Networking::WinSock::{IPPROTO_TCP, SOCKET, TCP_MAXSEG, getsockopt};
 
