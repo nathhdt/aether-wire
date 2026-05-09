@@ -88,7 +88,7 @@ fn run_single_stream(
     // TCP_MAXSEG info
     let mss = get_tcp_maxseg(&data_sock)?;
 
-    println!("[data] stream {stream_id} connected to {data_addr}, TCP_MAXSEG = {mss}");
+    println!("[data] stream {stream_id} connected to {data_addr}, MSS = {mss}");
 
     // stream_id send through the wire before any benchmark starts
     data_sock.write_all(&stream_id.to_be_bytes())?;

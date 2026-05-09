@@ -7,6 +7,7 @@ use std::time::Duration;
 use crate::client::benchmark::client::{BenchmarkParameters, run_silent};
 use crate::protocol::messages::Direction;
 use crate::protocol::stats::TcpStreamStats;
+use crate::utils::format::human_bps;
 
 /// runs TCP probe to establish reference throughput (Vref)
 pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
@@ -29,8 +30,8 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
     )?;
 
     println!(
-        "[qualify]   single stream: {:.2} Gbit/s",
-        throughput_single / 1_000_000_000.0
+        "[qualify]   single stream: {}",
+        human_bps(throughput_single)
     );
 
     // test 2: multi stream
@@ -50,16 +51,16 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
     )?;
 
     println!(
-        "[qualify]   multi stream:  {:.2} Gbit/s",
-        throughput_multi / 1_000_000_000.0
+        "[qualify]   multi stream: {}",
+        human_bps(throughput_multi)
     );
 
     // Vref calculation
     let vref = throughput_single.max(throughput_multi);
 
     println!(
-        "[qualify]   Vref = {:.2} Gbit/s (reference throughput established)",
-        vref / 1_000_000_000.0
+        "[qualify]   Vref = {} (reference throughput established)",
+        human_bps(vref)
     );
     println!("[qualify] step 1 complete\n");
 
