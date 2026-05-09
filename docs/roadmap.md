@@ -46,7 +46,7 @@
 
 ### step 4 - stress test
 
-- [ ] ramp from 80% to 110% Vref ($V_{ref}$)
+- [ ] ramp from 80% to 110% $V_{ref}$
 - [ ] ROWD (Relative One-Way Delay) calculation
 - [ ] bufferbloat detection
 - [ ] loss threshold detection
