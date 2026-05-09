@@ -305,8 +305,19 @@ all metrics calculated post-reception:
 - ROWD for all packets
 - mean, variance, jitter
 - sorting (if needed)
-- integrity verification (if `--verify`)
+- integrity verification
 
+## integrity verification `--verify`
+
+optional check to ensure no data corruption occurred within the network stack, NIC, or intermediate middleboxes.
+
+**memory-safe buffering**: to avoid OOM (Out Of Memory) issues during high-speed tests, the receiver buffers only the first 1 GB of data. this volume is statistically significant enough to validate the integrity of the TCP stack and hardware buffers.
+
+**reconstruction logic**: the payload is deterministic. the server reconstructs the expected pattern post-benchmark using the shared session seed.
+
+**seed derivation per stream**: uses the golden ratio constant to ensure high entropy in bit mixing.
+
+**performance impact**: near zero. verification is strictly post-benchmark. the only overhead during the test is the *memcpy* to the pre-allocated 1 GB buffer.
 
 ## limitations
 
