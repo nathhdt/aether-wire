@@ -4,7 +4,7 @@ use anyhow::Result;
 use std::net::Ipv4Addr;
 use std::time::Duration;
 
-use crate::client::benchmark::client::{BenchmarkParameters, run_silent};
+use crate::client::benchmark::client::{TcpBenchmarkParameters, run_tcp_silent};
 use crate::info;
 use crate::protocol::messages::Direction;
 use crate::protocol::stats::TcpStreamStats;
@@ -16,7 +16,7 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
 
     // test 1: single stream
     info!("qualify", "  running single stream test (15s)...");
-    let single_params = BenchmarkParameters {
+    let single_params = TcpBenchmarkParameters {
         server,
         port,
         duration: Duration::from_secs(15),
@@ -25,7 +25,7 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
         direction: Direction::Default,
     };
 
-    let (_, single_server_stats) = run_silent(single_params)?;
+    let (_, single_server_stats) = run_tcp_silent(single_params)?;
     let throughput_single =
         calculate_throughput(&single_server_stats.expect("server should return stats"))?;
 
@@ -37,7 +37,7 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
 
     // test 2: multi stream
     info!("qualify", "  running multi stream test (4 streams, 15s)...");
-    let multi_params = BenchmarkParameters {
+    let multi_params = TcpBenchmarkParameters {
         server,
         port,
         duration: Duration::from_secs(15),
@@ -46,7 +46,7 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
         direction: Direction::Default,
     };
 
-    let (_, multi_server_stats) = run_silent(multi_params)?;
+    let (_, multi_server_stats) = run_tcp_silent(multi_params)?;
     let throughput_multi =
         calculate_throughput(&multi_server_stats.expect("server should return stats"))?;
 

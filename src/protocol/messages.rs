@@ -17,17 +17,27 @@ pub struct Hello {
 /// session type to determine what the client wants to do
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum SessionType {
-    Benchmark(BenchmarkConfig),
+    TcpBenchmark(TcpBenchmarkConfig),
+    UdpBenchmark(UdpBenchmarkConfig),
     Qualify,
 }
 
 /// TCP benchmark configuration
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct BenchmarkConfig {
+pub struct TcpBenchmarkConfig {
     pub duration_secs: u64,
     pub n_streams: u16,
     pub verify_integrity: bool,
     pub direction: Direction,
+}
+
+/// UDP benchmark configuration
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct UdpBenchmarkConfig {
+    pub duration_secs: u64,
+    pub n_streams: u16,
+    pub bandwidth: u64,
+    pub payload_size: u16,
 }
 
 /// traffic direction for TCP benchmark
@@ -50,9 +60,13 @@ pub struct SessionStart {
 /// statistics sent by the server after a session
 #[derive(Debug, Deserialize, Serialize)]
 pub enum SessionStats {
-    Benchmark {
+    TcpBenchmark {
         upload: Option<Vec<TcpStreamStats>>,
         download: Option<Vec<TcpStreamStats>>,
+    },
+    UdpBenchmark {
+        upload: Option<Vec<UdpStreamStats>>,
+        download: Option<Vec<UdpStreamStats>>,
     },
     Qualify(Vec<UdpStreamStats>),
 }

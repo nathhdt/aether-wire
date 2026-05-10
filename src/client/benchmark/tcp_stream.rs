@@ -49,7 +49,7 @@ pub fn run_tcp_benchmark(
 
     warn!(
         "data",
-        "all {} stream(s) connected, benchmark in progress...", n_streams
+        "all {} stream(s) connected, session in progress...", n_streams
     );
 
     // waits for benchmark

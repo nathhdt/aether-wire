@@ -7,14 +7,14 @@ aether-wire measures network performance under realistic conditions.
 principles:
 - **no optimization**: emulate standard client/server behavior
 - **TCP as-is**: let TCP handle flow control, congestion, retransmissions
-- **telemetry embedded**: timestamps for precise measurements
+- **telemetry embedded**: timestamps in UDP payloads for precise measurements
 - **benchmark-quality first**: all heavy calculations done after benchmark
 
 ## modes overview
 
 aether-wire offers two modes:
 
-**benchmark**: raw TCP throughput measurement.
+**benchmark**: raw TCP/UDP throughput measurement.
 
 **qualify**: automated multi-step link qualification pipeline. profiles a network path end-to-end: throughput, MTU, jitter, stability, bufferbloat, packet loss, with automated diagnostics.
 
@@ -98,6 +98,9 @@ reveals:
 - mutual congestion impact
 - realistic interactive workload
 
+## benchmark mode (UDP)
+
+TO-DO
 
 ## qualify mode (pipeline)
 

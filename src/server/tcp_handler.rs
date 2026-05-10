@@ -1,4 +1,4 @@
-//! server TCP session handler
+//! TCP session handler
 
 use anyhow::Result;
 use std::io::{ErrorKind, Read};
@@ -6,104 +6,26 @@ use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::time::Instant;
 
 use crate::protocol::messages::{
-    BenchmarkConfig, Direction, Hello, Message, PROTO_VERSION, SessionStart, SessionStats,
-    SessionType,
+    Direction, Message, SessionStart, SessionStats, TcpBenchmarkConfig,
 };
 use crate::protocol::stats::TcpStreamStats;
 use crate::protocol::wire;
+use crate::server::ServerParameters;
 use crate::utils::payload::{make_buffer, stream_seed};
 use crate::utils::random::rand_u64;
 use crate::utils::report::print_results;
-use crate::{bail_error, error, info, warn};
+use crate::{bail_error, info, warn};
 
-/// server arguments structure
-pub struct ServerParameters {
-    pub bind: std::net::Ipv4Addr,
-    pub port: u16,
-    pub once: bool,
-}
-
-/// runs the TCP server
-pub fn run_tcp_server(params: ServerParameters) -> Result<()> {
-    // listens to the control channel session port
-    let ctrl_addr = SocketAddr::new(IpAddr::V4(params.bind), params.port);
-    let ctrl_listener = TcpListener::bind(ctrl_addr)?;
-    info!("ctrl", "server listening on {ctrl_addr}");
-
-    // server loop
-    loop {
-        info!("ctrl", "waiting for client...");
-
-        // accepts only one session
-        let (mut ctrl_sock, ctrl_client) = ctrl_listener.accept()?;
-
-        // reads hello message
-        let hello: Hello = match wire::read_message(&mut ctrl_sock)? {
-            Message::Hello(h) => h,
-            other => {
-                // informs client that hello message is expected
-                let _ = wire::send_message(
-                    &mut ctrl_sock,
-                    &Message::Error("expected hello message".into()),
-                );
-                error!("ctrl", "unexpected first message : {other:?}");
-                continue;
-            }
-        };
-
-        // checks hello protocol version
-        if hello.version != PROTO_VERSION {
-            let msg = format!(
-                "incompatible version : client={}, server={}",
-                hello.version, PROTO_VERSION
-            );
-
-            let _ = wire::send_message(&mut ctrl_sock, &Message::Error(msg.clone()));
-            error!("ctrl", "{}", msg);
-            continue;
-        }
-
-        // dispatch based on session type
-        let session_result = match hello.session_type {
-            SessionType::Benchmark(config) => {
-                handle_benchmark_session(ctrl_sock, ctrl_client, config, &params)
-            }
-            SessionType::Qualify => {
-                warn!(
-                    "ctrl",
-                    "client requested qualify mode (not yet implemented)"
-                );
-                wire::send_message(
-                    &mut ctrl_sock,
-                    &Message::Error("qualify mode not yet implemented".into()),
-                )?;
-                Ok(())
-            }
-        };
-
-        if let Err(e) = session_result {
-            error!("ctrl", "session error: {e:#}");
-        }
-
-        if params.once {
-            warn!("ctrl", "--once flag set, exiting");
-            break;
-        }
-    }
-
-    Ok(())
-}
-
-/// handles a benchmark session
-fn handle_benchmark_session(
+/// handles a TCP session
+pub fn handle_tcp_session(
     mut ctrl_sock: TcpStream,
     ctrl_client: SocketAddr,
-    config: BenchmarkConfig,
+    config: TcpBenchmarkConfig,
     params: &ServerParameters,
 ) -> Result<()> {
     info!(
         "ctrl",
-        "client {} asked for a TCP benchmark ({} stream(s), {}s, direction: {})",
+        "client {} asked for a TCP session ({} stream(s), {}s, direction: {})",
         ctrl_client,
         config.n_streams,
         config.duration_secs,
@@ -120,7 +42,7 @@ fn handle_benchmark_session(
     // data channel session establishment
     let data_listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(params.bind), 0))?;
     let data_port = data_listener.local_addr()?.port();
-    info!("data", "listening on port {data_port}");
+    info!("data", "TCP listening on port {data_port}");
 
     // session id & seed generation
     let session_id: u64 = rand_u64();
@@ -169,12 +91,12 @@ fn handle_benchmark_session(
             }
         };
 
-    info!("data", "all streams done");
+    info!("data", "session complete");
 
     // sends stats back to the client
     wire::send_message(
         &mut ctrl_sock,
-        &Message::SessionStats(SessionStats::Benchmark {
+        &Message::SessionStats(SessionStats::TcpBenchmark {
             upload: upload_stats.clone(),
             download: download_stats.clone(),
         }),
@@ -224,7 +146,7 @@ fn receive_upload_streams(
 
     warn!(
         "data",
-        "all {} stream(s) connected, benchmark in progress...", n_streams
+        "all {} stream(s) connected, session in progress...", n_streams
     );
 
     // joins threads and collects stats
@@ -299,7 +221,7 @@ fn receive_data(
         None => 0,
     };
 
-    // post-benchmark validation: verify only the stored data
+    // post-session validation: verify only the stored data
     if let Some(received) = received_data {
         let verified_gb = received.len() as f64 / MAX_VERIFY_BUFFER as f64;
         let total_gb = bytes_received as f64 / MAX_VERIFY_BUFFER as f64;

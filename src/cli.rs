@@ -49,16 +49,27 @@ pub struct ServerArgs {
 /// client subcommands
 #[derive(Debug, Subcommand)]
 pub enum ClientCommand {
-    /// run a benchmark (raw TCP throughput measurement)
-    Benchmark(BenchmarkArgs),
+    /// run a benchmark (TCP or UDP throughput measurement)
+    #[command(subcommand)]
+    Benchmark(BenchmarkCommand),
 
     /// run full link qualification pipeline
     Qualify(QualifyArgs),
 }
 
-/// benchmark mode arguments
+/// benchmark subcommands
+#[derive(Debug, Subcommand)]
+pub enum BenchmarkCommand {
+    /// TCP throughput benchmark
+    Tcp(TcpBenchmarkArgs),
+
+    /// UDP throughput benchmark
+    Udp(UdpBenchmarkArgs),
+}
+
+/// TCP benchmark arguments
 #[derive(Args, Clone, Debug)]
-pub struct BenchmarkArgs {
+pub struct TcpBenchmarkArgs {
     /// server IPv4 address to connect to
     #[arg(short = 's', long, value_parser = validate_server_ipv4)]
     pub server: Ipv4Addr,
@@ -84,7 +95,7 @@ pub struct BenchmarkArgs {
     pub direction: DirectionArgs,
 }
 
-impl BenchmarkArgs {
+impl TcpBenchmarkArgs {
     pub fn validate(&self) -> anyhow::Result<()> {
         if self.verify && self.n_streams > 1 {
             anyhow::bail!("--verify can only be used with a single stream");
@@ -125,6 +136,34 @@ impl DirectionArgs {
             Direction::Default
         }
     }
+}
+
+/// UDP benchmark arguments
+#[derive(Args, Clone, Debug)]
+pub struct UdpBenchmarkArgs {
+    /// server IPv4 address to connect to
+    #[arg(short = 's', long, value_parser = validate_server_ipv4)]
+    pub server: Ipv4Addr,
+
+    /// server port number
+    #[arg(short = 'p', long)]
+    pub port: u16,
+
+    /// test duration (minimum 1s)
+    #[arg(short = 't', long, default_value = "10s", value_parser = parse_duration_min_1s)]
+    pub time: Duration,
+
+    /// number of parallel streams (1-128)
+    #[arg(short = 'n', long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=128))]
+    pub n_streams: u16,
+
+    /// target bandwidth (e.g., 1K, 1G, 50M)
+    #[arg(short = 'b', long, value_parser = parse_bandwidth)]
+    pub bandwidth: u64,
+
+    /// UDP payload size in bytes (e.g., 512, 1024, 1472)
+    #[arg(short = 'l', long, default_value_t = 1400)]
+    pub length: u16,
 }
 
 /// qualify mode arguments
@@ -173,4 +212,34 @@ fn validate_server_ipv4(s: &str) -> Result<Ipv4Addr, String> {
     }
 
     Ok(ip)
+}
+
+/// parses bandwidth specifications (K, M, G)
+fn parse_bandwidth(s: &str) -> Result<u64, String> {
+    let s = s.trim();
+
+    if s.is_empty() {
+        return Err("bandwidth cannot be empty".to_string());
+    }
+
+    // extracts number and unit
+    let (num_str, unit) = if let Some(pos) = s.find(|c: char| c.is_alphabetic()) {
+        (&s[..pos], &s[pos..])
+    } else {
+        (s, "")
+    };
+
+    let num: u64 = num_str
+        .parse()
+        .map_err(|_| format!("invalid number: {}", num_str))?;
+
+    let multiplier = match unit.to_uppercase().as_str() {
+        "" | "BPS" => 1,
+        "K" | "KBPS" => 1_000,
+        "M" | "MBPS" => 1_000_000,
+        "G" | "GBPS" => 1_000_000_000,
+        _ => return Err(format!("unknown unit: {}. Use K, M, or G", unit)),
+    };
+
+    Ok(num * multiplier)
 }

@@ -3,8 +3,9 @@
 ## CLI
 
 - [x] server (TCP)
-- [ ] server (unified TCP + UDP)
+- [ ] server (UDP)
 - [x] client benchmark (TCP)
+- [x] client benchmark (UDP)
 - [ ] client qualify (full pipeline)
 
 ## protocol support
@@ -14,14 +15,21 @@
 - [x] IPv4
 - [ ] IPv6
 
+### layer 4
+
+- [x] TCP
+- [ ] UDP
+
 ## benchmark mode
 
 - [x] multi-stream sessions
-- [x] payload integrity verification option (`--verify`)
-- [ ] reverse-directional mode
-- [ ] both-directional mode
-- [ ] bidirectional mode
-- [ ] benchmark quality optimizations
+- [ ] UDP base benchmark
+- [x] TCP base benchmark
+- [x] TCP payload integrity verification option (`--verify`)
+- [ ] TCP reverse-directional mode
+- [ ] TCP both-directional mode
+- [ ] TCP bidirectional mode
+- [ ] TCP benchmark quality optimizations
 
 ## qualify mode
 
