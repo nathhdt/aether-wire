@@ -4,6 +4,7 @@ use anyhow::Result;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Barrier};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::protocol::stats::UdpStreamStats;
@@ -34,26 +35,60 @@ pub fn run_udp_benchmark(
     // server address
     let data_addr = SocketAddr::new(IpAddr::V4(server), port);
 
+    // retrieve available CPU cores for affinity-enabled platforms
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let Some(core_ids) = core_affinity::get_core_ids() else {
+        bail_error!("aw", "failed to retrieve CPU core IDs");
+    };
+
     // launch threads
     for stream_id in 0..n_streams {
+        // threading
         let barrier = Arc::clone(&barrier);
         let stop = Arc::clone(&stop);
+        let thread_name = format!("aw-udp-stream-{stream_id}");
+
+        // CPU core to use
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        let core_id = core_ids[stream_id as usize];
 
         // payload buffer
         let buf = payload::make_buffer(payload::stream_seed(session_seed, stream_id));
 
         // thread spawn
-        let handle = std::thread::spawn(move || -> Result<UdpStreamStats> {
-            run_single_udp_stream(
-                stream_id,
-                data_addr,
-                buf,
-                barrier,
-                stop,
-                bandwidth_per_stream,
-                payload_size,
-            )
-        });
+        let handle = thread::Builder::new().name(thread_name.clone()).spawn(
+            move || -> Result<UdpStreamStats> {
+                // Linux & Windows: hard CPU affinity
+                #[cfg(any(target_os = "linux", target_os = "windows"))]
+                {
+                    if !core_affinity::set_for_current(core_id) {
+                        warn!(
+                            "aw",
+                            "UDP stream {stream_id}: failed to pin thread to CPU {}", core_id.id
+                        );
+                    }
+                }
+
+                // macOS: high-priority QoS scheduling
+                #[cfg(target_os = "macos")]
+                unsafe {
+                    libc::pthread_set_qos_class_self_np(
+                        libc::qos_class_t::QOS_CLASS_USER_INTERACTIVE,
+                        0,
+                    );
+                }
+
+                run_single_udp_stream(
+                    stream_id,
+                    data_addr,
+                    buf,
+                    barrier,
+                    stop,
+                    bandwidth_per_stream,
+                    payload_size,
+                )
+            },
+        )?;
 
         handles.push(handle);
     }
@@ -64,7 +99,7 @@ pub fn run_udp_benchmark(
     warn!("data", "all {} UDP stream(s) ready, sending...", n_streams);
 
     // wait for benchmark duration
-    std::thread::sleep(duration);
+    thread::sleep(duration);
 
     // signal end of benchmark
     stop.store(true, Ordering::Relaxed);

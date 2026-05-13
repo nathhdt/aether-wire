@@ -4,6 +4,9 @@ use clap::{Args, Parser, Subcommand};
 use std::net::Ipv4Addr;
 use std::time::Duration;
 
+use crate::protocol::messages::Direction;
+use crate::utils::hardware::cpu_cores_count;
+
 /// aether-wire base command
 #[derive(Debug, Parser)]
 #[command(
@@ -82,8 +85,8 @@ pub struct TcpBenchmarkArgs {
     #[arg(short = 't', long, default_value = "10s", value_parser = parse_duration_min_1s)]
     pub time: Duration,
 
-    /// number of parallel streams (1-128)
-    #[arg(short = 'n', long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=128))]
+    /// number of parallel streams (1-32)
+    #[arg(short = 'n', long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=32))]
     pub n_streams: u16,
 
     /// verify data integrity (reduces throughput, use for diagnostics)
@@ -123,9 +126,7 @@ pub struct DirectionArgs {
 
 impl DirectionArgs {
     /// converts CLI direction args to protocol Direction enum
-    pub fn to_direction(&self) -> crate::protocol::messages::Direction {
-        use crate::protocol::messages::Direction;
-
+    pub fn to_direction(&self) -> Direction {
         if self.reverse {
             Direction::Reverse
         } else if self.both {
@@ -153,11 +154,11 @@ pub struct UdpBenchmarkArgs {
     #[arg(short = 't', long, default_value = "10s", value_parser = parse_duration_min_1s)]
     pub time: Duration,
 
-    /// number of parallel streams (1-128)
-    #[arg(short = 'n', long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=128))]
+    /// number of parallel streams (depends on available CPU cores)
+    #[arg(short = 'n', long, default_value_t = 1, value_parser = parse_stream_number)]
     pub n_streams: u16,
 
-    /// target bandwidth (e.g., 1K, 1G, 50M)
+    /// total target bandwidth (e.g., 1K, 1G, 50M)
     #[arg(short = 'b', long, value_parser = parse_bandwidth)]
     pub bandwidth: u64,
 
@@ -242,4 +243,24 @@ fn parse_bandwidth(s: &str) -> Result<u64, String> {
     };
 
     Ok(num * multiplier)
+}
+
+// parses asked stream number
+fn parse_stream_number(s: &str) -> Result<u16, String> {
+    let n: u16 = s.parse().map_err(|_| "invalid stream count".to_string())?;
+
+    // max streams is from n CPU threads with a n_max of 32
+    let max_streams = cpu_cores_count();
+
+    if n == 0 {
+        return Err("stream count must be at least 1".to_string());
+    }
+
+    if n as usize > max_streams {
+        return Err(format!(
+            "stream count exceeds available CPU cores ({max_streams})"
+        ));
+    }
+
+    Ok(n)
 }
