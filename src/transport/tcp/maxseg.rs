@@ -1,6 +1,7 @@
 //! TCP_MAXSEG
 
 use anyhow::Result;
+use std::mem;
 use std::net::TcpStream;
 
 use crate::bail_error;
@@ -21,7 +22,7 @@ mod platform {
         let fd = socket.as_raw_fd();
 
         let mut mss: libc::c_int = 0;
-        let mut len = std::mem::size_of_val(&mss) as libc::socklen_t;
+        let mut len = mem::size_of_val(&mss) as libc::socklen_t;
 
         let ret = unsafe {
             libc::getsockopt(
@@ -53,7 +54,7 @@ mod platform {
         let sock = socket.as_raw_socket() as SOCKET;
 
         let mut mss: i32 = 0;
-        let mut len = std::mem::size_of_val(&mss) as i32;
+        let mut len = mem::size_of_val(&mss) as i32;
 
         let ret = unsafe {
             getsockopt(

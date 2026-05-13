@@ -5,6 +5,7 @@ use std::io::{ErrorKind, Write};
 use std::net::{IpAddr, Shutdown, SocketAddr, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Barrier};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::protocol::stats::TcpStreamStats;
@@ -37,7 +38,7 @@ pub fn run_tcp_benchmark(
         let buf = payload::make_buffer(payload::stream_seed(session_seed, stream_id));
 
         // thread spawn
-        let handle = std::thread::spawn(move || -> Result<TcpStreamStats> {
+        let handle = thread::spawn(move || -> Result<TcpStreamStats> {
             run_single_tcp_stream(stream_id, data_addr, buf, barrier, stop)
         });
 
@@ -53,7 +54,7 @@ pub fn run_tcp_benchmark(
     );
 
     // waits for benchmark
-    std::thread::sleep(duration);
+    thread::sleep(duration);
 
     // signals end of benchmark for all threads
     stop.store(true, Ordering::Relaxed);

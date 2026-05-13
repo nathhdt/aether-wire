@@ -1,6 +1,7 @@
 //! aether-wire qualify mode client
 
 use anyhow::Result;
+use std::net::Ipv4Addr;
 
 use crate::client::qualify::tcp_probe;
 use crate::{info, warn};
@@ -8,7 +9,7 @@ use crate::{info, warn};
 /// client qualify arguments structure
 #[derive(Debug, Clone)]
 pub struct QualifyParameters {
-    pub server: std::net::Ipv4Addr,
+    pub server: Ipv4Addr,
     pub port: u16,
     pub export_json: bool,
 }

@@ -1,7 +1,8 @@
 //! aether-wire benchmark mode client endpoints
 
 use anyhow::Result;
-use std::net::{IpAddr, SocketAddr, TcpStream};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
+use std::time::Duration;
 
 use crate::client::benchmark::{direction::Direction, tcp_stream, udp_stream};
 use crate::protocol::messages::{
@@ -16,9 +17,9 @@ use crate::{bail_error, info};
 
 /// client TCP benchmark arguments structure
 pub struct TcpBenchmarkParameters {
-    pub server: std::net::Ipv4Addr,
+    pub server: Ipv4Addr,
     pub port: u16,
-    pub duration: std::time::Duration,
+    pub duration: Duration,
     pub n_streams: u16,
     pub verify_integrity: bool,
     pub direction: Direction,
@@ -29,9 +30,9 @@ pub type TcpBenchmarkResult = (Option<Vec<TcpStreamStats>>, Option<Vec<TcpStream
 
 /// client UDP benchmark arguments structure
 pub struct UdpBenchmarkParameters {
-    pub server: std::net::Ipv4Addr,
+    pub server: Ipv4Addr,
     pub port: u16,
-    pub duration: std::time::Duration,
+    pub duration: Duration,
     pub n_streams: u16,
     pub bandwidth: u64,
     pub payload_size: u16,

@@ -1,6 +1,7 @@
 //! user interfaces for TUI app
 
-use ratatui::widgets::Padding;
+use ratatui::layout::Rect;
+use ratatui::widgets::{Padding, Wrap};
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -35,7 +36,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
 }
 
 /// ASCII logo
-fn draw_header(frame: &mut Frame, area: ratatui::layout::Rect) {
+fn draw_header(frame: &mut Frame, area: Rect) {
     let logo = vec![
         Line::from(Span::styled(
             r"             _   _                            _          ",
@@ -71,7 +72,7 @@ fn draw_header(frame: &mut Frame, area: ratatui::layout::Rect) {
 }
 
 /// menu navigation sidebar
-fn draw_sidebar(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
+fn draw_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     let items: Vec<ListItem> = MENU_ITEMS
         .iter()
         .enumerate()
@@ -98,7 +99,7 @@ fn draw_sidebar(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 }
 
 /// main content area
-fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
+fn draw_content(frame: &mut Frame, area: Rect, app: &App) {
     let text = match app.selected_menu {
         // benchmark view
         0 => {
@@ -180,7 +181,7 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
         }
     };
 
-    use ratatui::widgets::Wrap;
+    use Wrap;
 
     let content = Paragraph::new(text)
         .wrap(Wrap { trim: true })
@@ -197,7 +198,7 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 }
 
 // keyboard shortcuts help
-fn draw_footer(frame: &mut Frame, area: ratatui::layout::Rect) {
+fn draw_footer(frame: &mut Frame, area: Rect) {
     let footer = Paragraph::new("↑↓ navigate • q quit")
         .style(Style::default().fg(GREY))
         .alignment(Alignment::Center);

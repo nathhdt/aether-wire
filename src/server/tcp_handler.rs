@@ -1,8 +1,10 @@
 //! TCP session handler
 
 use anyhow::Result;
+use rayon::prelude::*;
 use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
+use std::thread;
 use std::time::Instant;
 
 use crate::protocol::messages::{
@@ -134,7 +136,7 @@ fn receive_upload_streams(
 
         let session_seed = seed;
 
-        let handle = std::thread::spawn(move || -> Result<TcpStreamStats> {
+        let handle = thread::spawn(move || -> Result<TcpStreamStats> {
             receive_data(stream_id, session_seed, verify, data_sock)
         });
         handles.push(handle);
@@ -238,8 +240,6 @@ fn receive_data(
         let expected_len = expected.len();
 
         // parallel verification by chunks
-        use rayon::prelude::*;
-
         let verification_result: Result<()> = received
             .par_chunks(expected_len)
             .enumerate()
