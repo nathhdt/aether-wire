@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use crate::tui::app::{App, MENU_ITEMS};
-use crate::tui::colors::{CYAN, GREEN, MUTED, TEXT};
+use crate::tui::colors::{BLUE, GREY, PINK, TEXT};
 
 /// main drawing function
 pub fn draw(frame: &mut Frame, app: &App) {
@@ -39,28 +39,28 @@ fn draw_header(frame: &mut Frame, area: ratatui::layout::Rect) {
     let logo = vec![
         Line::from(Span::styled(
             r"             _   _                            _          ",
-            Style::default().fg(CYAN).add_modifier(Modifier::BOLD),
+            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             r"   __ _  ___| |_| |__   ___ _ __    __      _(_)_ __ ___ ",
-            Style::default().fg(CYAN).add_modifier(Modifier::BOLD),
+            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             r"  / _` |/ _ \ __| '_ \ / _ \ '__|___\ \ /\ / / | '__/ _ \",
-            Style::default().fg(CYAN).add_modifier(Modifier::BOLD),
+            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             r" | (_| |  __/ |_| | | |  __/ | |_____\ V  V /| | | |  __/",
-            Style::default().fg(CYAN).add_modifier(Modifier::BOLD),
+            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(vec![
             Span::styled(
                 r"  \__,_|\___|\__|_| |_|\___|_|        \_/\_/ |_|_|  \___|",
-                Style::default().fg(CYAN).add_modifier(Modifier::BOLD),
+                Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("  v{}", env!("CARGO_PKG_VERSION")),
-                Style::default().fg(MUTED),
+                Style::default().fg(GREY),
             ),
         ]),
     ];
@@ -77,9 +77,9 @@ fn draw_sidebar(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
         .enumerate()
         .map(|(index, item)| {
             let style = if index == app.selected_menu {
-                Style::default().fg(CYAN).add_modifier(Modifier::BOLD)
+                Style::default().fg(BLUE).add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(MUTED)
+                Style::default().fg(GREY)
             };
 
             ListItem::new(Line::from(format!("  {}", item))).style(style)
@@ -90,7 +90,7 @@ fn draw_sidebar(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
         Block::default()
             .borders(Borders::ALL)
             .title(" menu ")
-            .border_style(Style::default().fg(CYAN))
+            .border_style(Style::default().fg(BLUE))
             .padding(Padding::top(1)),
     );
 
@@ -106,12 +106,12 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                 Line::from(""),
                 Line::from(Span::styled(
                     "benchmark mode",
-                    Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+                    Style::default().fg(PINK).add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "not implemented yet",
-                    Style::default().fg(MUTED),
+                    Style::default().fg(GREY),
                 )),
             ]
         }
@@ -122,12 +122,12 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                 Line::from(""),
                 Line::from(Span::styled(
                     "qualify mode",
-                    Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+                    Style::default().fg(PINK).add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "not implemented yet",
-                    Style::default().fg(MUTED),
+                    Style::default().fg(GREY),
                 )),
             ]
         }
@@ -138,12 +138,12 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                 Line::from(""),
                 Line::from(Span::styled(
                     "server mode",
-                    Style::default().fg(GREEN).add_modifier(Modifier::BOLD),
+                    Style::default().fg(PINK).add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "not implemented yet",
-                    Style::default().fg(MUTED),
+                    Style::default().fg(GREY),
                 )),
             ]
         }
@@ -154,7 +154,7 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                 Line::from(""),
                 Line::from(Span::styled(
                     "about",
-                    Style::default().fg(CYAN).add_modifier(Modifier::BOLD),
+                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
@@ -164,17 +164,17 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                     for quick throughput measurement, and a full link qualification \
                     pipeline that automatically profiles a network path \
                     (throughput, MTU, jitter, bufferbloat, packet loss).",
-                    Style::default().fg(MUTED),
+                    Style::default().fg(GREY),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "this project is under development.",
-                    Style::default().fg(MUTED),
+                    Style::default().fg(GREY),
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
                     "copyright (c) nathhdt",
-                    Style::default().fg(MUTED),
+                    Style::default().fg(GREY),
                 )),
             ]
         }
@@ -189,7 +189,7 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .title(" view ")
-                .border_style(Style::default().fg(CYAN))
+                .border_style(Style::default().fg(BLUE))
                 .padding(Padding::new(2, 2, 0, 0)),
         );
 
@@ -199,7 +199,7 @@ fn draw_content(frame: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 // keyboard shortcuts help
 fn draw_footer(frame: &mut Frame, area: ratatui::layout::Rect) {
     let footer = Paragraph::new("↑↓ navigate • q quit")
-        .style(Style::default().fg(MUTED))
+        .style(Style::default().fg(GREY))
         .alignment(Alignment::Center);
 
     frame.render_widget(footer, area);

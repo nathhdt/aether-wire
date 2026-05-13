@@ -13,8 +13,8 @@ pub enum LogLevel {
 /// internal method to generate the formatted log
 pub fn log_message(level: LogLevel, prefix: Option<&str>, message: String) {
     let color = match level {
-        LogLevel::Info => CYAN,
-        LogLevel::Warn => YELLOW,
+        LogLevel::Info => BLUE,
+        LogLevel::Warn => PINK,
         LogLevel::Error => RED,
     };
 

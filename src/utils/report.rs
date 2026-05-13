@@ -33,7 +33,7 @@ fn print_responsive_header(role: &str, width: usize) {
     let line = format!("{}{}{}", "═".repeat(left), title, "═".repeat(right),);
 
     info_noprefix_notimestamp!("");
-    info_noprefix_notimestamp!("      {BOLD}{CYAN}{line}{RESET}{NO_BOLD}",);
+    info_noprefix_notimestamp!("      {BOLD}{BLUE}{line}{RESET}{NO_BOLD}",);
 }
 
 #[derive(Debug, Clone)]
@@ -184,14 +184,21 @@ fn udp_table_width(w: UdpWidths) -> usize {
 }
 
 fn render_tcp_row(row: &TcpRow, w: TcpWidths) -> String {
+
     let prefix = if row.is_total {
-        format!("{BOLD}{GREEN}")
+        format!("{BOLD}{PINK}")
     } else {
-        YELLOW.to_string()
+        MAROON.to_string()
+    };
+
+    let bitrate_color = if row.is_total {
+        PINK
+    } else {
+        BLUE
     };
 
     format!(
-        "{prefix}{:<stream_w$}{CYAN} │ {:>dir_w$} │ {:>bytes_w$} │ {BOLD}{:>bitrate_w$}{NO_BOLD}{RESET}",
+        "{prefix}{:<stream_w$}{BLUE} │ {:>dir_w$} │ {:>bytes_w$} │ {bitrate_color}{BOLD}{:>bitrate_w$}{NO_BOLD}{BLUE}{RESET}",
         row.stream,
         row.direction,
         row.bytes,
@@ -205,15 +212,21 @@ fn render_tcp_row(row: &TcpRow, w: TcpWidths) -> String {
 
 fn render_udp_row(row: &UdpRow, w: UdpWidths) -> String {
     let prefix = if row.is_total {
-        format!("{BOLD}{GREEN}")
+        format!("{BOLD}{PINK}")
     } else {
-        YELLOW.to_string()
+        MAROON.to_string()
+    };
+
+    let bitrate_color = if row.is_total {
+        PINK
+    } else {
+        BLUE
     };
 
     let loss_col = format!("loss {}", row.loss);
 
     format!(
-        "{prefix}{:<stream_w$}{CYAN} │ {:>packets_w$} │ {:>bytes_w$} │ {BOLD}{:>bitrate_w$}{NO_BOLD} │ {:>loss_w$}{RESET}",
+        "{prefix}{:<stream_w$}{BLUE} │ {:>packets_w$} │ {:>bytes_w$} │ {bitrate_color}{BOLD}{:>bitrate_w$}{NO_BOLD}{BLUE} │ {:>loss_w$}{RESET}",
         row.stream,
         row.packets,
         row.bytes,
@@ -237,7 +250,7 @@ fn render_udp_detail_row(row: &UdpRow, w: UdpWidths) -> Option<String> {
     let dup_col = format!("dup: {dup}");
 
     Some(format!(
-        "{CYAN}{:<stream_w$} │ {:>packets_w$} │ {:>bytes_w$} │ {:>bitrate_w$} │ {:>loss_w$}{RESET}",
+        "{BLUE}{:<stream_w$} │ {:>packets_w$} │ {:>bytes_w$} │ {:>bitrate_w$} │ {:>loss_w$}{RESET}",
         "",
         "",
         jitter_col,
@@ -314,7 +327,7 @@ pub fn print_tcp_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) 
     print_responsive_header(role, table_width);
     for (idx, row) in rows.iter().enumerate() {
         if row.is_total && idx > 0 {
-            info_noprefix_notimestamp!("      {CYAN}{}{RESET}", "─".repeat(table_width),);
+            info_noprefix_notimestamp!("      {BLUE}{}{RESET}", "─".repeat(table_width),);
         }
 
         let rendered = render_tcp_row(row, widths);
@@ -443,7 +456,7 @@ pub fn print_udp_results(role: &str, stats: &[UdpStreamStats], is_sender: bool) 
     print_responsive_header(role, table_width);
     for (idx, row) in rows.iter().enumerate() {
         if row.is_total && idx > 0 {
-            info_noprefix_notimestamp!("      {CYAN}{}{RESET}", "─".repeat(table_width),);
+            info_noprefix_notimestamp!("      {BLUE}{}{RESET}", "─".repeat(table_width),);
         }
 
         let rendered = render_udp_row(row, widths);
