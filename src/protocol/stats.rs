@@ -22,8 +22,6 @@ pub struct UdpStreamStats {
     pub packets_lost: u64,
     pub packets_out_of_order: u64,
     pub packets_duplicate: u64,
-    pub jitter_mean_ms: u64,
-    pub jitter_median_ms: u64,
-    pub jitter_stddev_ms: u64,
+    pub jitter_rfc3550_ms: u64,
     pub duration_ns: u64,
 }

@@ -1,4 +1,4 @@
-//! TCP stream management for benchmark mode
+//! TCP stream management
 
 use anyhow::Result;
 use std::io::{ErrorKind, Write};
@@ -38,7 +38,7 @@ pub fn run_tcp_benchmark(
 
         // thread spawn
         let handle = std::thread::spawn(move || -> Result<TcpStreamStats> {
-            run_single_stream(stream_id, data_addr, buf, barrier, stop)
+            run_single_tcp_stream(stream_id, data_addr, buf, barrier, stop)
         });
 
         handles.push(handle);
@@ -49,7 +49,7 @@ pub fn run_tcp_benchmark(
 
     warn!(
         "data",
-        "all {} stream(s) connected, session in progress...", n_streams
+        "all {} TCP stream(s) connected, session in progress...", n_streams
     );
 
     // waits for benchmark
@@ -58,15 +58,15 @@ pub fn run_tcp_benchmark(
     // signals end of benchmark for all threads
     stop.store(true, Ordering::Relaxed);
 
-    info!("data", "all streams done");
+    info!("data", "all TCP streams done");
 
     // gets statistics from threads
     let mut client_stats: Vec<TcpStreamStats> = Vec::with_capacity(handles.len());
     for handle in handles {
         match handle.join() {
             Ok(Ok(s)) => client_stats.push(s),
-            Ok(Err(e)) => bail_error!("data", "stream failed: {e:#}"),
-            Err(_) => bail_error!("data", "stream thread panicked"),
+            Ok(Err(e)) => bail_error!("data", "TCP stream failed: {e:#}"),
+            Err(_) => bail_error!("data", "TCP stream thread panicked"),
         }
     }
 
@@ -76,7 +76,7 @@ pub fn run_tcp_benchmark(
 }
 
 /// runs a single TCP stream
-fn run_single_stream(
+fn run_single_tcp_stream(
     stream_id: u16,
     data_addr: SocketAddr,
     buf: Vec<u8>,
@@ -88,10 +88,9 @@ fn run_single_stream(
 
     // TCP_MAXSEG info
     let mss = get_tcp_maxseg(&data_sock)?;
-
     info!(
         "data",
-        "stream {stream_id} connected to {data_addr}, MSS = {mss}"
+        "TCP stream {stream_id} connected to {data_addr}, MSS = {mss}"
     );
 
     // stream_id send through the wire before any benchmark starts

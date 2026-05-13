@@ -4,12 +4,13 @@ use anyhow::Result;
 use std::net::{IpAddr, SocketAddr, TcpStream, UdpSocket};
 use std::time::Instant;
 
-use crate::protocol::messages::{Message, SessionStart, UdpBenchmarkConfig};
+use crate::protocol::messages::{Message, SessionStart, SessionStats, UdpBenchmarkConfig};
 use crate::protocol::stats::UdpStreamStats;
 use crate::protocol::wire;
 use crate::server::ServerParameters;
 use crate::utils::format::human_bps;
 use crate::utils::random::rand_u64;
+use crate::utils::report::print_udp_results;
 use crate::{info, warn};
 
 /// handles a UDP session
@@ -46,89 +47,129 @@ pub fn handle_udp_session(
             data_ports: vec![data_udp_port],
         }),
     )?;
-    info!(
-        "ctrl",
-        "informed the client the session can start (id: {session_id})"
-    );
 
     // receive UDP packets
-    let _stats = receive_udp_stream(&data_udp_sock, config.n_streams)?;
+    let stats = receive_udp_stream(&data_udp_sock, config.n_streams)?;
 
     info!("ctrl", "session complete");
 
-    // TODO: send stats back to client
-    // TODO: print results
+    // send stats back to client
+    wire::send_message(
+        &mut ctrl_sock,
+        &Message::SessionStats(SessionStats::UdpBenchmark {
+            upload: Some(stats.clone()),
+            download: None,
+        }),
+    )?;
+    info!("ctrl", "session statistics sent to the client");
+
+    // print results server-side
+    print_udp_results("receiver (server)", &stats, false);
+
+    info!("ctrl", "session complete");
 
     Ok(())
 }
 
-/// receives UDP packets from client
+/// UDP stream runtime statistics
+#[derive(Default)]
+struct StreamState {
+    packets_recv: u64,
+    bytes_received: u64,
+
+    last_send_ts: Option<u64>,
+    last_recv_ts: Option<u64>,
+
+    // RFC3550 interarrival jitter estimator
+    jitter_ns: f64,
+
+    duration_ns: u64,
+}
+
+/// receives UDP stream from client
 fn receive_udp_stream(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamStats>> {
-    let mut buf = vec![0u8; 65536]; // max UDP datagram size
+    let mut buf = vec![0u8; 65536];
 
-    let mut stats: Vec<UdpStreamStats> = (0..n_streams)
-        .map(|id| UdpStreamStats {
-            stream_id: id,
-            ..Default::default()
-        })
-        .collect();
-
-    let mut first: Option<Instant> = None;
-    let mut last = Instant::now();
+    // per-stream runtime state
+    let mut streams: Vec<StreamState> = (0..n_streams).map(|_| StreamState::default()).collect();
 
     warn!("data", "waiting for UDP packets...");
 
+    sock.set_read_timeout(Some(std::time::Duration::from_secs(4)))?;
+
+    let start = Instant::now();
+
+    // receiving loop
     loop {
         match sock.recv_from(&mut buf) {
-            Ok((n, src)) => {
-                if first.is_none() {
-                    first = Some(Instant::now());
-                    info!("data", "first packet received from {src}");
-                }
-                last = Instant::now();
+            Ok((n, _)) => {
+                if n >= 18 {
+                    let recv_ts = start.elapsed().as_nanos() as u64;
 
-                // TODO: parse packet header to get stream_id, seq_num, timestamp
-                // For now, just count bytes on stream 0
-                if !stats.is_empty() {
-                    stats[0].bytes_received += n as u64;
-                    stats[0].packets_recv += 1;
-                }
+                    let stream_id = u16::from_be_bytes([buf[0], buf[1]]) as usize;
+                    let timestamp_send = u64::from_be_bytes(buf[10..18].try_into().unwrap());
 
-                // Simple timeout detection: if no packet for 2s, assume done
-                if let Some(t0) = first
-                    && last.duration_since(t0).as_secs() > 2
-                    && Instant::now().duration_since(last).as_secs() > 2
-                {
-                    break;
+                    if stream_id < streams.len() {
+                        let stream = &mut streams[stream_id];
+
+                        stream.packets_recv += 1;
+                        stream.bytes_received += n as u64;
+                        stream.duration_ns = recv_ts;
+
+                        // RFC3550 interarrival jitter
+                        if let (Some(prev_send), Some(prev_recv)) =
+                            (stream.last_send_ts, stream.last_recv_ts)
+                        {
+                            let send_delta = timestamp_send as i64 - prev_send as i64;
+                            let recv_delta = recv_ts as i64 - prev_recv as i64;
+                            let d = (recv_delta - send_delta).abs() as f64;
+
+                            stream.jitter_ns += (d - stream.jitter_ns) / 16.0;
+                        }
+
+                        stream.last_send_ts = Some(timestamp_send);
+                        stream.last_recv_ts = Some(recv_ts);
+                    }
                 }
             }
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                // timeout, check if we're done
-                if let Some(t0) = first
-                    && Instant::now().duration_since(t0).as_secs() > 10
-                {
-                    break;
-                }
+            Err(e)
+                if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut =>
+            {
+                break;
             }
             Err(e) => return Err(e.into()),
         }
     }
 
-    let duration_ns = match first {
-        Some(t0) => last.duration_since(t0).as_nanos() as u64,
-        None => 0,
-    };
+    // stats compute
+    compute_stats(streams)
+}
 
-    for stat in &mut stats {
-        stat.duration_ns = duration_ns;
+/// statistics compute for received UDP packets
+fn compute_stats(streams: Vec<StreamState>) -> Result<Vec<UdpStreamStats>> {
+    let mut stats = Vec::new();
+
+    for (stream_id, stream) in streams.iter().enumerate() {
+        stats.push(UdpStreamStats {
+            stream_id: stream_id as u16,
+
+            bytes_sent: 0,
+            bytes_received: stream.bytes_received,
+
+            packets_sent: 0,
+            packets_recv: stream.packets_recv,
+
+            packets_lost: 0,
+            packets_out_of_order: 0,
+            packets_duplicate: 0,
+
+            // jitter to milliseconds
+            jitter_rfc3550_ms: (stream.jitter_ns / 1_000_000.0) as u64,
+
+            duration_ns: stream.duration_ns,
+        });
     }
-
-    info!(
-        "data",
-        "received {} packets, {} bytes total",
-        stats.iter().map(|s| s.packets_recv).sum::<u64>(),
-        stats.iter().map(|s| s.bytes_received).sum::<u64>()
-    );
 
     Ok(stats)
 }

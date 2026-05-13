@@ -53,6 +53,13 @@ macro_rules! info_noprefix {
 }
 
 #[macro_export]
+macro_rules! info_noprefix_notimestamp {
+    ($($arg:tt)*) => {
+        println!("{}", format!($($arg)*))
+    };
+}
+
+#[macro_export]
 macro_rules! warn {
     ($prefix:expr, $fmt:expr $(, $arg:expr)* $(,)?) => {
         $crate::utils::logging::log_message(

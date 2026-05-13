@@ -10,7 +10,7 @@ principles:
 - **telemetry embedded**: timestamps in UDP payloads for precise measurements
 - **benchmark-quality first**: all heavy calculations done after benchmark
 
-## modes overview
+# modes overview
 
 aether-wire offers two modes:
 
@@ -55,52 +55,84 @@ stream_seed = session_seed ⊕ (stream_id × golden_ratio_constant)
 
 ensures each stream has unique, reproducible payload.
 
-### directional modes
 
-#### unidirectional (default)
 
-```
-client ─── [n streams] ──> server
-```
 
-measures: upload capacity.
 
-#### reverse
 
-```
-client <── [n streams] ─── server
-```
 
-measures: download capacity.
 
-#### both (sequential)
 
-```
-phase 1: client ─── [n streams] ──> server (10s)
-phase 2: client <── [n streams] ─── server (10s)
 
-total: 2n connections, 20s
-```
-
-detects asymmetry without interference. separate measurements per direction.
-
-#### bidirectional (simultaneous)
-
-```
-client ──── [n streams] (upload) ───> server
-client <── [n streams] (download) ─── server
-
-total: 2n connections, 10s
-```
-
-reveals:
-- bidirectional saturation
-- mutual congestion impact
-- realistic interactive workload
 
 ## benchmark mode (UDP)
 
-TO-DO
+### parallel streams model
+
+- client: **n UDP sockets** (ephemeral ports)
+- server: **1 UDP socket** (listening port)
+- streams identified by **stream_id** in header
+
+### packet format (18-byte header)
+
+```
+[u16 stream_id][u64 seq_num][u64 timestamp_ns][payload]
+```
+
+### bandwidth control
+
+```
+bits_per_packet = (18 + payload_size) × 8
+interval_ns = 1_000_000_000 / (bandwidth / bits_per_packet)
+```
+spin-loop timing for sub-microsecond precision.
+
+### jitter (RFC 3550 §6.4.1)
+
+interarrival jitter with exponentially weighted moving average:
+```
+D = |(recv_delta - send_delta)|
+J = J + (D - J) / 16
+```
+
+no clock synchronization required (relative deltas).
+
+### statistics
+
+- **packet loss**: `(max_seq - min_seq + 1) - packets_received`
+- **out-of-order**: arrival order ≠ sequential order (not implemented yet)
+- **duplicates**: `HashSet` tracking of `seq_num` (not implemented yet)
+
+### payload generation
+
+same ChaCha8 approach as TCP:
+
+```
+stream_seed = session_seed ⊕ (stream_id × golden_ratio)
+```
+
+### reception timeout
+
+4-second timeout after last packet to detect transmission end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## qualify mode (pipeline)
 

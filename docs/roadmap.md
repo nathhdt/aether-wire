@@ -3,7 +3,7 @@
 ## CLI
 
 - [x] server (TCP)
-- [ ] server (UDP)
+- [x] server (UDP)
 - [x] client benchmark (TCP)
 - [x] client benchmark (UDP)
 - [ ] client qualify (full pipeline)
@@ -18,20 +18,21 @@
 ### layer 4
 
 - [x] TCP
-- [ ] UDP
+- [x] UDP
 
 ## benchmark mode
 
 - [x] multi-stream sessions
-- [ ] UDP base benchmark
+- [x] UDP base benchmark
 - [x] TCP base benchmark
 - [x] TCP payload integrity verification option (`--verify`)
 - [ ] TCP reverse-directional mode
 - [ ] TCP both-directional mode
 - [ ] TCP bidirectional mode
 - [ ] TCP benchmark quality optimizations
+- [ ] UDP benchmark quality optimizations
 
-## qualify mode
+## qualify mode (not implemented yet)
 
 ### step 1 - TCP probe
 

@@ -17,13 +17,12 @@ pub struct ServerParameters {
     pub once: bool,
 }
 
-/// runs the unified server (TCP + UDP)
+/// runs the unified server
 pub fn run(params: ServerParameters) -> Result<()> {
     let addr = SocketAddr::new(IpAddr::V4(params.bind), params.port);
     let listener = TcpListener::bind(addr)?;
 
     info!("server", "server listening on {addr}");
-    info!("server", "ready to handle sessions");
 
     loop {
         info!("server", "waiting for client...");
