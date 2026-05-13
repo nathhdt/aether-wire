@@ -184,18 +184,13 @@ fn udp_table_width(w: UdpWidths) -> usize {
 }
 
 fn render_tcp_row(row: &TcpRow, w: TcpWidths) -> String {
-
     let prefix = if row.is_total {
         format!("{BOLD}{PINK}")
     } else {
         MAROON.to_string()
     };
 
-    let bitrate_color = if row.is_total {
-        PINK
-    } else {
-        BLUE
-    };
+    let bitrate_color = if row.is_total { PINK } else { BLUE };
 
     format!(
         "{prefix}{:<stream_w$}{BLUE} │ {:>dir_w$} │ {:>bytes_w$} │ {bitrate_color}{BOLD}{:>bitrate_w$}{NO_BOLD}{BLUE}{RESET}",
@@ -217,11 +212,7 @@ fn render_udp_row(row: &UdpRow, w: UdpWidths) -> String {
         MAROON.to_string()
     };
 
-    let bitrate_color = if row.is_total {
-        PINK
-    } else {
-        BLUE
-    };
+    let bitrate_color = if row.is_total { PINK } else { BLUE };
 
     let loss_col = format!("loss {}", row.loss);
 
