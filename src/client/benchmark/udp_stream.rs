@@ -196,9 +196,7 @@ fn run_single_udp_stream(
         packets_lost: 0,
         packets_out_of_order: 0,
         packets_duplicate: 0,
-        jitter_mean_ms: 0,
-        jitter_median_ms: 0,
-        jitter_stddev_ms: 0,
+        jitter_rfc3550_ms: 0,
         duration_ns,
     })
 }

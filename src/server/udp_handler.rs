@@ -106,7 +106,7 @@ fn receive_udp_stream(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamS
                 if n >= 18 {
                     let recv_ts = start.elapsed().as_nanos() as u64;
 
-                    let stream_id = u16::from_be_bytes([buf[0], buf[1]]) as usize;
+                    let stream_id = ((buf[0] as usize) << 8) | (buf[1] as usize);
                     let timestamp_send = u64::from_be_bytes(buf[10..18].try_into().unwrap());
 
                     if stream_id < streams.len() {
