@@ -38,7 +38,7 @@
 
 - [x] single stream throughput test
 - [x] multi stream throughput test
-- [x] $V_{ref}$ (reference throughput) calculation
+- [x] $B_{ref}$ (reference throughput) calculation
 
 ### step 2 - MTU sweep
 
@@ -48,14 +48,14 @@
 
 ### step 3 - health check (UDP CBR)
 
-- [ ] constant bitrate sender (80% $V_{ref}$)
+- [ ] constant bitrate sender (80% $B_{ref}$)
 - [ ] jitter measurement
 - [ ] stability measurement
 - [ ] packet loss measurement
 
 ### step 4 - stress test
 
-- [ ] ramp from 80% to 110% $V_{ref}$
+- [ ] ramp from 80% to 110% $B_{ref}$
 - [ ] ROWD (Relative One-Way Delay) calculation
 - [ ] bufferbloat detection
 - [ ] loss threshold detection

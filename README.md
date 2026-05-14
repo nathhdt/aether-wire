@@ -4,7 +4,12 @@ native cross-platform E2E network performance and benchmarking tool
 
 ## overview
 
-**aether-wire** is a lightweight, native cross-platform tool built in Rust for measuring end-to-end (E2E) network performance. it provides two modes: a **raw TCP/UDP benchmark** for quick throughput measurement, and a **full link qualification** (not yet implemented) pipeline that automatically profiles a network path (throughput, MTU, jitter, bufferbloat, packet loss).
+**aether-wire** is a lightweight native cross-platform tool written in Rust for end-to-end (E2E) network performance measurement.
+
+it provides:
+- **realistic TCP benchmarking** using the native OS TCP stack
+- **deterministic UDP benchmarking** with precise packet pacing and embedded telemetry
+- an upcoming **link qualification pipeline** for automated network profiling (throughput, MTU, jitter, packet loss, bufferbloat, stability)
 
 this project is under development.
 

@@ -4,21 +4,35 @@
 
 aether-wire measures network performance under realistic conditions.
 
-principles:
-- **no optimization**: emulate standard client/server behavior
-- **TCP as-is**: let TCP handle flow control, congestion, retransmissions
-- **telemetry embedded**: timestamps in UDP payloads for precise measurements
-- **benchmark-quality first**: all heavy calculations done after benchmark
-
-# modes overview
+### modes overview
 
 aether-wire offers two modes:
 
-**benchmark**: raw TCP/UDP throughput measurement.
+- **benchmark mode**: direct TCP/UDP performance measurement.
+- **qualify mode**: automated end-to-end network qualification.
 
-**qualify**: automated multi-step link qualification pipeline. profiles a network path end-to-end: throughput, MTU, jitter, stability, bufferbloat, packet loss, with automated diagnostics.
+### benchmark mode principles
 
-## benchmark mode (TCP)
+the project distinguishes between:
+- **TCP realism**: preserve native TCP stack behavior
+- **UDP determinism**: minimize scheduler and pacing artifacts to obtain stable latency and jitter measurements
+
+#### TCP benchmark mode principles
+
+- native OS TCP stack
+- no artificial pacing
+- no CPU affinity by default
+- pseudo-random payloads to prevent middlebox optimization
+
+#### UDP benchmark mode principles
+
+- deterministic packet pacing
+- dedicated per-stream worker threads
+- platform-specific scheduling optimizations
+- embedded packet telemetry
+- pseudo-random payloads to prevent middlebox optimization
+
+## TCP benchmark mode
 
 ### parallel streams model
 
@@ -29,7 +43,7 @@ with **n streams**:
 
 ### test boundaries
 
-client sends for exactly **T seconds** (e.g., 10s).
+client sends for exactly **t seconds** (e.g., 10s).
 
 ### throughput calculation
 
@@ -55,7 +69,7 @@ stream_seed = session_seed ⊕ (stream_id × golden_ratio_constant)
 
 ensures each stream has unique, reproducible payload.
 
-## benchmark mode (UDP)
+## UDP benchmark mode
 
 ### parallel streams model
 
@@ -80,7 +94,7 @@ packets are paced using a spin-loop timer for sub-microsecond precision.
 
 #### CPU affinity model
 
-each UDP stream runs on its own dedicated thread.
+each UDP stream runs on its own dedicated thread, hardware permitting.
 
 stream count is capped at:
 - available logical CPUs
@@ -95,7 +109,9 @@ platform behavior:
 | macOS Intel | logical CPUs | QoS |
 | macOS Apple Silicon | mostly performance cores | QoS |
 
-on Apple Silicon, threads use `QOS_CLASS_USER_INTERACTIVE` and the stream count is limited to the number of performance cores, encouraging the scheduler to run benchmark workloads primarily on P-cores for more deterministic measurements.
+on Apple Silicon Macs, threads use `QOS_CLASS_USER_INTERACTIVE` and the stream count is limited to the number of performance cores, encouraging the scheduler to run benchmark workloads primarily on P-cores for more deterministic measurements.
+
+on Intel Macs, the same QoS flag is used, but the stream count extends to all logical cores.
 
 ### jitter (RFC 3550 §6.4.1)
 
@@ -109,9 +125,9 @@ no clock synchronization required (relative deltas).
 
 ### statistics
 
-- **packet loss**: `(max_seq - min_seq + 1) - packets_received`
+- **packet loss**: `(max_seq - min_seq + 1) - packets_received` (not implemented yet)
 - **out-of-order**: arrival order ≠ sequential order (not implemented yet)
-- **duplicates**: `HashSet` tracking of `seq_num` (not implemented yet)
+- **duplicates**: (not implemented yet)
 
 ### payload generation
 
@@ -127,16 +143,16 @@ stream_seed = session_seed ⊕ (stream_id × golden_ratio)
 
 ### UDP stream limits
 
-to preserve deterministic packet pacing and avoid scheduler oversubscription, the maximum number of UDP streams depends on platform capabilities.
+to preserve deterministic packet pacing and avoid scheduler oversubscription, the maximum number of UDP streams (max. 32) depends on platform capabilities.
 
 | platform | maximum UDP streams |
 |---|---|
-| Linux | logical CPUs (max 32) |
-| Windows | logical CPUs (max 32) |
-| macOS Intel | logical CPUs (max 32) |
-| macOS Apple Silicon | performance cores only (max 32) |
+| Linux | logical CPUs |
+| Windows | logical CPUs |
+| macOS Intel | logical CPUs |
+| macOS Apple Silicon | performance cores only |
 
-## qualify mode (pipeline)
+## qualify mode (not implemented yet)
 
 the qualification pipeline runs automatically. the client orchestrates all steps sequentially, using the same server endpoint.
 
@@ -145,7 +161,7 @@ the qualification pipeline runs automatically. the client orchestrates all steps
 │                    aw client qualify                     │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
-│  step 1: TCP probe ─────────────────────────────→ Vref   │
+│  step 1: TCP probe ─────────────────────────────→ Bref   │
 │                                                          │
 │  step 2: MTU sweep ─────────────────────────────→ MTU    │
 │                                                          │
@@ -162,13 +178,11 @@ the qualification pipeline runs automatically. the client orchestrates all steps
 
 ### step 1 — TCP probe
 
-establishes a reference throughput ($V_{ref}$) for the link.
+establishes a reference throughput ($B_{ref}$) for the link.
 
 **procedure**:
 - single stream TCP test (15s) → throughput_single
 - multi stream TCP test, 4 streams (15s) → throughput_multi
-- $V_{ref}$ = max(throughput_single, throughput_multi)
+- $B_{ref}$ = max(throughput_single, throughput_multi)
 
-$V_{ref}$ is used by all subsequent steps to calibrate their sending rates.
-
-**reuses**: existing benchmark mode TCP implementation.
+$B_{ref}$ is used by all subsequent steps to calibrate their sending rates.
