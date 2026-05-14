@@ -69,6 +69,12 @@ stream_seed = session_seed ⊕ (stream_id × golden_ratio_constant)
 
 ensures each stream has unique, reproducible payload.
 
+### `--verify` option
+
+performs data integrity validation for received TCP streams:
+- uses the deterministic `stream_seed` to verify data
+- validation capped at the first **1 GiB** (`MAX_VERIFY_BUFFER`) per stream
+
 ## UDP benchmark mode
 
 ### parallel streams model

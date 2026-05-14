@@ -1,7 +1,6 @@
 //! TCP session handler
 
 use anyhow::Result;
-use rayon::prelude::*;
 use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::thread;
@@ -13,7 +12,7 @@ use crate::protocol::messages::{
 use crate::protocol::stats::TcpStreamStats;
 use crate::protocol::wire;
 use crate::server::ServerParameters;
-use crate::utils::payload::{make_buffer, stream_seed};
+use crate::server::tcp::verify;
 use crate::utils::random::rand_u64;
 use crate::utils::report::print_tcp_results;
 use crate::{bail_error, info, warn};
@@ -64,7 +63,7 @@ pub fn handle_tcp_session(
     let (upload_stats, download_stats): (Option<Vec<TcpStreamStats>>, Option<Vec<TcpStreamStats>>) =
         match config.direction {
             Direction::Default => {
-                let stats = receive_upload_streams(
+                let stats = receive_tcp_streams(
                     &data_listener,
                     config.n_streams,
                     seed,
@@ -115,7 +114,7 @@ pub fn handle_tcp_session(
 }
 
 /// receives upload streams (client -> server)
-fn receive_upload_streams(
+fn receive_tcp_streams(
     data_listener: &TcpListener,
     n_streams: u16,
     seed: u64,
@@ -137,7 +136,7 @@ fn receive_upload_streams(
         let session_seed = seed;
 
         let handle = thread::spawn(move || -> Result<TcpStreamStats> {
-            receive_data(stream_id, session_seed, verify, data_sock)
+            receive_tcp_stream(stream_id, session_seed, verify, data_sock)
         });
         handles.push(handle);
     }
@@ -161,8 +160,8 @@ fn receive_upload_streams(
     Ok(streams)
 }
 
-/// reads received data until client FIN
-fn receive_data(
+/// received TCP stream from client until client FIN
+fn receive_tcp_stream(
     stream_id: u16,
     session_seed: u64,
     verify: bool,
@@ -221,51 +220,7 @@ fn receive_data(
 
     // post-session validation: verify only the stored data
     if let Some(received) = received_data {
-        let verified_gb = received.len() as f64 / MAX_VERIFY_BUFFER as f64;
-        let total_gb = bytes_received as f64 / MAX_VERIFY_BUFFER as f64;
-
-        if received.len() < bytes_received as usize {
-            warn!(
-                "data",
-                "stream {stream_id}: verifying first {verified_gb:.2} GiB of {total_gb:.2} GiB total..."
-            );
-        } else {
-            warn!(
-                "data",
-                "stream {stream_id}: verifying {verified_gb:.2} GiB..."
-            );
-        }
-
-        let expected = make_buffer(stream_seed(session_seed, stream_id));
-        let expected_len = expected.len();
-
-        // parallel verification by chunks
-        let verification_result: Result<()> = received
-            .par_chunks(expected_len)
-            .enumerate()
-            .try_for_each(|(chunk_idx, chunk)| {
-                let base_offset = chunk_idx * expected_len;
-                // compare chunk against expected pattern
-                if chunk != &expected[..chunk.len()] {
-                    // find exact mismatch byte
-                    for i in 0..chunk.len() {
-                        if chunk[i] != expected[i] {
-                            bail_error!(
-                                "data",
-                                "stream {}: integrity check failed at byte {}. expected 0x{:02x}, got 0x{:02x}",
-                                stream_id,
-                                base_offset + i,
-                                expected[i],
-                                chunk[i]
-                            );
-                        }
-                    }
-                }
-                Ok(())
-            });
-
-        verification_result?;
-        info!("data", "stream {stream_id}: integrity check passed");
+        verify::verify_received_data(stream_id, session_seed, bytes_received, received)?;
     }
 
     Ok(TcpStreamStats {

@@ -1,7 +1,7 @@
 //! unified server handling all session types
 
-pub mod tcp_handler;
-pub mod udp_handler;
+pub mod tcp;
+pub mod udp;
 
 use anyhow::Result;
 use std::net::{IpAddr, SocketAddr, TcpListener};
@@ -56,10 +56,10 @@ pub fn run(params: ServerParameters) -> Result<()> {
         // dispatch based on session type
         let session_result = match hello.session_type {
             SessionType::TcpBenchmark(config) => {
-                tcp_handler::handle_tcp_session(ctrl_sock, ctrl_client, config, &params)
+                tcp::handler::handle_tcp_session(ctrl_sock, ctrl_client, config, &params)
             }
             SessionType::UdpBenchmark(config) => {
-                udp_handler::handle_udp_session(ctrl_sock, ctrl_client, config, &params)
+                udp::handler::handle_udp_session(ctrl_sock, ctrl_client, config, &params)
             }
             SessionType::Qualify => {
                 warn!(

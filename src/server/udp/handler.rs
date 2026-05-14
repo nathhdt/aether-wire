@@ -8,6 +8,7 @@ use crate::protocol::messages::{Message, SessionStart, SessionStats, UdpBenchmar
 use crate::protocol::stats::UdpStreamStats;
 use crate::protocol::wire;
 use crate::server::ServerParameters;
+use crate::server::udp::statistics::{StreamState, compute_stats};
 use crate::utils::format::human_bps;
 use crate::utils::random::rand_u64;
 use crate::utils::report::print_udp_results;
@@ -49,7 +50,7 @@ pub fn handle_udp_session(
     )?;
 
     // receive UDP packets
-    let stats = receive_udp_stream(&data_udp_sock, config.n_streams)?;
+    let stats = receive_udp_streams(&data_udp_sock, config.n_streams)?;
 
     info!("ctrl", "session complete");
 
@@ -71,23 +72,8 @@ pub fn handle_udp_session(
     Ok(())
 }
 
-/// UDP stream runtime statistics
-#[derive(Default)]
-struct StreamState {
-    packets_recv: u64,
-    bytes_received: u64,
-
-    last_send_ts: Option<u64>,
-    last_recv_ts: Option<u64>,
-
-    // RFC3550 interarrival jitter estimator
-    jitter_ns: f64,
-
-    duration_ns: u64,
-}
-
-/// receives UDP stream from client
-fn receive_udp_stream(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamStats>> {
+/// receives UDP streams from client
+fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamStats>> {
     let mut buf = vec![0u8; 65536];
 
     // per-stream runtime state
@@ -107,14 +93,17 @@ fn receive_udp_stream(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamS
                     let recv_ts = start.elapsed().as_nanos() as u64;
 
                     let stream_id = ((buf[0] as usize) << 8) | (buf[1] as usize);
-                    let timestamp_send = u64::from_be_bytes(buf[10..18].try_into().unwrap());
+                    let timestamp_send = u64::from_be_bytes(buf[10..18].try_into()?);
 
                     if stream_id < streams.len() {
                         let stream = &mut streams[stream_id];
 
                         stream.packets_recv += 1;
                         stream.bytes_received += n as u64;
-                        stream.duration_ns = recv_ts;
+
+                        if stream.first_recv_ts.is_none() {
+                            stream.first_recv_ts = Some(recv_ts);
+                        }
 
                         // RFC3550 interarrival jitter
                         if let (Some(prev_send), Some(prev_recv)) =
@@ -144,32 +133,4 @@ fn receive_udp_stream(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamS
 
     // stats compute
     compute_stats(streams)
-}
-
-/// statistics compute for received UDP packets
-fn compute_stats(streams: Vec<StreamState>) -> Result<Vec<UdpStreamStats>> {
-    let mut stats = Vec::new();
-
-    for (stream_id, stream) in streams.iter().enumerate() {
-        stats.push(UdpStreamStats {
-            stream_id: stream_id as u16,
-
-            bytes_sent: 0,
-            bytes_received: stream.bytes_received,
-
-            packets_sent: 0,
-            packets_recv: stream.packets_recv,
-
-            packets_lost: 0,
-            packets_out_of_order: 0,
-            packets_duplicate: 0,
-
-            // jitter to milliseconds
-            jitter_rfc3550_ms: (stream.jitter_ns / 1_000_000.0) as u64,
-
-            duration_ns: stream.duration_ns,
-        });
-    }
-
-    Ok(stats)
 }
