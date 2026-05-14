@@ -109,13 +109,13 @@ platform behavior:
 | macOS Intel | logical CPUs | QoS |
 | macOS Apple Silicon | mostly performance cores | QoS |
 
-on Apple Silicon Macs, threads use `QOS_CLASS_USER_INTERACTIVE` and the stream count is limited to the number of performance cores, encouraging the scheduler to run benchmark workloads primarily on P-cores for more deterministic measurements.
+on Apple Silicon Macs, threads use `QOS_CLASS_USER_INTERACTIVE` and the stream count is limited to the number of performance cores, encouraging the scheduler to run benchmark workloads primarily on P-cores for more deterministic measurements. See [optimize for Apple Silicon with performance and efficiency cores](https://developer.apple.com/news/?id=vk3m204o).
 
-on Intel Macs, the same QoS flag is used, but the stream count extends to all logical cores.
+on Intel Macs, the same QoS flag is used, but the maximum stream count extends to all logical cores.
 
-### jitter (RFC 3550 §6.4.1)
+### jitter
 
-interarrival jitter with exponentially weighted moving average:
+interarrival jitter calculation (based on [RFC 3550 §6.4.1](https://www.rfc-editor.org/rfc/rfc3550.html#section-6.4.1)) using an exponentially weighted moving average:
 ```
 D = |(recv_delta - send_delta)|
 J = J + (D - J) / 16
@@ -176,7 +176,7 @@ the qualification pipeline runs automatically. the client orchestrates all steps
 └──────────────────────────────────────────────────────────┘
 ```
 
-### step 1 — TCP probe
+### step 1: TCP probe
 
 establishes a reference throughput ($B_{ref}$) for the link.
 

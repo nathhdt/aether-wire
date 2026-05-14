@@ -159,12 +159,9 @@ fn draw_content(frame: &mut Frame, area: Rect, app: &App) {
                 )),
                 Line::from(""),
                 Line::from(Span::styled(
-                    "aether-wire is a lightweight, native cross-platform \
-                    tool built in Rust for measuring end-to-end (E2E) network \
-                    performance. it provides two modes: a raw TCP/UDP benchmark \
-                    for quick throughput measurement, and a full link qualification \
-                    pipeline that automatically profiles a network path \
-                    (throughput, MTU, jitter, bufferbloat, packet loss).",
+                    "aether-wire is a lightweight native cross-platform \
+                    tool written in Rust for end-to-end (E2E) network \
+                    performance measurement.",
                     Style::default().fg(GREY),
                 )),
                 Line::from(""),

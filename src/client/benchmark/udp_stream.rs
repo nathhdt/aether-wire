@@ -58,7 +58,7 @@ pub fn run_udp_benchmark(
         // thread spawn
         let handle = thread::Builder::new().name(thread_name.clone()).spawn(
             move || -> Result<UdpStreamStats> {
-                // Linux & Windows: hard CPU affinity
+                // Linux, Windows: hard CPU affinity
                 #[cfg(any(target_os = "linux", target_os = "windows"))]
                 {
                     if !core_affinity::set_for_current(core_id) {
