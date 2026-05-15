@@ -6,7 +6,7 @@ use crate::protocol::stats::UdpStreamStats;
 
 /// UDP stream runtime statistics
 #[derive(Default)]
-pub struct StreamState {
+pub struct StreamStatistics {
     pub packets_recv: u64,
     pub bytes_received: u64,
 
@@ -20,7 +20,7 @@ pub struct StreamState {
 }
 
 /// statistics compute for received UDP packets
-pub fn compute_stats(streams: Vec<StreamState>) -> Result<Vec<UdpStreamStats>> {
+pub fn compute_stats(streams: Vec<StreamStatistics>) -> Result<Vec<UdpStreamStats>> {
     let mut stats = Vec::new();
 
     for (stream_id, stream) in streams.iter().enumerate() {

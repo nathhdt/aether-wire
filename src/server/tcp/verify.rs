@@ -1,4 +1,4 @@
-//! payload verification module
+//! TCP payload verification module
 
 use anyhow::Result;
 use rayon::prelude::*;

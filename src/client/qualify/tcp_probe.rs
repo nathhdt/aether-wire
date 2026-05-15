@@ -10,7 +10,7 @@ use crate::protocol::messages::Direction;
 use crate::protocol::stats::TcpStreamStats;
 use crate::utils::format::human_bps;
 
-/// runs TCP probe to establish reference throughput (Bref)
+/// runs TCP probe to establish reference throughput (Tref)
 pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
     info!("qualify", "step 1: TCP probe");
 
@@ -52,12 +52,12 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
 
     info!("qualify", "  multi stream: {}", human_bps(throughput_multi));
 
-    // Bref calculation
+    // Tref calculation
     let vref = throughput_single.max(throughput_multi);
 
     info!(
         "qualify",
-        "  Bref = {} (reference throughput established)",
+        "  Tref = {} (reference throughput established)",
         human_bps(vref)
     );
     info!("qualify", "step 1 complete");

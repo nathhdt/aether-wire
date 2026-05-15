@@ -5,7 +5,7 @@ use std::net::UdpSocket;
 use std::time::Instant;
 
 use crate::protocol::stats::UdpStreamStats;
-use crate::server::udp::statistics::{StreamState, compute_stats};
+use crate::server::udp::statistics::{StreamStatistics, compute_stats};
 use crate::warn;
 
 /// receives UDP streams from client
@@ -13,7 +13,7 @@ pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpSt
     let mut buf = vec![0u8; 65536];
 
     // per-stream runtime state
-    let mut streams: Vec<StreamState> = (0..n_streams).map(|_| StreamState::default()).collect();
+    let mut streams: Vec<StreamStatistics> = (0..n_streams).map(|_| StreamStatistics::default()).collect();
 
     warn!("data", "waiting for UDP packets...");
 
