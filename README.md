@@ -37,4 +37,4 @@ aw client benchmark tcp -s 192.168.1.11 -p 9000 -t 10s -n 4
 
 - [CLI reference](./docs/cli-reference.md)
 - [roadmap](./docs/roadmap.md)
-- [technical details](./docs/technical-details.md)
+- [technical details](./docs/technical-details/technical-details.md)
