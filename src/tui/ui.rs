@@ -78,9 +78,9 @@ fn draw_sidebar(frame: &mut Frame, area: Rect, app: &App) {
         .enumerate()
         .map(|(index, item)| {
             let style = if index == app.selected_menu {
-                Style::default().fg(BLUE).add_modifier(Modifier::BOLD)
+                Style::default().fg(PINK).add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(GREY)
+                Style::default().fg(BLUE)
             };
 
             ListItem::new(Line::from(format!("  {}", item))).style(style)
