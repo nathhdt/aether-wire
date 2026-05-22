@@ -72,7 +72,7 @@ mod platform {
     use std::mem;
     use std::os::fd::AsRawFd;
 
-    const SCM_TIMESTAMPNS: libc::c_int = linc::SO_TIMESTAMPNS;
+    const SCM_TIMESTAMPNS: libc::c_int = libc::SO_TIMESTAMPNS;
 
     #[inline]
     pub fn recv(
