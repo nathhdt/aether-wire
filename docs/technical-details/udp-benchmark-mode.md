@@ -102,3 +102,13 @@ to reduce user-space scheduling jitter, packet arrival timestamps are captured d
 | Windows | `recv_from` fallback | scheduler-dependent | user-space |
 
 unsupported platforms fall back to user-space receive timing.
+
+## kernel receive buffer optimization (SO_RCVBUF)
+
+the server requests a 16 MB socket receive buffer to prevent packet drops. the size is automatically scaled down to the platform maximum.
+
+| platform | max buffer resolution | behavior |
+|---|---|---|
+| Linux | clamped to `/proc/sys/net/core/rmem_max` | halved before `setsockopt` to counter kernel doubling |
+| macOS | clamped to `kern.ipc.maxsockbuf` | applied via `setsockopt` |
+| Windows | uncapped | requests full 16 MB via `setsockopt` |
