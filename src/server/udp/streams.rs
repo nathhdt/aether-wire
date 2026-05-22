@@ -30,7 +30,7 @@ pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpSt
         Ok(allocated_bytes) => {
             if allocated_bytes < target_bytes {
                 warn!(
-                    "aw",
+                    "data",
                     "socket receive buffer set to {} KB",
                     allocated_bytes / 1024
                 );
