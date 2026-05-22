@@ -1,4 +1,4 @@
-//! TCP stream server module
+//! UDP stream server module
 
 use anyhow::Result;
 use std::net::UdpSocket;
