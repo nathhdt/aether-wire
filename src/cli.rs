@@ -217,8 +217,9 @@ fn validate_server_ipv4(s: &str) -> Result<Ipv4Addr, String> {
 
 /// parses bandwidth specifications (K, M, G)
 fn parse_bandwidth(s: &str) -> Result<u64, String> {
-    let s = s.trim();
+    const MAX_BANDWIDTH: u64 = 5_000_000_000; // 5 Gbit/s
 
+    let s = s.trim();
     if s.is_empty() {
         return Err("bandwidth cannot be empty".to_string());
     }
@@ -242,7 +243,15 @@ fn parse_bandwidth(s: &str) -> Result<u64, String> {
         _ => return Err(format!("unknown unit: {}. Use K, M, or G", unit)),
     };
 
-    Ok(num * multiplier)
+    // total bandwidth
+    let total_bandwidth = num * multiplier;
+
+    // checks max bandwidth
+    if total_bandwidth > MAX_BANDWIDTH {
+        return Err("bandwidth exceeds maximum allowed limit of 5 Gbit/s".to_string());
+    }
+
+    Ok(total_bandwidth)
 }
 
 // parses asked stream number
