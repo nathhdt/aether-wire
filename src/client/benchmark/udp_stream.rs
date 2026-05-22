@@ -210,8 +210,8 @@ fn run_single_udp_stream(
             // schedule next send
             next_send += Duration::from_nanos(interval_ns);
 
-            // drift correction: if we're falling behind, catch up
-            if next_send < now {
+            // drift correction: if we're falling behind, catch up (max. 1 interval)
+            if next_send + Duration::from_nanos(interval_ns) < now {
                 next_send = now;
             }
         } else {

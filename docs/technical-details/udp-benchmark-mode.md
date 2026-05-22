@@ -32,6 +32,8 @@ interval_ns = 1_000_000_000 / (bandwidth / bits_per_packet)
 
 packets are paced using a spin-loop timer for sub-microsecond precision.
 
+if the sender falls behind (OS jitter), it resets to `now` instead of bursting. this prevents spikes and caps IAT deviation.
+
 ### CPU affinity model
 
 each UDP stream runs on its own dedicated thread, hardware permitting.
