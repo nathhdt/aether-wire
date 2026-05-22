@@ -66,8 +66,6 @@ impl TimestampReceiver {
 // Linux timestamp receiver
 #[cfg(target_os = "linux")]
 mod platform {
-    use libc::SCM_TIMESTAMP;
-
     use super::*;
     use std::mem;
     use std::os::fd::AsRawFd;
