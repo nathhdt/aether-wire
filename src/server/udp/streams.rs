@@ -24,15 +24,21 @@ pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpSt
         warn!("aw", "could not enable kernel-level timestamp")
     }
 
-    // enables larger receiving buffers (max. 16 MB)
+    // enables larger socket receiving buffers (max. 16 MB)
     let target_bytes = 16 * 1024 * 1024;
-    let allocated_bytes = set_so_rcvbuf(sock, target_bytes);
-    if allocated_bytes < target_bytes {
-        warn!(
-            "aw",
-            "kernel receive buffer set to {} KB",
-            allocated_bytes / 1024
-        );
+    match set_so_rcvbuf(sock, target_bytes) {
+        Ok(allocated_bytes) => {
+            if allocated_bytes < target_bytes {
+                warn!(
+                    "aw",
+                    "socket receive buffer set to {} KB",
+                    allocated_bytes / 1024
+                );
+            }
+        }
+        Err(err) => {
+            warn!("aw", "failed to configure SO_RCVBUF: {}", err);
+        }
     }
 
     warn!("data", "waiting for UDP packets...");

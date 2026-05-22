@@ -1,5 +1,6 @@
 //! socket receive buffer configuration (cross-platform) via SO_RCVBUF
 
+use std::io;
 use std::mem;
 use std::net::UdpSocket;
 
@@ -9,7 +10,7 @@ use std::os::fd::AsRawFd;
 use std::os::windows::io::AsRawSocket;
 
 /// clamps the target size to platform limits and applies it
-pub fn set_so_rcvbuf(sock: &UdpSocket, target_bytes: usize) -> usize {
+pub fn set_so_rcvbuf(sock: &UdpSocket, target_bytes: usize) -> std::io::Result<usize> {
     #[cfg(unix)]
     let fd = sock.as_raw_fd() as _;
     #[cfg(windows)]
@@ -18,29 +19,46 @@ pub fn set_so_rcvbuf(sock: &UdpSocket, target_bytes: usize) -> usize {
     let max_bytes = get_platform_max_rcvbuf().unwrap_or(target_bytes);
     let desired = target_bytes.min(max_bytes);
 
+    // Linux internally doubles SO_RCVBUF values
     #[cfg(target_os = "linux")]
     let desired = desired / 2;
 
-    let desired_ffi = desired as libc::c_int;
+    let desired_ffi: libc::c_int = desired
+        .try_into()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "SO_RCVBUF too large"))?;
 
-    unsafe {
+    let ret = unsafe {
         libc::setsockopt(
             fd,
             libc::SOL_SOCKET,
             libc::SO_RCVBUF,
             (&desired_ffi as *const libc::c_int).cast(),
             mem::size_of_val(&desired_ffi) as libc::socklen_t,
-        );
+        )
+    };
+
+    if ret != 0 {
+        return Err(io::Error::last_os_error());
     }
 
-    #[cfg(target_os = "linux")]
-    {
-        desired * 2
+    let mut actual: libc::c_int = 0;
+    let mut len = mem::size_of_val(&actual) as libc::socklen_t;
+
+    let ret = unsafe {
+        libc::getsockopt(
+            fd,
+            libc::SOL_SOCKET,
+            libc::SO_RCVBUF,
+            (&mut actual as *mut libc::c_int).cast(),
+            &mut len,
+        )
+    };
+
+    if ret != 0 {
+        return Err(io::Error::last_os_error());
     }
-    #[cfg(not(target_os = "linux"))]
-    {
-        desired
-    }
+
+    Ok(actual as usize)
 }
 
 #[cfg(target_os = "linux")]
