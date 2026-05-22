@@ -8,9 +8,9 @@ use crate::protocol::messages::{Message, SessionStart, SessionStats, UdpBenchmar
 use crate::protocol::wire;
 use crate::server::ServerParameters;
 use crate::server::udp::streams;
-use crate::utils::format::human_bps;
+use crate::utils::format::bytes_formatting::human_bps;
+use crate::utils::format::report::print_udp_results;
 use crate::utils::random::rand_u64;
-use crate::utils::report::print_udp_results;
 
 /// handles a UDP session
 pub fn handle_udp_session(

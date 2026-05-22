@@ -5,7 +5,7 @@ mod cli;
 mod client;
 mod protocol;
 mod server;
-mod transport;
+mod socket;
 mod tui;
 mod utils;
 

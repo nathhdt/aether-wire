@@ -5,7 +5,7 @@ use std::net::Ipv4Addr;
 use std::time::Duration;
 
 use crate::protocol::messages::Direction;
-use crate::utils::hardware::cpu_cores_count;
+use crate::utils::system::hardware::cpu_cores_count;
 
 /// aether-wire base command
 #[derive(Debug, Parser)]

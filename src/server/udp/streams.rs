@@ -2,10 +2,10 @@
 
 use anyhow::Result;
 use std::net::UdpSocket;
-use std::time::Instant;
 
 use crate::protocol::stats::UdpStreamStats;
 use crate::server::udp::statistics::{StreamStatistics, compute_stats};
+use crate::server::udp::timestamp_recv::TimestampReceiver;
 use crate::warn;
 
 /// receives UDP streams from client
@@ -13,21 +13,25 @@ pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpSt
     let mut buf = vec![0u8; 65536];
 
     // per-stream runtime state
-    let mut streams: Vec<StreamStatistics> = (0..n_streams).map(|_| StreamStatistics::default()).collect();
+    let mut streams: Vec<StreamStatistics> = (0..n_streams)
+        .map(|_| StreamStatistics::default())
+        .collect();
+
+    // enables kernel-level timestamps
+    let (receiver, kernel_ts) = TimestampReceiver::new(sock);
+    if !kernel_ts {
+        warn!("aw", "could not enable kernel-level timestamp")
+    }
 
     warn!("data", "waiting for UDP packets...");
 
     sock.set_read_timeout(Some(std::time::Duration::from_secs(4)))?;
 
-    let start = Instant::now();
-
     // receiving loop
     loop {
-        match sock.recv_from(&mut buf) {
-            Ok((n, _)) => {
+        match receiver.recv(sock, &mut buf) {
+            Ok((n, recv_ts)) => {
                 if n >= 18 {
-                    let recv_ts = start.elapsed().as_nanos() as u64;
-
                     let stream_id = ((buf[0] as usize) << 8) | (buf[1] as usize);
                     let timestamp_send = u64::from_be_bytes(buf[10..18].try_into()?);
 

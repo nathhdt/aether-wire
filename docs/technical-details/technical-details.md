@@ -24,7 +24,7 @@ the project distinguishes between:
 - no CPU affinity by default
 - pseudo-random payloads to prevent middlebox optimization
 
-see [documentation](./docs/technical-details/tcp-benchmark-mode.md).
+see [documentation](./tcp-benchmark-mode.md).
 
 ### UDP benchmark mode principles
 
@@ -34,4 +34,4 @@ see [documentation](./docs/technical-details/tcp-benchmark-mode.md).
 - embedded packet telemetry
 - pseudo-random payloads to prevent middlebox optimization
 
-see [documentation](./docs/technical-details/udp-benchmark-mode.md).
+see [documentation](./udp-benchmark-mode.md).

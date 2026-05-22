@@ -10,8 +10,8 @@ use crate::protocol::stats::TcpStreamStats;
 use crate::protocol::wire;
 use crate::server::ServerParameters;
 use crate::server::tcp::streams;
+use crate::utils::format::report::print_tcp_results;
 use crate::utils::random::rand_u64;
-use crate::utils::report::print_tcp_results;
 use crate::{bail_error, info, warn};
 
 /// handles a TCP session

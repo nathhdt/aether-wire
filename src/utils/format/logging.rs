@@ -2,7 +2,7 @@
 
 use chrono::Local;
 
-use crate::utils::colors::*;
+use crate::utils::format::colors::*;
 
 pub enum LogLevel {
     Info,
@@ -33,8 +33,8 @@ pub fn log_message(level: LogLevel, prefix: Option<&str>, message: String) {
 #[macro_export]
 macro_rules! info {
     ($prefix:expr, $fmt:expr $(, $arg:expr)* $(,)?) => {
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Info,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Info,
             Some($prefix),
             format!($fmt $(, $arg)*)
         )
@@ -44,8 +44,8 @@ macro_rules! info {
 #[macro_export]
 macro_rules! info_noprefix {
     ($($arg:tt)*) => {
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Info,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Info,
             None,
             format!($($arg)*)
         )
@@ -62,8 +62,8 @@ macro_rules! info_noprefix_notimestamp {
 #[macro_export]
 macro_rules! warn {
     ($prefix:expr, $fmt:expr $(, $arg:expr)* $(,)?) => {
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Warn,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Warn,
             Some($prefix),
             format!($fmt $(, $arg)*)
         )
@@ -73,8 +73,8 @@ macro_rules! warn {
 #[macro_export]
 macro_rules! warn_noprefix {
     ($($arg:tt)*) => {
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Warn,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Warn,
             None,
             format!($($arg)*)
         )
@@ -84,8 +84,8 @@ macro_rules! warn_noprefix {
 #[macro_export]
 macro_rules! error {
     ($prefix:expr, $fmt:expr $(, $arg:expr)* $(,)?) => {
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Error,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Error,
             Some($prefix),
             format!($fmt $(, $arg)*)
         )
@@ -95,8 +95,8 @@ macro_rules! error {
 #[macro_export]
 macro_rules! error_noprefix {
     ($($arg:tt)*) => {
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Error,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Error,
             None,
             format!($($arg)*)
         )
@@ -108,8 +108,8 @@ macro_rules! bail_error {
     ($prefix:expr, $fmt:expr $(, $arg:expr)* $(,)?) => {{
         let msg = format!($fmt $(, $arg)*);
 
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Error,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Error,
             Some($prefix),
             msg.clone()
         );
@@ -123,8 +123,8 @@ macro_rules! bail_error_noprefix {
     ($($arg:tt)*) => {{
         let msg = format!($($arg)*);
 
-        $crate::utils::logging::log_message(
-            $crate::utils::logging::LogLevel::Error,
+        $crate::utils::format::logging::log_message(
+            $crate::utils::format::logging::LogLevel::Error,
             None,
             msg.clone()
         );

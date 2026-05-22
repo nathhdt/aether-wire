@@ -4,7 +4,7 @@ use std::process::Command;
 use std::str;
 use std::thread;
 
-/// returns the number of available CPU cores for benchmakr purposes
+/// returns the number of available CPU cores for benchmark purposes
 pub fn cpu_cores_count() -> usize {
     get_apple_silicon_perf_cores().unwrap_or_else(|| {
         thread::available_parallelism()

@@ -1,4 +1,4 @@
-//! formatting and display utility functions
+//! wire speed formatting and display utility functions
 
 /// converts bytes per second data measure to human-readable format
 pub fn human_bps(bps: f64) -> String {

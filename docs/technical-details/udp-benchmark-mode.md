@@ -88,3 +88,15 @@ J = J + (D - J) / 16
 ```
 
 no clock synchronization required (relative deltas).
+
+## kernel-level receive timestamping
+
+to reduce user-space scheduling jitter, packet arrival timestamps are captured directly from the kernel network stack when supported.
+
+| platform | implementation | precision | source |
+|---|---|---|---|
+| Linux | `SO_TIMESTAMPNS` + `recvmsg` | nanoseconds | kernel |
+| macOS | `SO_TIMESTAMP` + `recvmsg` | microseconds | kernel |
+| Windows | `recv_from` fallback | scheduler-dependent | user-space |
+
+unsupported platforms fall back to user-space receive timing.

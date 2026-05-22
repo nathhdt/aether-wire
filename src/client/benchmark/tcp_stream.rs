@@ -9,7 +9,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::protocol::stats::TcpStreamStats;
-use crate::transport::tcp::maxseg::get_tcp_maxseg;
+use crate::socket::tcp_maxseg::get_tcp_maxseg;
 use crate::utils::payload;
 use crate::{bail_error, info, warn};
 

@@ -8,7 +8,7 @@ use crate::client::benchmark::client::{TcpBenchmarkParameters, run_tcp_silent};
 use crate::info;
 use crate::protocol::messages::Direction;
 use crate::protocol::stats::TcpStreamStats;
-use crate::utils::format::human_bps;
+use crate::utils::format::bytes_formatting::human_bps;
 
 /// runs TCP probe to establish reference throughput (Tref)
 pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {

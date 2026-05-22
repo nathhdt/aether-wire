@@ -2,8 +2,8 @@
 
 use crate::info_noprefix_notimestamp;
 use crate::protocol::stats::{TcpStreamStats, UdpStreamStats};
-use crate::utils::colors::*;
-use crate::utils::format::{human_bps, human_bytes};
+use crate::utils::format::bytes_formatting::{human_bps, human_bytes};
+use crate::utils::format::colors::*;
 
 /// returns visible width of a string without ANSI escape sequences
 fn visible_width(s: &str) -> usize {

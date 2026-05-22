@@ -11,8 +11,8 @@ use crate::protocol::messages::{
 };
 use crate::protocol::stats::{TcpStreamStats, UdpStreamStats};
 use crate::protocol::wire;
-use crate::utils::format::human_bps;
-use crate::utils::report::{print_tcp_results, print_udp_results};
+use crate::utils::format::bytes_formatting::human_bps;
+use crate::utils::format::report::{print_tcp_results, print_udp_results};
 use crate::{bail_error, info};
 
 /// client TCP benchmark arguments structure
