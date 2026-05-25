@@ -1,19 +1,18 @@
-//! user interfaces for TUI app
+//! TUI top level drawing
 
-use ratatui::layout::Rect;
-use ratatui::widgets::{Padding, Wrap};
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Modifier, Style},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style, Stylize},
+    symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Padding, Paragraph},
 };
 
 use crate::tui::app::{App, MENU_ITEMS};
-use crate::tui::colors::{BLUE, GREY, PINK, TEXT};
+use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_LIGHT_GREY};
 
-/// main drawing function
+/// draws top level TUI layout
 pub fn draw(frame: &mut Frame, app: &App) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
@@ -40,165 +39,81 @@ fn draw_header(frame: &mut Frame, area: Rect) {
     let logo = vec![
         Line::from(Span::styled(
             r"             _   _                            _          ",
-            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+            Style::default().fg(R_BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             r"   __ _  ___| |_| |__   ___ _ __    __      _(_)_ __ ___ ",
-            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+            Style::default().fg(R_BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             r"  / _` |/ _ \ __| '_ \ / _ \ '__|___\ \ /\ / / | '__/ _ \",
-            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+            Style::default().fg(R_BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled(
             r" | (_| |  __/ |_| | | |  __/ | |_____\ V  V /| | | |  __/",
-            Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+            Style::default().fg(R_BLUE).add_modifier(Modifier::BOLD),
         )),
         Line::from(vec![
             Span::styled(
                 r"  \__,_|\___|\__|_| |_|\___|_|        \_/\_/ |_|_|  \___|",
-                Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                Style::default().fg(R_BLUE).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 format!("  v{}", env!("CARGO_PKG_VERSION")),
-                Style::default().fg(GREY),
+                Style::default().fg(R_GREY),
             ),
         ]),
     ];
 
-    let widget = Paragraph::new(logo);
-
-    frame.render_widget(widget, area);
+    frame.render_widget(Paragraph::new(logo), area);
 }
 
-/// menu navigation sidebar
+/// navigation sidebar
 fn draw_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     let items: Vec<ListItem> = MENU_ITEMS
         .iter()
         .enumerate()
         .map(|(index, item)| {
-            let style = if index == app.selected_menu {
-                Style::default().fg(PINK).add_modifier(Modifier::BOLD)
+            let selected = index == app.selected_menu;
+
+            let style = if selected {
+                Style::default().fg(R_LAVENDER).add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(BLUE)
+                Style::default().fg(R_BLUE)
             };
 
-            ListItem::new(Line::from(format!("  {}", item))).style(style)
+            let prefix = if selected { " > " } else { "   " };
+
+            ListItem::new(Line::from(format!("{prefix}{item}"))).style(style)
         })
         .collect();
 
     let sidebar = List::new(items).block(
         Block::default()
             .borders(Borders::ALL)
-            .title(" menu ")
-            .border_style(Style::default().fg(BLUE))
+            .border_set(symbols::border::ROUNDED)
+            .title(" menu ".fg(R_LAVENDER))
+            .border_style(Style::default().fg(R_BLUE))
             .padding(Padding::top(1)),
     );
 
     frame.render_widget(sidebar, area);
 }
 
-/// main content area
+/// dispatches content rendering to the active panel
 fn draw_content(frame: &mut Frame, area: Rect, app: &App) {
-    let text = match app.selected_menu {
-        // benchmark view
-        0 => {
-            vec![
-                Line::from(""),
-                Line::from(Span::styled(
-                    "benchmark mode",
-                    Style::default().fg(PINK).add_modifier(Modifier::BOLD),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "not implemented yet",
-                    Style::default().fg(GREY),
-                )),
-            ]
-        }
-
-        // qualify view
-        1 => {
-            vec![
-                Line::from(""),
-                Line::from(Span::styled(
-                    "qualify mode",
-                    Style::default().fg(PINK).add_modifier(Modifier::BOLD),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "not implemented yet",
-                    Style::default().fg(GREY),
-                )),
-            ]
-        }
-
-        // server view
-        2 => {
-            vec![
-                Line::from(""),
-                Line::from(Span::styled(
-                    "server mode",
-                    Style::default().fg(PINK).add_modifier(Modifier::BOLD),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "not implemented yet",
-                    Style::default().fg(GREY),
-                )),
-            ]
-        }
-
-        // about view
-        _ => {
-            vec![
-                Line::from(""),
-                Line::from(Span::styled(
-                    "about",
-                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "aether-wire is a lightweight native cross-platform \
-                    tool written in Rust for end-to-end (E2E) network \
-                    performance measurement.",
-                    Style::default().fg(GREY),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "this project is under development.",
-                    Style::default().fg(GREY),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "copyright (c) nathhdt",
-                    Style::default().fg(GREY),
-                )),
-            ]
-        }
-    };
-
-    use Wrap;
-
-    let content = Paragraph::new(text)
-        .wrap(Wrap { trim: true })
-        .style(Style::default().fg(TEXT))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" view ")
-                .border_style(Style::default().fg(BLUE))
-                .padding(Padding::new(2, 2, 0, 0)),
-        );
-
-    frame.render_widget(content, area);
+    app.panels.draw_active(frame, app.selected_menu, area);
 }
 
-// keyboard shortcuts help
+/// TUI footer
 fn draw_footer(frame: &mut Frame, area: Rect) {
-    let footer = Paragraph::new("↑↓ navigate • q quit")
-        .style(Style::default().fg(GREY))
-        .alignment(Alignment::Center);
+    let footer = Paragraph::new(Line::from(vec![
+        Span::styled("↑↓", Style::default().fg(R_LIGHT_GREY)),
+        Span::styled(" navigate • ", Style::default().fg(R_GREY)),
+        Span::styled("q", Style::default().fg(R_LIGHT_GREY)),
+        Span::styled(" quit", Style::default().fg(R_GREY)),
+    ]))
+    .alignment(Alignment::Center);
 
     frame.render_widget(footer, area);
 }

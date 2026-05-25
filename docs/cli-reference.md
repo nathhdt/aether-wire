@@ -1,5 +1,11 @@
 # CLI reference
 
+## use the TUI
+
+```bash
+aw
+```
+
 ## command pattern
 
 ```bash

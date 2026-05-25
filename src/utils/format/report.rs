@@ -3,7 +3,7 @@
 use crate::info_noprefix_notimestamp;
 use crate::protocol::stats::{TcpStreamStats, UdpStreamStats};
 use crate::utils::format::bytes_formatting::{human_bps, human_bytes};
-use crate::utils::format::colors::*;
+use crate::utils::format::colors::{T_BLUE, T_BOLD, T_MAROON, T_NO_BOLD, T_PINK, T_RESET};
 
 /// returns visible width of a string without ANSI escape sequences
 fn visible_width(s: &str) -> usize {
@@ -33,7 +33,7 @@ fn print_responsive_header(role: &str, width: usize) {
     let line = format!("{}{}{}", "═".repeat(left), title, "═".repeat(right),);
 
     info_noprefix_notimestamp!("");
-    info_noprefix_notimestamp!("      {BOLD}{BLUE}{line}{RESET}{NO_BOLD}",);
+    info_noprefix_notimestamp!("      {T_BOLD}{T_BLUE}{line}{T_RESET}{T_NO_BOLD}",);
 }
 
 #[derive(Debug, Clone)]
@@ -185,15 +185,15 @@ fn udp_table_width(w: UdpWidths) -> usize {
 
 fn render_tcp_row(row: &TcpRow, w: TcpWidths) -> String {
     let prefix = if row.is_total {
-        format!("{BOLD}{PINK}")
+        format!("{T_BOLD}{T_PINK}")
     } else {
-        MAROON.to_string()
+        T_MAROON.to_string()
     };
 
-    let bitrate_color = if row.is_total { PINK } else { BLUE };
+    let bitrate_color = if row.is_total { T_PINK } else { T_BLUE };
 
     format!(
-        "{prefix}{:<stream_w$}{BLUE} │ {:>dir_w$} │ {:>bytes_w$} │ {bitrate_color}{BOLD}{:>bitrate_w$}{NO_BOLD}{BLUE}{RESET}",
+        "{prefix}{:<stream_w$}{T_BLUE} │ {:>dir_w$} │ {:>bytes_w$} │ {bitrate_color}{T_BOLD}{:>bitrate_w$}{T_NO_BOLD}{T_BLUE}{T_RESET}",
         row.stream,
         row.direction,
         row.bytes,
@@ -207,17 +207,17 @@ fn render_tcp_row(row: &TcpRow, w: TcpWidths) -> String {
 
 fn render_udp_row(row: &UdpRow, w: UdpWidths) -> String {
     let prefix = if row.is_total {
-        format!("{BOLD}{PINK}")
+        format!("{T_BOLD}{T_PINK}")
     } else {
-        MAROON.to_string()
+        T_MAROON.to_string()
     };
 
-    let bitrate_color = if row.is_total { PINK } else { BLUE };
+    let bitrate_color = if row.is_total { T_PINK } else { T_BLUE };
 
     let loss_col = format!("loss {}", row.loss);
 
     format!(
-        "{prefix}{:<stream_w$}{BLUE} │ {:>packets_w$} │ {:>bytes_w$} │ {bitrate_color}{BOLD}{:>bitrate_w$}{NO_BOLD}{BLUE} │ {:>loss_w$}{RESET}",
+        "{prefix}{:<stream_w$}{T_BLUE} │ {:>packets_w$} │ {:>bytes_w$} │ {bitrate_color}{T_BOLD}{:>bitrate_w$}{T_NO_BOLD}{T_BLUE} │ {:>loss_w$}{T_RESET}",
         row.stream,
         row.packets,
         row.bytes,
@@ -241,7 +241,7 @@ fn render_udp_detail_row(row: &UdpRow, w: UdpWidths) -> Option<String> {
     let dup_col = format!("dup: {dup}");
 
     Some(format!(
-        "{BLUE}{:<stream_w$} │ {:>packets_w$} │ {:>bytes_w$} │ {:>bitrate_w$} │ {:>loss_w$}{RESET}",
+        "{T_BLUE}{:<stream_w$} │ {:>packets_w$} │ {:>bytes_w$} │ {:>bitrate_w$} │ {:>loss_w$}{T_RESET}",
         "",
         "",
         jitter_col,
@@ -318,7 +318,7 @@ pub fn print_tcp_results(role: &str, stats: &[TcpStreamStats], is_sender: bool) 
     print_responsive_header(role, table_width);
     for (idx, row) in rows.iter().enumerate() {
         if row.is_total && idx > 0 {
-            info_noprefix_notimestamp!("      {BLUE}{}{RESET}", "─".repeat(table_width),);
+            info_noprefix_notimestamp!("      {T_BLUE}{}{T_RESET}", "─".repeat(table_width),);
         }
 
         let rendered = render_tcp_row(row, widths);
@@ -447,7 +447,7 @@ pub fn print_udp_results(role: &str, stats: &[UdpStreamStats], is_sender: bool) 
     print_responsive_header(role, table_width);
     for (idx, row) in rows.iter().enumerate() {
         if row.is_total && idx > 0 {
-            info_noprefix_notimestamp!("      {BLUE}{}{RESET}", "─".repeat(table_width),);
+            info_noprefix_notimestamp!("      {T_BLUE}{}{T_RESET}", "─".repeat(table_width),);
         }
 
         let rendered = render_udp_row(row, widths);

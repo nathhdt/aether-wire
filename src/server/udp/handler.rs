@@ -2,14 +2,16 @@
 
 use anyhow::Result;
 use std::net::{IpAddr, SocketAddr, TcpStream, UdpSocket};
+use std::sync::mpsc::Sender;
 
 use crate::info;
 use crate::protocol::messages::{Message, SessionStart, SessionStats, UdpBenchmarkConfig};
-use crate::protocol::wire;
-use crate::server::ServerParameters;
-use crate::server::udp::streams;
+use crate::protocol::wire::send_message;
+use crate::server::udp::streams::receive_udp_streams;
+use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::utils::format::bytes_formatting::human_bps;
 use crate::utils::format::report::print_udp_results;
+use crate::utils::format::tui_logging::format_udp_result_lines;
 use crate::utils::random::rand_u64;
 
 /// handles a UDP session
@@ -18,6 +20,7 @@ pub fn handle_udp_session(
     ctrl_client: SocketAddr,
     config: UdpBenchmarkConfig,
     params: &ServerParameters,
+    tui_tx: Option<Sender<ServerTuiEvent>>,
 ) -> Result<()> {
     info!(
         "ctrl",
@@ -38,7 +41,7 @@ pub fn handle_udp_session(
     let seed: u64 = rand_u64();
 
     // inform client session can start
-    wire::send_message(
+    send_message(
         &mut ctrl_sock,
         &Message::SessionStart(SessionStart {
             session_id,
@@ -48,12 +51,12 @@ pub fn handle_udp_session(
     )?;
 
     // receive UDP packets
-    let stats = streams::receive_udp_streams(&data_udp_sock, config.n_streams)?;
+    let stats = receive_udp_streams(&data_udp_sock, config.n_streams)?;
 
     info!("ctrl", "session complete");
 
     // send stats back to client
-    wire::send_message(
+    send_message(
         &mut ctrl_sock,
         &Message::SessionStats(SessionStats::UdpBenchmark {
             upload: Some(stats.clone()),
@@ -64,6 +67,11 @@ pub fn handle_udp_session(
 
     // print results server-side
     print_udp_results("receiver (server)", &stats, false);
+    if let Some(ref tx) = tui_tx {
+        let _ = tx.send(ServerTuiEvent::SessionResult {
+            lines: format_udp_result_lines(&stats),
+        });
+    }
 
     info!("ctrl", "session complete");
 

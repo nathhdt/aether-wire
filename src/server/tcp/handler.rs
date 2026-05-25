@@ -1,16 +1,19 @@
 //! TCP session handler
 
 use anyhow::Result;
+use mpsc::Sender;
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
+use std::sync::mpsc;
 
 use crate::protocol::messages::{
     Direction, Message, SessionStart, SessionStats, TcpBenchmarkConfig,
 };
 use crate::protocol::stats::TcpStreamStats;
-use crate::protocol::wire;
-use crate::server::ServerParameters;
-use crate::server::tcp::streams;
+use crate::protocol::wire::send_message;
+use crate::server::tcp::streams::receive_tcp_streams;
+use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::utils::format::report::print_tcp_results;
+use crate::utils::format::tui_logging::format_tcp_result_lines;
 use crate::utils::random::rand_u64;
 use crate::{bail_error, info, warn};
 
@@ -20,6 +23,7 @@ pub fn handle_tcp_session(
     ctrl_client: SocketAddr,
     config: TcpBenchmarkConfig,
     params: &ServerParameters,
+    tui_tx: Option<Sender<ServerTuiEvent>>,
 ) -> Result<()> {
     info!(
         "ctrl",
@@ -47,7 +51,7 @@ pub fn handle_tcp_session(
     let seed: u64 = rand_u64();
 
     // informs the client the session can start
-    wire::send_message(
+    send_message(
         &mut ctrl_sock,
         &Message::SessionStart(SessionStart {
             session_id,
@@ -60,7 +64,7 @@ pub fn handle_tcp_session(
     let (upload_stats, download_stats): (Option<Vec<TcpStreamStats>>, Option<Vec<TcpStreamStats>>) =
         match config.direction {
             Direction::Default => {
-                let stats = streams::receive_tcp_streams(
+                let stats = receive_tcp_streams(
                     &data_listener,
                     config.n_streams,
                     seed,
@@ -69,8 +73,7 @@ pub fn handle_tcp_session(
                 (Some(stats), None)
             }
             Direction::Reverse | Direction::Both | Direction::Bidirectional => {
-                // TODO: implement download, both, bidirectional
-                let _ = wire::send_message(
+                let _ = send_message(
                     &mut ctrl_sock,
                     &Message::Error(format!(
                         "direction {:?} not yet implemented",
@@ -88,7 +91,7 @@ pub fn handle_tcp_session(
     info!("data", "session complete");
 
     // sends stats back to the client
-    wire::send_message(
+    send_message(
         &mut ctrl_sock,
         &Message::SessionStats(SessionStats::TcpBenchmark {
             upload: upload_stats.clone(),
@@ -97,12 +100,21 @@ pub fn handle_tcp_session(
     )?;
     info!("ctrl", "session statistics sent to the client");
 
-    // result print
     if let Some(ref stats) = upload_stats {
         print_tcp_results("receiver (server)", stats, false);
+        if let Some(ref tx) = tui_tx {
+            let _ = tx.send(ServerTuiEvent::SessionResult {
+                lines: format_tcp_result_lines(stats, false),
+            });
+        }
     }
     if let Some(ref stats) = download_stats {
         print_tcp_results("sender (server)", stats, true);
+        if let Some(ref tx) = tui_tx {
+            let _ = tx.send(ServerTuiEvent::SessionResult {
+                lines: format_tcp_result_lines(stats, true),
+            });
+        }
     }
 
     info!("ctrl", "session complete");

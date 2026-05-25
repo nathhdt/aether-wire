@@ -14,7 +14,7 @@ fn main() -> Result<()> {
 
     match cli.command {
         // server command
-        cli::Command::Server(args) => {
+        Some(cli::Command::Server(args)) => {
             let server_params = server::ServerParameters {
                 bind: args.bind,
                 port: args.port,
@@ -24,7 +24,7 @@ fn main() -> Result<()> {
         }
 
         // client command
-        cli::Command::Client(client_cmd) => match client_cmd {
+        Some(cli::Command::Client(client_cmd)) => match client_cmd {
             cli::ClientCommand::Benchmark(bench_cmd) => match bench_cmd {
                 cli::BenchmarkCommand::Tcp(args) => {
                     args.validate()?;
@@ -65,7 +65,7 @@ fn main() -> Result<()> {
             }
         },
 
-        // TUI command
-        cli::Command::Tui => tui::app::run(),
+        // default to TUI
+        None => tui::app::run(),
     }
 }

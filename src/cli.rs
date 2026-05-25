@@ -16,7 +16,7 @@ use crate::utils::system::hardware::cpu_cores_count;
 )]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
 }
 
 /// aether-wire commands
@@ -28,9 +28,6 @@ pub enum Command {
     /// run client operations
     #[command(subcommand)]
     Client(ClientCommand),
-
-    /// open TUI
-    Tui,
 }
 
 /// server arguments

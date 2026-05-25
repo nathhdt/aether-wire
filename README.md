@@ -27,6 +27,12 @@ aw server -p 9000
 aw client benchmark tcp -s 192.168.1.11 -p 9000 -t 10s -n 4
 ```
 
+### run the TUI
+
+```bash
+aw
+```
+
 ## platform support
 
 **tested and working:**

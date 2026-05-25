@@ -1,6 +1,7 @@
 //! logging utilities
 
 use chrono::Local;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::utils::format::colors::*;
 
@@ -10,22 +11,37 @@ pub enum LogLevel {
     Error,
 }
 
-/// internal method to generate the formatted log
+/// set to true while the TUI is active to suppress stdout logging
+static TUI_MODE: AtomicBool = AtomicBool::new(false);
+
+pub fn set_tui_mode(enabled: bool) {
+    TUI_MODE.store(enabled, Ordering::Relaxed);
+}
+
+pub fn is_tui_mode() -> bool {
+    TUI_MODE.load(Ordering::Relaxed)
+}
+
+/// internal method to generate formatted log
 pub fn log_message(level: LogLevel, prefix: Option<&str>, message: String) {
+    if TUI_MODE.load(Ordering::Relaxed) {
+        return;
+    }
+
     let color = match level {
-        LogLevel::Info => BLUE,
-        LogLevel::Warn => PINK,
-        LogLevel::Error => RED,
+        LogLevel::Info => T_BLUE,
+        LogLevel::Warn => T_PINK,
+        LogLevel::Error => T_RED,
     };
 
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
 
     match prefix {
         Some(prefix) => {
-            println!("{color}{timestamp} [{prefix}] {message}{RESET}");
+            println!("{color}{timestamp} [{prefix}] {message}{T_RESET}");
         }
         None => {
-            println!("{color}{timestamp} {message}{RESET}");
+            println!("{color}{timestamp} {message}{T_RESET}");
         }
     }
 }
@@ -55,7 +71,9 @@ macro_rules! info_noprefix {
 #[macro_export]
 macro_rules! info_noprefix_notimestamp {
     ($($arg:tt)*) => {
-        println!("{}", format!($($arg)*))
+        if !$crate::utils::format::logging::is_tui_mode() {
+            println!("{}", format!($($arg)*))
+        }
     };
 }
 
