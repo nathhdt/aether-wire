@@ -2,6 +2,10 @@
 
 native cross-platform E2E network performance and benchmarking tool
 
+<p align="center">
+    <img src="docs/aether-wire.png" alt="aether-wire" width="65%">
+</p>
+
 ## overview
 
 **aether-wire** is a lightweight native cross-platform tool written in Rust for end-to-end (E2E) network performance measurement.
