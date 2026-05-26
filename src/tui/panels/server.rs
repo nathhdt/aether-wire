@@ -17,7 +17,7 @@ use ratatui::{
 };
 
 use crate::server::{self, ServerParameters, ServerTuiEvent};
-use crate::tui::input::InputField;
+use crate::tui::input_list::{InputList, separator, text, toggle};
 use crate::tui::task::TaskHandle;
 use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_LIGHT_GREY, R_PINK, R_RED};
 
@@ -27,16 +27,9 @@ pub enum ServerPanelState {
     Error(String),
 }
 
-pub struct ServerInputs {
-    pub port: InputField,
-    pub bind: InputField,
-    pub once: bool,
-    pub focused: usize, // 0 = bind, 1 = port, 2 = once
-}
-
 pub struct ServerPanel {
     pub state: ServerPanelState,
-    pub inputs: ServerInputs,
+    pub inputs: InputList,
     pub task: Option<TaskHandle<ServerTuiEvent>>,
     pub log: Vec<String>,
     pub session_in_progress: bool,
@@ -45,21 +38,19 @@ pub struct ServerPanel {
 
 impl ServerPanel {
     pub fn new() -> Self {
-        let mut panel = Self {
+        Self {
             state: ServerPanelState::Idle,
-            inputs: ServerInputs {
-                port: InputField::new("port", "", "9000"),
-                bind: InputField::new("bind", "", "0.0.0.0"),
-                once: false,
-                focused: 0,
-            },
+            inputs: InputList::new(vec![
+                text("bind", "", "0.0.0.0", true),
+                text("port", "", "9000", true),
+                separator(),
+                toggle("once", "once", false, true),
+            ]),
             task: None,
             log: Vec::new(),
             session_in_progress: false,
             session_start: None,
-        };
-        panel.inputs.bind.focused = true;
-        panel
+        }
     }
 
     pub fn on_key(&mut self, key: KeyCode) {
@@ -79,50 +70,29 @@ impl ServerPanel {
                 }
             }
 
-            KeyCode::Tab => {
-                if matches!(self.state, ServerPanelState::Idle) {
-                    // cycle through the items
-                    self.inputs.focused = (self.inputs.focused + 1) % 3;
-                    self.inputs.bind.focused = self.inputs.focused == 0;
-                    self.inputs.port.focused = self.inputs.focused == 1;
-                }
-            }
-
-            // toggle with space key
-            KeyCode::Char(' ') => {
-                if matches!(self.state, ServerPanelState::Idle) && self.inputs.focused == 2 {
-                    self.inputs.once = !self.inputs.once;
-                }
-            }
-
             key => {
                 if matches!(self.state, ServerPanelState::Idle) {
-                    match self.inputs.focused {
-                        0 => {
-                            if let KeyCode::Char(c) = key {
-                                // digits, dots, colons only + max 15 chars
-                                if (c.is_ascii_digit() || c == '.' || c == ':')
-                                    && self.inputs.bind.value.len() < 15
-                                {
-                                    self.inputs.bind.on_key(key);
-                                }
-                            } else {
-                                // allow backspace, delete, arrows, etc.
-                                self.inputs.bind.on_key(key);
-                            }
+                    // validate input before delegating
+                    let focused_key = self
+                        .inputs
+                        .visible_entries()
+                        .get(self.inputs.focused_index())
+                        .map(|e| e.key)
+                        .unwrap_or("");
+
+                    let valid = match (focused_key, key) {
+                        ("bind", KeyCode::Char(c)) => {
+                            (c.is_ascii_digit() || c == '.' || c == ':')
+                                && self.inputs.get_text("bind").len() < 15
                         }
-                        1 => {
-                            if let KeyCode::Char(c) = key {
-                                // digits only + max 5 chars
-                                if c.is_ascii_digit() && self.inputs.port.value.len() < 5 {
-                                    self.inputs.port.on_key(key);
-                                }
-                            } else {
-                                // allow backspace, delete, arrows, etc.
-                                self.inputs.port.on_key(key);
-                            }
+                        ("port", KeyCode::Char(c)) => {
+                            c.is_ascii_digit() && self.inputs.get_text("port").len() < 5
                         }
-                        _ => {}
+                        _ => true, // backspace, arrows, tab, space on toggle
+                    };
+
+                    if valid {
+                        self.inputs.on_key(key);
                     }
                 }
             }
@@ -188,7 +158,7 @@ impl ServerPanel {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_set(symbols::border::ROUNDED)
-            .title(" server ".fg(R_LAVENDER)) // apply color here
+            .title(" server ".fg(R_LAVENDER))
             .border_style(Style::default().fg(R_BLUE))
             .padding(Padding::new(2, 2, 1, 0));
 
@@ -203,38 +173,19 @@ impl ServerPanel {
     }
 
     fn draw_idle(&self, frame: &mut Frame, area: Rect) {
-        // focus style when "once" is selected
-        let once_style = if self.inputs.focused == 2 {
-            Style::default().fg(R_PINK)
-        } else {
-            Style::default().fg(R_LIGHT_GREY)
-        };
+        let n = self.inputs.visible_count();
 
-        let once_label = if self.inputs.once {
-            "● once"
-        } else {
-            "○ once"
-        };
+        let mut constraints: Vec<Constraint> = (0..n).map(|_| Constraint::Length(1)).collect();
+        constraints.push(Constraint::Min(0)); // spacer
+        constraints.push(Constraint::Length(1)); // hint
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Min(0),
-                Constraint::Length(1),
-            ])
+            .constraints(constraints)
             .split(area);
 
-        self.inputs.bind.draw(frame, chunks[0]);
-        self.inputs.port.draw(frame, chunks[1]);
+        self.inputs.draw(frame, &chunks[..n]);
 
-        // render "once" option
-        frame.render_widget(Paragraph::new(once_label).style(once_style), chunks[3]);
-
-        // render hint on last chunk
         frame.render_widget(
             Paragraph::new(Line::from(vec![
                 Span::styled("enter", Style::default().fg(R_LIGHT_GREY)),
@@ -244,7 +195,7 @@ impl ServerPanel {
                 Span::styled("space", Style::default().fg(R_LIGHT_GREY)),
                 Span::styled(" toggle selection", Style::default().fg(R_GREY)),
             ])),
-            chunks[5],
+            chunks[n + 1],
         );
     }
 
@@ -362,21 +313,23 @@ impl ServerPanel {
         // clear previous session history on clean start
         self.log.clear();
 
-        let port: u16 = match self.inputs.port.value.trim().parse() {
+        let port: u16 = match self.inputs.get_text("port").trim().parse() {
             Ok(p) => p,
             Err(_) => {
-                self.state =
-                    ServerPanelState::Error(format!("invalid port: {}", self.inputs.port.value));
+                self.state = ServerPanelState::Error(format!(
+                    "invalid port: {}",
+                    self.inputs.get_text("port")
+                ));
                 return;
             }
         };
 
-        let bind: Ipv4Addr = match self.inputs.bind.value.trim().parse() {
+        let bind: Ipv4Addr = match self.inputs.get_text("bind").trim().parse() {
             Ok(a) => a,
             Err(_) => {
                 self.state = ServerPanelState::Error(format!(
                     "invalid bind address: {}",
-                    self.inputs.bind.value
+                    self.inputs.get_text("bind")
                 ));
                 return;
             }
@@ -388,7 +341,7 @@ impl ServerPanel {
         let params = ServerParameters {
             bind,
             port,
-            once: self.inputs.once,
+            once: self.inputs.get_toggle("once"),
         };
 
         let stop_clone = Arc::clone(&stop);

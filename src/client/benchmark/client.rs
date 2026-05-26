@@ -137,6 +137,12 @@ pub fn run_udp(args: UdpBenchmarkParameters) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
+/// runs UDP benchmark without printing results
+pub fn run_udp_silent(args: UdpBenchmarkParameters) -> Result<UdpBenchmarkResult> {
+    run_udp_internal(args)
+}
+
 /// internal UDP benchmark execution
 fn run_udp_internal(args: UdpBenchmarkParameters) -> Result<UdpBenchmarkResult> {
     // control channel session establishment

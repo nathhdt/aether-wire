@@ -80,7 +80,7 @@ impl QualifyPanel {
             Block::default()
                 .borders(Borders::ALL)
                 .border_set(symbols::border::ROUNDED)
-                .title(" qualify ".fg(R_LAVENDER)) // <-- MODIFIE CETTE LIGNE
+                .title(" qualify ".fg(R_LAVENDER))
                 .border_style(Style::default().fg(R_BLUE))
                 .padding(Padding::new(2, 2, 0, 0)),
         );
