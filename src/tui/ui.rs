@@ -25,7 +25,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
     let body = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(24), Constraint::Min(10)])
+        .constraints([Constraint::Length(20), Constraint::Min(10)])
         .split(layout[1]);
 
     draw_header(frame, layout[0]);

@@ -9,7 +9,7 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-use crate::utils::format::colors::{R_DARK_GREY, R_LIGHT_GREY, R_PINK};
+use crate::utils::format::colors::{R_MAROON, R_PINK, R_TEXT};
 
 /// single-line text input field
 pub struct InputField {
@@ -41,11 +41,15 @@ impl InputField {
         }
     }
 
-    pub fn draw(&self, frame: &mut Frame, area: Rect) {
-        let active_color = if self.focused { R_PINK } else { R_LIGHT_GREY };
+    pub fn draw(&self, frame: &mut Frame, area: Rect, label_width: usize) {
+        let active_color = if self.focused { R_PINK } else { R_MAROON };
 
         let label = Span::styled(
-            format!("{}: ", self.label),
+            format!(
+                "{:<width$}",
+                format!("{}:", self.label),
+                width = label_width
+            ),
             Style::default().fg(active_color),
         );
 
@@ -58,16 +62,13 @@ impl InputField {
             if self.focused {
                 vec![
                     label,
-                    Span::styled(
-                        first.to_string(),
-                        Style::default().fg(R_DARK_GREY).bg(R_PINK),
-                    ),
-                    Span::styled(rest, Style::default().fg(R_DARK_GREY)),
+                    Span::styled(first.to_string(), Style::default().fg(R_TEXT).bg(R_PINK)),
+                    Span::styled(rest, Style::default().fg(R_TEXT)),
                 ]
             } else {
                 vec![
                     label,
-                    Span::styled(self.placeholder, Style::default().fg(R_DARK_GREY)),
+                    Span::styled(self.placeholder, Style::default().fg(R_TEXT)),
                 ]
             }
         } else {

@@ -46,6 +46,7 @@ impl ServerPanel {
                 text("port", "", "9000", true),
                 separator(),
                 text("UDP recv. buffer", "16M", "16M", true),
+                separator(),
                 toggle("once", "once", false, true),
             ]),
             task: None,
@@ -186,7 +187,7 @@ impl ServerPanel {
             .constraints(constraints)
             .split(area);
 
-        self.inputs.draw(frame, &chunks[..n]);
+        self.inputs.draw(frame, &chunks[..n], 18);
 
         frame.render_widget(
             Paragraph::new(Line::from(vec![

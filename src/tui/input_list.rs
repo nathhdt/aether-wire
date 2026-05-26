@@ -4,7 +4,7 @@ use crossterm::event::KeyCode;
 use ratatui::{Frame, layout::Rect, style::Style, widgets::Paragraph};
 
 use crate::tui::input::InputField;
-use crate::utils::format::colors::{R_LIGHT_GREY, R_PINK};
+use crate::utils::format::colors::{R_MAROON, R_PINK};
 
 /// input kinds
 pub enum InputKind {
@@ -25,15 +25,15 @@ pub struct PanelInputEntry {
 }
 
 impl PanelInputEntry {
-    pub fn draw(&self, frame: &mut Frame, area: Rect) {
+    pub fn draw(&self, frame: &mut Frame, area: Rect, label_width: usize) {
         match &self.kind {
-            InputKind::Text(field) => field.draw(frame, area),
+            InputKind::Text(field) => field.draw(frame, area, label_width),
             InputKind::Toggle {
                 label,
                 value,
                 focused,
             } => {
-                let color = if *focused { R_PINK } else { R_LIGHT_GREY };
+                let color = if *focused { R_PINK } else { R_MAROON };
                 let bullet = if *value { "●" } else { "○" };
                 frame.render_widget(
                     Paragraph::new(format!("{bullet} {label}")).style(Style::default().fg(color)),
@@ -126,9 +126,9 @@ impl InputList {
         self.entries.iter().filter(|e| e.is_focusable()).count()
     }
 
-    pub fn draw(&self, frame: &mut Frame, areas: &[Rect]) {
+    pub fn draw(&self, frame: &mut Frame, areas: &[Rect], label_width: usize) {
         for (entry, area) in self.visible_entries().iter().zip(areas.iter()) {
-            entry.draw(frame, *area);
+            entry.draw(frame, *area, label_width);
         }
     }
 
