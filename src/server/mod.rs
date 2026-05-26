@@ -12,6 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::protocol::messages::{Hello, Message, PROTO_VERSION, SessionType};
+use crate::protocol::stats::{TcpStreamStats, UdpStreamStats};
 use crate::protocol::wire::{read_message, send_message};
 use crate::{error, info, warn};
 
@@ -24,10 +25,21 @@ pub struct ServerParameters {
 
 /// events emitted by the TUI server
 pub enum ServerTuiEvent {
-    Listening { addr: String },
-    SessionStarted { peer: String, session_type: String },
-    SessionResult { lines: Vec<String> },
-    SessionEnded { peer: String, session_type: String },
+    Listening {
+        addr: String,
+    },
+    SessionStarted {
+        peer: String,
+        session_type: String,
+    },
+    TcpSessionResult {
+        stats: Vec<TcpStreamStats>,
+        is_sender: bool,
+    },
+    UdpSessionResult(Vec<UdpStreamStats>),
+    SessionEnded {
+        peer: String,
+    },
     Error(String),
 }
 
@@ -201,7 +213,6 @@ pub fn run_tui(
                     Ok(()) => {
                         let _ = tx.send(ServerTuiEvent::SessionEnded {
                             peer: ctrl_client.to_string(),
-                            session_type,
                         });
                     }
 

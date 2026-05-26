@@ -149,13 +149,18 @@ impl ServerPanel {
                     self.session_in_progress = true;
                     self.session_start = Some(Instant::now());
                 }
-                ServerTuiEvent::SessionResult { lines } => {
-                    for line in lines {
+                ServerTuiEvent::TcpSessionResult { stats, is_sender } => {
+                    for line in crate::tui::format::format_tcp_result_lines(&stats, is_sender) {
                         self.log.push(line);
                     }
                 }
-                ServerTuiEvent::SessionEnded { peer, session_type } => {
-                    self.log.push(format!("> {peer}  [{session_type}] done"));
+                ServerTuiEvent::UdpSessionResult(stats) => {
+                    for line in crate::tui::format::format_udp_result_lines(&stats) {
+                        self.log.push(line);
+                    }
+                }
+                ServerTuiEvent::SessionEnded { peer } => {
+                    self.log.push(format!("> {peer}  done"));
                     self.session_in_progress = false;
                     self.session_start = None;
                 }

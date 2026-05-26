@@ -11,7 +11,6 @@ use crate::server::udp::streams::receive_udp_streams;
 use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::utils::format::bytes_formatting::human_bps;
 use crate::utils::format::report::print_udp_results;
-use crate::utils::format::tui_logging::format_udp_result_lines;
 use crate::utils::random::rand_u64;
 
 /// handles a UDP session
@@ -68,9 +67,7 @@ pub fn handle_udp_session(
     // print results server-side
     print_udp_results("receiver (server)", &stats, false);
     if let Some(ref tx) = tui_tx {
-        let _ = tx.send(ServerTuiEvent::SessionResult {
-            lines: format_udp_result_lines(&stats),
-        });
+        let _ = tx.send(ServerTuiEvent::UdpSessionResult(stats.clone()));
     }
 
     info!("ctrl", "session complete");

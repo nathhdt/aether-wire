@@ -13,7 +13,6 @@ use crate::protocol::wire::send_message;
 use crate::server::tcp::streams::receive_tcp_streams;
 use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::utils::format::report::print_tcp_results;
-use crate::utils::format::tui_logging::format_tcp_result_lines;
 use crate::utils::random::rand_u64;
 use crate::{bail_error, info, warn};
 
@@ -103,16 +102,18 @@ pub fn handle_tcp_session(
     if let Some(ref stats) = upload_stats {
         print_tcp_results("receiver (server)", stats, false);
         if let Some(ref tx) = tui_tx {
-            let _ = tx.send(ServerTuiEvent::SessionResult {
-                lines: format_tcp_result_lines(stats, false),
+            let _ = tx.send(ServerTuiEvent::TcpSessionResult {
+                stats: stats.clone(),
+                is_sender: false,
             });
         }
     }
     if let Some(ref stats) = download_stats {
         print_tcp_results("sender (server)", stats, true);
         if let Some(ref tx) = tui_tx {
-            let _ = tx.send(ServerTuiEvent::SessionResult {
-                lines: format_tcp_result_lines(stats, true),
+            let _ = tx.send(ServerTuiEvent::TcpSessionResult {
+                stats: stats.clone(),
+                is_sender: true,
             });
         }
     }

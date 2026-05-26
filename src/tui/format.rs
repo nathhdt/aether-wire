@@ -1,9 +1,9 @@
-//! TUI logging utilities
+//! TUI result formatting — plain-text rendering of benchmark stats for the panel log
 
 use crate::protocol::stats::{TcpStreamStats, UdpStreamStats};
 use crate::utils::format::bytes_formatting::{human_bps, human_bytes};
 
-/// formats TCP stats as plain-text lines for TUI display
+/// formats TCP stats for TUI display
 pub fn format_tcp_result_lines(stats: &[TcpStreamStats], is_sender: bool) -> Vec<String> {
     let direction = if is_sender { "sent" } else { "received" };
     let mut lines = Vec::new();
@@ -22,12 +22,14 @@ pub fn format_tcp_result_lines(stats: &[TcpStreamStats], is_sender: bool) -> Vec
         } else {
             0.0
         };
+
         lines.push(format!(
             "  stream {:>2}  {}  {}  ({direction})",
             s.stream_id,
             human_bps(bps),
             human_bytes(bytes),
         ));
+
         total_bytes += bytes;
         max_ns = max_ns.max(s.duration_ns);
     }
@@ -39,6 +41,7 @@ pub fn format_tcp_result_lines(stats: &[TcpStreamStats], is_sender: bool) -> Vec
         } else {
             0.0
         };
+
         lines.push(format!(
             "  total     {}  {}  ({direction})",
             human_bps(total_bps),
@@ -49,7 +52,7 @@ pub fn format_tcp_result_lines(stats: &[TcpStreamStats], is_sender: bool) -> Vec
     lines
 }
 
-/// formats UDP stats as plain-text lines for TUI display
+/// formats UDP stats for TUI display
 pub fn format_udp_result_lines(stats: &[UdpStreamStats]) -> Vec<String> {
     let mut lines = Vec::new();
     let mut total_bytes: u64 = 0;
@@ -99,6 +102,7 @@ pub fn format_udp_result_lines(stats: &[UdpStreamStats]) -> Vec<String> {
         } else {
             0.0
         };
+
         lines.push(format!(
             "  total     {}  {}  loss {:.1}%",
             human_bps(total_bps),
