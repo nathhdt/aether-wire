@@ -8,6 +8,13 @@
 - [x] client benchmark (UDP)
 - [ ] client qualify (full pipeline)
 
+## TUI
+
+- [ ] server
+- [ ] client benchmark (TCP)
+- [ ] client benchmark (UDP)
+- [ ] client qualify (full pipeline)
+
 ## protocol support
 
 ### layer 3
@@ -20,17 +27,30 @@
 - [x] TCP
 - [x] UDP
 
-## benchmark mode
+## TCP benchmark mode
 
-- [x] multi-stream sessions
-- [x] UDP base benchmark
 - [x] TCP base benchmark
+- [x] multi-stream sessions
 - [x] TCP payload integrity verification option (`--verify`)
 - [ ] TCP reverse-directional mode
 - [ ] TCP both-directional mode
 - [ ] TCP bidirectional mode
 - [ ] TCP benchmark quality optimizations
+- [ ] JSON export (`--json`)
+
+## UDP benchmark mode
+
+- [x] multi-stream sessions
+- [x] UDP base benchmark
 - [ ] UDP benchmark quality optimizations
+- [ ] out-of-order packet count statistics
+- [ ] duplicate packet count statistics
+- [ ] configurable UDP sending buffer size
+- [ ] JSON export (`--json`)
+
+## server mode
+
+- [ ] configurable UDP receiving buffer size
 
 ## qualify mode (not implemented yet)
 
