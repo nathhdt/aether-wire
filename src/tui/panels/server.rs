@@ -20,6 +20,7 @@ use crate::server::{self, ServerParameters, ServerTuiEvent};
 use crate::tui::input_list::{InputList, separator, text, toggle};
 use crate::tui::task::TaskHandle;
 use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_LIGHT_GREY, R_PINK, R_RED};
+use crate::utils::parser;
 
 pub enum ServerPanelState {
     Idle,
@@ -44,6 +45,7 @@ impl ServerPanel {
                 text("bind", "", "0.0.0.0", true),
                 text("port", "", "9000", true),
                 separator(),
+                text("UDP recv. buffer", "16M", "16M", true),
                 toggle("once", "once", false, true),
             ]),
             task: None,
@@ -313,17 +315,6 @@ impl ServerPanel {
         // clear previous session history on clean start
         self.log.clear();
 
-        let port: u16 = match self.inputs.get_text("port").trim().parse() {
-            Ok(p) => p,
-            Err(_) => {
-                self.state = ServerPanelState::Error(format!(
-                    "invalid port: {}",
-                    self.inputs.get_text("port")
-                ));
-                return;
-            }
-        };
-
         let bind: Ipv4Addr = match self.inputs.get_text("bind").trim().parse() {
             Ok(a) => a,
             Err(_) => {
@@ -335,12 +326,36 @@ impl ServerPanel {
             }
         };
 
+        let port: u16 = match self.inputs.get_text("port").trim().parse() {
+            Ok(p) => p,
+            Err(_) => {
+                self.state = ServerPanelState::Error(format!(
+                    "invalid port: {}",
+                    self.inputs.get_text("port")
+                ));
+                return;
+            }
+        };
+
+        let udp_recv_buffer =
+            match parser::parse_udp_buf_mem_size(self.inputs.get_text("UDP recv. buffer")) {
+                Ok(v) => v,
+                Err(e) => {
+                    self.state = ServerPanelState::Error(format!(
+                        "invalid UDP recv. buffer value: {} ({e})",
+                        self.inputs.get_text("UDP recv. buffer")
+                    ));
+                    return;
+                }
+            };
+
         let stop = Arc::new(AtomicBool::new(false));
         let (tx, rx) = mpsc::channel::<ServerTuiEvent>();
 
         let params = ServerParameters {
             bind,
             port,
+            udp_recv_buffer,
             once: self.inputs.get_toggle("once"),
         };
 

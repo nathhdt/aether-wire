@@ -20,6 +20,7 @@ use crate::{error, info, warn};
 pub struct ServerParameters {
     pub bind: std::net::Ipv4Addr,
     pub port: u16,
+    pub udp_recv_buffer: u64,
     pub once: bool,
 }
 

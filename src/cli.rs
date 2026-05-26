@@ -5,7 +5,7 @@ use std::net::Ipv4Addr;
 use std::time::Duration;
 
 use crate::protocol::messages::Direction;
-use crate::utils::system::hardware::cpu_cores_count;
+use crate::utils::parser;
 
 /// aether-wire base command
 #[derive(Debug, Parser)]
@@ -41,6 +41,10 @@ pub struct ServerArgs {
     #[arg(short = 'p', long)]
     pub port: u16,
 
+    /// UDP receiving buffer size
+    #[arg(long = "udp-recv-buffer", default_value = "16M", value_parser = parser::parse_udp_buf_mem_size)]
+    pub udp_recv_buffer: u64,
+
     /// exit after serving one session
     #[arg(long)]
     pub once: bool,
@@ -71,7 +75,7 @@ pub enum BenchmarkCommand {
 #[derive(Args, Clone, Debug)]
 pub struct TcpBenchmarkArgs {
     /// server IPv4 address to connect to
-    #[arg(short = 's', long, value_parser = validate_server_ipv4)]
+    #[arg(short = 's', long, value_parser = parser::parse_server_ipv4)]
     pub server: Ipv4Addr,
 
     /// server port number
@@ -79,7 +83,7 @@ pub struct TcpBenchmarkArgs {
     pub port: u16,
 
     /// test duration (minimum 1s)
-    #[arg(short = 't', long, default_value = "10s", value_parser = parse_duration_min_1s)]
+    #[arg(short = 't', long, default_value = "10s", value_parser = parser::parse_duration_min_1s)]
     pub time: Duration,
 
     /// number of parallel streams (1-32)
@@ -140,7 +144,7 @@ impl DirectionArgs {
 #[derive(Args, Clone, Debug)]
 pub struct UdpBenchmarkArgs {
     /// server IPv4 address to connect to
-    #[arg(short = 's', long, value_parser = validate_server_ipv4)]
+    #[arg(short = 's', long, value_parser = parser::parse_server_ipv4)]
     pub server: Ipv4Addr,
 
     /// server port number
@@ -148,15 +152,15 @@ pub struct UdpBenchmarkArgs {
     pub port: u16,
 
     /// test duration (minimum 1s)
-    #[arg(short = 't', long, default_value = "10s", value_parser = parse_duration_min_1s)]
+    #[arg(short = 't', long, default_value = "10s", value_parser = parser::parse_duration_min_1s)]
     pub time: Duration,
 
     /// number of parallel streams (depends on available CPU cores)
-    #[arg(short = 'n', long, default_value_t = 1, value_parser = parse_stream_number)]
+    #[arg(short = 'n', long, default_value_t = 1, value_parser = parser::parse_stream_number)]
     pub n_streams: u16,
 
     /// total target bandwidth (e.g., 1K, 1G, 50M)
-    #[arg(short = 'b', long, value_parser = parse_bandwidth)]
+    #[arg(short = 'b', long, value_parser = parser::parse_bandwidth)]
     pub bandwidth: u64,
 
     /// UDP payload size in bytes (e.g., 512, 1024, 1472)
@@ -168,7 +172,7 @@ pub struct UdpBenchmarkArgs {
 #[derive(Args, Clone, Debug)]
 pub struct QualifyArgs {
     /// server IPv4 address to connect to
-    #[arg(short = 's', long, value_parser = validate_server_ipv4)]
+    #[arg(short = 's', long, value_parser = parser::parse_server_ipv4)]
     pub server: Ipv4Addr,
 
     /// server port number
@@ -178,95 +182,4 @@ pub struct QualifyArgs {
     /// export full metrics to JSON file
     #[arg(long)]
     pub json: bool,
-}
-
-/// checks for a minimal duration of 1s
-fn parse_duration_min_1s(s: &str) -> Result<Duration, String> {
-    let d = humantime::parse_duration(s).map_err(|e| e.to_string())?;
-
-    if d < Duration::from_secs(1) {
-        return Err("duration must be at least 1s".to_string());
-    }
-
-    Ok(d)
-}
-
-/// validates the provided server IPv4 is an actual reachable host
-fn validate_server_ipv4(s: &str) -> Result<Ipv4Addr, String> {
-    let ip: Ipv4Addr = s
-        .parse()
-        .map_err(|_| format!("{s} is not a valid IPv4 address"))?;
-
-    if ip.is_unspecified() {
-        return Err("0.0.0.0 is not a valid host address".into());
-    }
-
-    if ip.is_multicast() {
-        return Err("multicast addresses are not valid hosts".into());
-    }
-
-    if ip.octets() == [255, 255, 255, 255] {
-        return Err("broadcast addresses is not a valid host".into());
-    }
-
-    Ok(ip)
-}
-
-/// parses bandwidth specifications (K, M, G)
-fn parse_bandwidth(s: &str) -> Result<u64, String> {
-    const MAX_BANDWIDTH: u64 = 5_000_000_000; // 5 Gbit/s
-
-    let s = s.trim();
-    if s.is_empty() {
-        return Err("bandwidth cannot be empty".to_string());
-    }
-
-    // extracts number and unit
-    let (num_str, unit) = if let Some(pos) = s.find(|c: char| c.is_alphabetic()) {
-        (&s[..pos], &s[pos..])
-    } else {
-        (s, "")
-    };
-
-    let num: u64 = num_str
-        .parse()
-        .map_err(|_| format!("invalid number: {}", num_str))?;
-
-    let multiplier = match unit.to_uppercase().as_str() {
-        "" | "BPS" => 1,
-        "K" | "KBPS" => 1_000,
-        "M" | "MBPS" => 1_000_000,
-        "G" | "GBPS" => 1_000_000_000,
-        _ => return Err(format!("unknown unit: {}. Use K, M, or G", unit)),
-    };
-
-    // total bandwidth
-    let total_bandwidth = num * multiplier;
-
-    // checks max bandwidth
-    if total_bandwidth > MAX_BANDWIDTH {
-        return Err("bandwidth exceeds maximum allowed limit of 5 Gbit/s".to_string());
-    }
-
-    Ok(total_bandwidth)
-}
-
-// parses asked stream number
-fn parse_stream_number(s: &str) -> Result<u16, String> {
-    let n: u16 = s.parse().map_err(|_| "invalid stream count".to_string())?;
-
-    // max streams is from n CPU threads with a n_max of 32
-    let max_streams = cpu_cores_count();
-
-    if n == 0 {
-        return Err("stream count must be at least 1".to_string());
-    }
-
-    if n as usize > max_streams {
-        return Err(format!(
-            "stream count exceeds available CPU cores ({max_streams})"
-        ));
-    }
-
-    Ok(n)
 }

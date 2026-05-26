@@ -18,6 +18,7 @@ fn main() -> Result<()> {
             let server_params = server::ServerParameters {
                 bind: args.bind,
                 port: args.port,
+                udp_recv_buffer: args.udp_recv_buffer,
                 once: args.once,
             };
             server::run(server_params)

@@ -9,9 +9,11 @@ use crate::protocol::messages::{Message, SessionStart, SessionStats, UdpBenchmar
 use crate::protocol::wire::send_message;
 use crate::server::udp::streams::receive_udp_streams;
 use crate::server::{ServerParameters, ServerTuiEvent};
+use crate::socket::so_rcvbuf::set_so_rcvbuf;
 use crate::utils::format::bytes_formatting::human_bps;
 use crate::utils::format::report::print_udp_results;
 use crate::utils::random::rand_u64;
+use crate::warn;
 
 /// handles a UDP session
 pub fn handle_udp_session(
@@ -34,6 +36,21 @@ pub fn handle_udp_session(
     let data_udp_sock = UdpSocket::bind(SocketAddr::new(IpAddr::V4(params.bind), 0))?;
     let data_udp_port = data_udp_sock.local_addr()?.port();
     info!("data", "UDP listening on port {data_udp_port}");
+
+    // socket receiving buffer size
+    let target_bytes = params.udp_recv_buffer as usize;
+    match set_so_rcvbuf(&data_udp_sock, target_bytes) {
+        Ok(allocated_bytes) => {
+            warn!(
+                "data",
+                "socket receive buffer set to {} KB",
+                allocated_bytes / 1024
+            );
+        }
+        Err(err) => {
+            warn!("aw", "failed to configure SO_RCVBUF: {}", err);
+        }
+    }
 
     // session id & seed generation
     let session_id: u64 = rand_u64();
