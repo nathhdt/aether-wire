@@ -17,7 +17,7 @@ use ratatui::{
 };
 
 use crate::server::{self, ServerParameters, ServerTuiEvent};
-use crate::tui::input_list::{InputList, separator, text, toggle};
+use crate::tui::input::{InputList, separator, text, toggle};
 use crate::tui::task::TaskHandle;
 use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_LIGHT_GREY, R_PINK, R_RED};
 use crate::utils::parser;
