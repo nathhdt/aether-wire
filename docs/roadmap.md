@@ -43,6 +43,7 @@
 - [x] multi-stream sessions
 - [x] UDP base benchmark
 - [ ] UDP benchmark quality optimizations
+- [ ] packet length option
 - [ ] out-of-order packet count statistics
 - [ ] duplicate packet count statistics
 - [ ] configurable UDP sending buffer size
@@ -50,7 +51,7 @@
 
 ## server mode
 
-- [ ] configurable UDP receiving buffer size
+- [x] configurable UDP receiving buffer size
 
 ## qualify mode (not implemented yet)
 
