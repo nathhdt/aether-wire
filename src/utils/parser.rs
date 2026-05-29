@@ -3,7 +3,9 @@
 use std::net::Ipv4Addr;
 use std::time::Duration;
 
-use crate::utils::system::hardware::cpu_cores_count;
+use crate::utils::format::bytes_formatting::human_bytes;
+use crate::utils::system::hardware::cpu::cpu_cores_count;
+use crate::utils::system::hardware::ram::get_total_memory_bytes;
 
 /// checks for a minimal duration of 1s
 pub fn parse_duration_min_1s(s: &str) -> Result<Duration, String> {
@@ -76,44 +78,6 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
     Ok(total_bandwidth)
 }
 
-/// parses memory sizes (K, M, G)
-pub fn parse_udp_buf_mem_size(s: &str) -> Result<u64, String> {
-    const MAX_SIZE: u64 = 256 * 1024 * 1024;
-
-    let s = s.trim();
-    if s.is_empty() {
-        return Err("size cannot be empty".to_string());
-    }
-
-    let (num_str, unit) = if let Some(pos) = s.find(|c: char| c.is_alphabetic()) {
-        (&s[..pos], &s[pos..])
-    } else {
-        (s, "")
-    };
-
-    let num: u64 = num_str
-        .parse()
-        .map_err(|_| format!("invalid number: {}", num_str))?;
-
-    let multiplier = match unit.to_uppercase().as_str() {
-        "" | "B" => 1,
-        "K" | "KB" | "KIB" => 1024,
-        "M" | "MB" | "MIB" => 1024 * 1024,
-        "G" | "GB" | "GIB" => 1024 * 1024 * 1024,
-        _ => return Err(format!("unknown unit: {}. Use K, M, or G", unit)),
-    };
-
-    let total_size = num
-        .checked_mul(multiplier)
-        .ok_or_else(|| "size overflow".to_string())?;
-
-    if total_size > MAX_SIZE {
-        return Err("buffer size exceeds maximum allowed limit of 256 MiB".to_string());
-    }
-
-    Ok(total_size)
-}
-
 // parses asked stream number
 pub fn parse_stream_number(s: &str) -> Result<u16, String> {
     let n: u16 = s.parse().map_err(|_| "invalid stream count".to_string())?;
@@ -132,4 +96,71 @@ pub fn parse_stream_number(s: &str) -> Result<u16, String> {
     }
 
     Ok(n)
+}
+
+/// parses size bytes (B, K, M, G) for multiple cases
+fn parse_size_bytes(s: &str) -> Result<u64, String> {
+    let s = s.trim();
+
+    if s.is_empty() {
+        return Err("size cannot be empty".into());
+    }
+
+    let (num_str, unit) = if let Some(pos) = s.find(|c: char| c.is_alphabetic()) {
+        (&s[..pos], &s[pos..])
+    } else {
+        (s, "")
+    };
+
+    let num: u64 = num_str
+        .parse()
+        .map_err(|_| format!("invalid number: {num_str}"))?;
+
+    let multiplier = match unit.to_uppercase().as_str() {
+        "" | "B" => 1,
+        "K" | "KB" | "KIB" => 1024,
+        "M" | "MB" | "MIB" => 1024 * 1024,
+        "G" | "GB" | "GIB" => 1024 * 1024 * 1024,
+        _ => return Err(format!("unknown unit: {unit}. Use B, K, M, or G")),
+    };
+
+    num.checked_mul(multiplier)
+        .ok_or_else(|| "size overflow".to_string())
+}
+
+/// parses memory size for UDP receiving buffer
+pub fn parse_udp_buf_mem_size(s: &str) -> Result<u64, String> {
+    const MAX_SIZE: u64 = 256 * 1024 * 1024;
+
+    let size = parse_size_bytes(s)?;
+
+    if size == 0 {
+        return Err("buffer size must be at least 1 byte".into());
+    }
+
+    if size > MAX_SIZE {
+        return Err("buffer size exceeds maximum allowed limit of 256 MiB".into());
+    }
+
+    Ok(size)
+}
+
+/// parses --verify option buffer size
+pub fn parse_verify_size(s: &str) -> Result<u64, String> {
+    let size = parse_size_bytes(s)?;
+
+    if size == 0 {
+        return Err("verify size must be at least 1 byte".into());
+    }
+
+    if let Some(max_size) = get_total_memory_bytes()
+        && size > max_size
+    {
+        return Err(format!(
+            "verify size must be lower than available memory ({})",
+            human_bytes(max_size)
+        ));
+    }
+
+    Ok(size)
 }

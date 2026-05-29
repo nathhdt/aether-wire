@@ -27,7 +27,7 @@ pub enum SessionType {
 pub struct TcpBenchmarkConfig {
     pub duration_secs: u64,
     pub n_streams: u16,
-    pub verify_integrity: bool,
+    pub verify_integrity: Option<u64>,
     pub direction: Direction,
 }
 

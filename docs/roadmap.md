@@ -44,6 +44,7 @@
 - [x] UDP base benchmark
 - [ ] UDP benchmark quality optimizations
 - [ ] packet length option
+- [x] jitter statistics
 - [ ] out-of-order packet count statistics
 - [ ] duplicate packet count statistics
 - [ ] configurable UDP sending buffer size

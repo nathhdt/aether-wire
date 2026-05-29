@@ -21,7 +21,7 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
         port,
         duration: Duration::from_secs(15),
         n_streams: 1,
-        verify_integrity: false,
+        verify_integrity: None,
         direction: Direction::Default,
     };
 
@@ -42,7 +42,7 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
         port,
         duration: Duration::from_secs(15),
         n_streams: 4,
-        verify_integrity: false,
+        verify_integrity: None,
         direction: Direction::Default,
     };
 

@@ -12,6 +12,7 @@ use crate::protocol::stats::TcpStreamStats;
 use crate::protocol::wire::send_message;
 use crate::server::tcp::streams::receive_tcp_streams;
 use crate::server::{ServerParameters, ServerTuiEvent};
+use crate::utils::format::bytes_formatting::human_bytes;
 use crate::utils::format::report::print_tcp_results;
 use crate::utils::random::rand_u64;
 use crate::{bail_error, info, warn};
@@ -33,10 +34,11 @@ pub fn handle_tcp_session(
         config.direction.description()
     );
 
-    if config.verify_integrity {
+    if let Some(verify_size) = config.verify_integrity {
         warn!(
             "ctrl",
-            "client requested server-side buffer verification (--verify)"
+            "client requested server-side buffer verification ({})",
+            human_bytes(verify_size)
         );
     }
 

@@ -1,4 +1,4 @@
-//! hardware utilities
+//! cpu utilities
 
 use std::process::Command;
 use std::str;

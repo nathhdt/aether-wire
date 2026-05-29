@@ -6,7 +6,6 @@ use std::net::UdpSocket;
 use crate::protocol::stats::UdpStreamStats;
 use crate::server::udp::statistics::{StreamStatistics, compute_stats};
 use crate::server::udp::timestamp_recv::TimestampReceiver;
-// use crate::socket::so_rcvbuf::set_so_rcvbuf;
 use crate::warn;
 
 /// receives UDP streams from client
@@ -23,23 +22,6 @@ pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpSt
     if !kernel_ts {
         warn!("aw", "could not enable kernel-level timestamp")
     }
-
-    // enables larger socket receiving buffers (max. 16 MB)
-    // let target_bytes = 16 * 1024 * 1024;
-    // match set_so_rcvbuf(sock, target_bytes) {
-    //     Ok(allocated_bytes) => {
-    //         if allocated_bytes < target_bytes {
-    //             warn!(
-    //                 "data",
-    //                 "socket receive buffer set to {} KB",
-    //                 allocated_bytes / 1024
-    //             );
-    //         }
-    //     }
-    //     Err(err) => {
-    //         warn!("aw", "failed to configure SO_RCVBUF: {}", err);
-    //     }
-    // }
 
     warn!("data", "waiting for UDP packets...");
 

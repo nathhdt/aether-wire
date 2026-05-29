@@ -21,7 +21,7 @@ pub struct TcpBenchmarkParameters {
     pub port: u16,
     pub duration: Duration,
     pub n_streams: u16,
-    pub verify_integrity: bool,
+    pub verify_integrity: Option<u64>,
     pub direction: Direction,
 }
 

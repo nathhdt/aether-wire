@@ -37,6 +37,7 @@ ensures each stream has unique, reproducible payload.
 
 ## `--verify` option
 
-performs data integrity validation for received TCP streams:
+performs data integrity validation for received TCP stream:
 - uses the deterministic `stream_seed` to verify data
-- validation capped at **1 GiB** (`MAX_VERIFY_BUFFER`) per stream
+- verification buffer size is configurable (default: `1 GiB`, max: available RAM)
+- available only with a single stream (`--n-streams 1`)

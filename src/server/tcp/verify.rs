@@ -13,12 +13,13 @@ pub fn verify_received_data(
     bytes_received: u64,
     received: Vec<u8>,
 ) -> Result<()> {
-    const MAX_VERIFY_BUFFER: usize = 1024 * 1024 * 1024; // 1 GB hard limit
+    const GIB: f64 = 1024.0 * 1024.0 * 1024.0;
 
-    let verified_gb = received.len() as f64 / MAX_VERIFY_BUFFER as f64;
-    let total_gb = bytes_received as f64 / MAX_VERIFY_BUFFER as f64;
+    let verified_bytes = received.len() as u64;
+    let verified_gb = verified_bytes as f64 / GIB;
+    let total_gb = bytes_received as f64 / GIB;
 
-    if received.len() < bytes_received as usize {
+    if verified_bytes < bytes_received {
         warn!(
             "data",
             "stream {stream_id}: verifying first {verified_gb:.2} GiB of {total_gb:.2} GiB total..."
@@ -34,7 +35,7 @@ pub fn verify_received_data(
     let expected_len = expected.len();
 
     // parallel verification by chunks
-    let verification_result: Result<()> = received
+    received
         .par_chunks(expected_len)
         .enumerate()
         .try_for_each(|(chunk_idx, chunk)| {
@@ -43,24 +44,23 @@ pub fn verify_received_data(
             // compare chunk against expected pattern
             if chunk != &expected[..chunk.len()] {
                 // find exact mismatch byte
-                for i in 0..chunk.len() {
-                    if chunk[i] != expected[i] {
+                for (i, (&got, &exp)) in chunk.iter().zip(expected.iter()).enumerate() {
+                    if got != exp {
                         bail_error!(
                             "data",
                             "stream {}: integrity check failed at byte {}. expected 0x{:02x}, got 0x{:02x}",
                             stream_id,
                             base_offset + i,
-                            expected[i],
-                            chunk[i]
+                            exp,
+                            got
                         );
                     }
                 }
             }
 
             Ok(())
-        });
+        })?;
 
-    verification_result?;
     info!("data", "stream {stream_id}: integrity check passed");
 
     Ok(())

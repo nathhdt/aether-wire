@@ -15,7 +15,7 @@ pub fn receive_tcp_streams(
     data_listener: &TcpListener,
     n_streams: u16,
     seed: u64,
-    verify: bool,
+    verify: Option<u64>,
 ) -> Result<Vec<TcpStreamStats>> {
     let mut handles = Vec::with_capacity(n_streams as usize);
 
@@ -61,23 +61,17 @@ pub fn receive_tcp_streams(
 pub fn receive_tcp_stream(
     stream_id: u16,
     session_seed: u64,
-    verify: bool,
+    verify: Option<u64>,
     mut sock: TcpStream,
 ) -> Result<TcpStreamStats> {
     // receiving buffer
     let mut buf = vec![0u8; 256 * 1024];
 
-    // buffer verification
-    const MAX_VERIFY_BUFFER: usize = 1024 * 1024 * 1024; // 1 GB hard limit
-
-    let mut received_data = if verify {
-        // pre-allocate 1 GB to avoid initial reallocations
+    let mut received_data = verify.map(|verify_size| {
         let mut v = Vec::new();
-        v.reserve_exact(MAX_VERIFY_BUFFER);
-        Some(v)
-    } else {
-        None
-    };
+        v.reserve_exact(verify_size as usize);
+        v
+    });
 
     // counters
     let mut first: Option<Instant> = None;
@@ -96,11 +90,11 @@ pub fn receive_tcp_stream(
 
                 bytes_received += n as u64;
 
-                // store data up to 1GB limit
-                if let Some(ref mut data) = received_data
-                    && data.len() < MAX_VERIFY_BUFFER
+                // stores data for --verify
+                if let (Some(data), Some(verify_size)) = (&mut received_data, verify)
+                    && data.len() < verify_size as usize
                 {
-                    let remaining = MAX_VERIFY_BUFFER - data.len();
+                    let remaining = verify_size as usize - data.len();
                     let to_store = n.min(remaining);
                     data.extend_from_slice(&buf[..to_store]);
                 }

@@ -90,9 +90,14 @@ pub struct TcpBenchmarkArgs {
     #[arg(short = 'n', long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=32))]
     pub n_streams: u16,
 
-    /// verify data integrity (reduces throughput, use for diagnostics)
-    #[arg(long)]
-    pub verify: bool,
+    /// verify data integrity (default: 1 GiB buffer, single stream only)
+    #[arg(
+        long,
+        num_args = 0..=1,
+        default_missing_value = "1G",
+        value_parser = parser::parse_verify_size
+    )]
+    pub verify: Option<u64>,
 
     /// traffic direction mode
     #[command(flatten)]
@@ -101,7 +106,7 @@ pub struct TcpBenchmarkArgs {
 
 impl TcpBenchmarkArgs {
     pub fn validate(&self) -> anyhow::Result<()> {
-        if self.verify && self.n_streams > 1 {
+        if self.verify.is_some() && self.n_streams > 1 {
             anyhow::bail!("--verify can only be used with a single stream");
         }
         Ok(())

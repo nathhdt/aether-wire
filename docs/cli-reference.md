@@ -52,7 +52,7 @@ aw client benchmark tcp -s 192.168.1.11 -p 9000
 | `-p, --port` | target server port | required |
 | `-t, --time` | benchmark duration (e.g., `10s`, `1m`) | `10s` |
 | `-n, --n-streams` | number of parallel streams (1-128) | `1` |
-| `--verify` | enable payload integrity verification | off |
+| `--verify` | requests payload integrity verification | off |
 
 ### UDP benchmark
 
