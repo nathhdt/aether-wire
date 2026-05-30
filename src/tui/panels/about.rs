@@ -4,12 +4,11 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Style, Stylize},
-    symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, Padding, Paragraph, Wrap},
+    widgets::{Block, Padding, Paragraph, Wrap},
 };
 
-use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_TEXT};
+use crate::utils::format::colors::{R_GREY, R_LAVENDER, R_TEXT};
 
 pub struct AboutPanel;
 
@@ -45,11 +44,8 @@ measurement.",
             .style(Style::default().fg(R_TEXT))
             .block(
                 Block::default()
-                    .borders(Borders::ALL)
-                    .border_set(symbols::border::ROUNDED)
                     .title(" about ".fg(R_LAVENDER))
-                    .border_style(Style::default().fg(R_BLUE))
-                    .padding(Padding::new(2, 2, 0, 0)),
+                    .padding(Padding::new(1, 2, 1, 0)),
             );
 
         frame.render_widget(widget, area);

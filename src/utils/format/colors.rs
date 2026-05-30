@@ -14,6 +14,7 @@ pub const T_RESET: &str = "\x1b[0m";
 
 /// ratatui terminal colors
 pub const R_BLUE: Color = Color::Rgb(137, 180, 250);
+pub const R_DARK_GREY: Color = Color::Rgb(76, 79, 105);
 pub const R_GREY: Color = Color::Rgb(127, 132, 156);
 pub const R_LAVENDER: Color = Color::Rgb(180, 190, 254);
 pub const R_LIGHT_GREY: Color = Color::Rgb(166, 173, 200);

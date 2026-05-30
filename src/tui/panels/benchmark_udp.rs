@@ -13,7 +13,7 @@ use ratatui::{
 use crate::protocol::stats::UdpStreamStats;
 use crate::tui::input::InputField;
 use crate::tui::task::TaskHandle;
-use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER};
+use crate::utils::format::colors::{R_DARK_GREY, R_GREY, R_LAVENDER};
 
 #[allow(dead_code)]
 pub enum BenchmarkUdpEvent {
@@ -91,7 +91,7 @@ impl BenchmarkUdpPanel {
                 .borders(Borders::ALL)
                 .border_set(symbols::border::ROUNDED)
                 .title(" UDP benchmark ".fg(R_LAVENDER))
-                .border_style(Style::default().fg(R_BLUE))
+                .border_style(Style::default().fg(R_DARK_GREY))
                 .padding(Padding::new(2, 2, 0, 0)),
         );
 

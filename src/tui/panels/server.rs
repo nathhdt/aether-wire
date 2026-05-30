@@ -19,7 +19,9 @@ use ratatui::{
 use crate::server::{self, ServerParameters, ServerTuiEvent};
 use crate::tui::input::{InputList, separator, text, toggle};
 use crate::tui::task::TaskHandle;
-use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_LIGHT_GREY, R_PINK, R_RED};
+use crate::utils::format::colors::{
+    R_BLUE, R_DARK_GREY, R_GREY, R_LAVENDER, R_LIGHT_GREY, R_PINK, R_RED,
+};
 use crate::utils::parser;
 
 pub enum ServerPanelState {
@@ -158,11 +160,8 @@ impl ServerPanel {
 
     pub fn draw(&self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
-            .borders(Borders::ALL)
-            .border_set(symbols::border::ROUNDED)
             .title(" server ".fg(R_LAVENDER))
-            .border_style(Style::default().fg(R_BLUE))
-            .padding(Padding::new(2, 2, 1, 0));
+            .padding(Padding::new(1, 2, 1, 0));
 
         let inner = block.inner(area);
         frame.render_widget(block, area);
