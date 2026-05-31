@@ -25,9 +25,14 @@ pub enum Command {
     /// start an aether-wire server
     Server(ServerArgs),
 
-    /// run client operations
-    #[command(subcommand)]
-    Client(ClientCommand),
+    /// TCP throughput benchmark
+    Tcp(TcpBenchmarkArgs),
+
+    /// UDP throughput benchmark
+    Udp(UdpBenchmarkArgs),
+
+    /// run full link qualification pipeline
+    Qualify(QualifyArgs),
 }
 
 /// server arguments
@@ -48,27 +53,6 @@ pub struct ServerArgs {
     /// exit after serving one session
     #[arg(long)]
     pub once: bool,
-}
-
-/// client subcommands
-#[derive(Debug, Subcommand)]
-pub enum ClientCommand {
-    /// run a benchmark (TCP or UDP throughput measurement)
-    #[command(subcommand)]
-    Benchmark(BenchmarkCommand),
-
-    /// run full link qualification pipeline
-    Qualify(QualifyArgs),
-}
-
-/// benchmark subcommands
-#[derive(Debug, Subcommand)]
-pub enum BenchmarkCommand {
-    /// TCP throughput benchmark
-    Tcp(TcpBenchmarkArgs),
-
-    /// UDP throughput benchmark
-    Udp(UdpBenchmarkArgs),
 }
 
 /// TCP benchmark arguments

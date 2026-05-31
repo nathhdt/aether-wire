@@ -9,7 +9,7 @@ aw
 ## command pattern
 
 ```bash
-aw <command> [subcommand] [options]
+aw <command> [options]
 ```
 
 # commands
@@ -37,12 +37,12 @@ terminates the server after the first completed session.
 
 useful for: scripting, CI pipelines, automated benchmark orchestration.
 
-## client
+## tcp
 
-### TCP benchmark
+run a simple TCP benchmark:
 
 ```bash
-aw client benchmark tcp -s 192.168.1.11 -p 9000
+aw tcp -s 192.168.1.11 -p 9000
 ```
 
 #### TCP benchmark options
@@ -55,10 +55,12 @@ aw client benchmark tcp -s 192.168.1.11 -p 9000
 | `-n, --n-streams` | number of parallel streams (1-128) | `1` |
 | `--verify` | requests payload integrity verification | off |
 
-### UDP benchmark
+## udp
+
+run a simple UDP benchmark:
 
 ```bash
-aw client benchmark udp -s 192.168.1.11 -p 9000 -b 50M
+aw udp -s 192.168.1.11 -p 9000 -b 10M
 ```
 
 #### UDP benchmark options
@@ -72,10 +74,10 @@ aw client benchmark udp -s 192.168.1.11 -p 9000 -b 50M
 | `-b, --bandwidth` | target bandwidth (e.g., `1K`, `10M`, `1G`) | required |
 | `-l, --length` | UDP payload size in bytes | `1400` |
 
-### qualify (not yet implemented)
+## qualify (not yet implemented)
 
 automated link qualification. runs a multi-step pipeline to fully profile a network path.
 
 ```bash
-aw client qualify -s 192.168.1.11 -p 9000
+aw qualify -s 192.168.1.11 -p 9000
 ```

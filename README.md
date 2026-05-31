@@ -28,7 +28,7 @@ aw server -p 9000
 ### run a TCP benchmark
 
 ```bash
-aw client benchmark tcp -s 192.168.1.11 -p 9000 -t 10s -n 4
+aw tcp -s 192.168.1.11 -p 9000 -t 10s -n 4
 ```
 
 ### run the TUI
