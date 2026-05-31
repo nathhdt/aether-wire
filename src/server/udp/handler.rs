@@ -4,7 +4,6 @@ use anyhow::Result;
 use std::net::{IpAddr, SocketAddr, TcpStream, UdpSocket};
 use std::sync::mpsc::Sender;
 
-use crate::info;
 use crate::protocol::messages::{Message, SessionStart, SessionStats, UdpBenchmarkConfig};
 use crate::protocol::wire::send_message;
 use crate::server::udp::streams::receive_udp_streams;
@@ -13,7 +12,7 @@ use crate::socket::so_rcvbuf::set_so_rcvbuf;
 use crate::utils::format::bytes_formatting::human_bps;
 use crate::utils::format::report::print_udp_results;
 use crate::utils::system::random::rand_u64;
-use crate::warn;
+use crate::{info, info_noprefix, warn};
 
 /// handles a UDP session
 pub fn handle_udp_session(
@@ -41,11 +40,20 @@ pub fn handle_udp_session(
     let target_bytes = params.udp_recv_buffer as usize;
     match set_so_rcvbuf(&data_udp_sock, target_bytes) {
         Ok(allocated_bytes) => {
-            warn!(
-                "data",
-                "socket receive buffer set to {} KB",
-                allocated_bytes / 1024
-            );
+            if allocated_bytes == target_bytes {
+                info!(
+                    "data",
+                    "socket receive buffer set to {} KB",
+                    allocated_bytes / 1024
+                );
+            } else {
+                warn!(
+                    "data",
+                    "socket receive buffer requested {} KB but OS allocated {} KB",
+                    target_bytes / 1024,
+                    allocated_bytes / 1024
+                );
+            }
         }
         Err(err) => {
             warn!("aw", "failed to configure SO_RCVBUF: {}", err);
@@ -87,6 +95,7 @@ pub fn handle_udp_session(
         let _ = tx.send(ServerTuiEvent::UdpSessionResult(stats.clone()));
     }
 
+    info_noprefix!("");
     info!("ctrl", "session complete");
 
     Ok(())
