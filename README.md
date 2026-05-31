@@ -3,7 +3,7 @@
 native cross-platform E2E network performance and benchmarking tool
 
 <p align="center">
-    <img src="docs/aether-wire.png" alt="aether-wire" width="65%">
+    <img src="docs/aether-wire.gif" alt="aether-wire" width="65%">
 </p>
 
 ## overview
