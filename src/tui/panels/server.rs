@@ -17,6 +17,9 @@ use ratatui::{
 
 use crate::server::{self, ServerParameters, ServerTuiEvent};
 use crate::tui::components::footer::FooterItem;
+use crate::tui::components::spinner::get_spinner_char;
+use crate::tui::format::tcp_benchmark_result::format_tcp_result;
+use crate::tui::format::udp_benchmark_result::format_udp_result;
 use crate::tui::input::{InputList, separator, text, toggle};
 use crate::tui::panels::PanelFooter;
 use crate::tui::task::TaskHandle;
@@ -142,12 +145,12 @@ impl ServerPanel {
                     self.session_start = Some(Instant::now());
                 }
                 ServerTuiEvent::TcpSessionResult { stats, is_sender } => {
-                    for line in crate::tui::format::format_tcp_result_lines(&stats, is_sender) {
+                    for line in format_tcp_result(&stats, is_sender) {
                         self.log.push(line);
                     }
                 }
                 ServerTuiEvent::UdpSessionResult(stats) => {
-                    for line in crate::tui::format::format_udp_result_lines(&stats) {
+                    for line in format_udp_result(&stats) {
                         self.log.push(line);
                     }
                 }
@@ -224,22 +227,7 @@ impl ServerPanel {
 
         // animated dots
         let session_line = if self.session_in_progress {
-            let spinner = match self
-                .session_start
-                .map(|t| (t.elapsed().as_millis() / 80) % 10)
-                .unwrap_or(0)
-            {
-                0 => "⠋",
-                1 => "⠙",
-                2 => "⠹",
-                3 => "⠸",
-                4 => "⠼",
-                5 => "⠴",
-                6 => "⠦",
-                7 => "⠧",
-                8 => "⠇",
-                _ => "⠏",
-            };
+            let spinner = self.session_start.map(get_spinner_char).unwrap_or("⠋");
 
             Paragraph::new(format!("{spinner} session in progress"))
                 .style(Style::default().fg(R_BLUE))

@@ -75,6 +75,7 @@ impl Panels {
     /// true if the active panel has a running background task
     pub fn active_is_busy(&self, selected: usize) -> bool {
         match selected {
+            0 => self.benchmark_tcp.is_busy(),
             3 => self.server.is_busy(),
             _ => false,
         }
