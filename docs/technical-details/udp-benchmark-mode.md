@@ -20,13 +20,13 @@ to preserve deterministic packet pacing and avoid scheduler oversubscription, th
 ## packet format (18-byte header)
 
 ```
-[u16 stream_id][u64 seq_num][u64 timestamp_ns][payload]
+[u16 stream_id][u64 seq_num][u64 timestamp_ns][payload until payload_size]
 ```
 
 ## bandwidth control
 
 ```
-bits_per_packet = (18 + payload_size) × 8
+bits_per_packet = (payload_size) × 8
 interval_ns = 1_000_000_000 / (bandwidth / bits_per_packet)
 ```
 

@@ -137,7 +137,16 @@ fn run_single_udp_stream(
     info!("data", "UDP stream {stream_id} connected to {server_addr}");
 
     // calculate packet timing for bandwidth control
-    let packet_size = HEADER_SIZE + payload_size as usize;
+    let packet_size = payload_size as usize;
+
+    if packet_size < HEADER_SIZE {
+        bail_error!(
+            "data",
+            "stream {stream_id}: payload size must be at least {HEADER_SIZE} bytes"
+        );
+    }
+
+    let data_size = packet_size - HEADER_SIZE;
     let bits_per_packet = (packet_size * 8) as u64;
 
     if bandwidth < bits_per_packet {
@@ -181,12 +190,12 @@ fn run_single_udp_stream(
             packet[10..18].copy_from_slice(&timestamp_ns.to_be_bytes());
 
             // payload: cycle through buffer
-            let payload_offset = (seq_num as usize * payload_size as usize) % payload_buf.len();
+            let payload_offset = (seq_num as usize * data_size) % payload_buf.len();
             let mut payload_written = 0;
 
-            while payload_written < payload_size as usize {
+            while payload_written < data_size {
                 let src_start = (payload_offset + payload_written) % payload_buf.len();
-                let remaining = payload_size as usize - payload_written;
+                let remaining = data_size - payload_written;
                 let to_copy = remaining.min(payload_buf.len() - src_start);
 
                 packet[HEADER_SIZE + payload_written..HEADER_SIZE + payload_written + to_copy]
