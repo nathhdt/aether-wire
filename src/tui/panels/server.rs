@@ -16,7 +16,7 @@ use ratatui::{
 };
 
 use crate::server::{self, ServerParameters, ServerTuiEvent};
-use crate::tui::footer::FooterItem;
+use crate::tui::components::footer::FooterItem;
 use crate::tui::input::{InputList, separator, text, toggle};
 use crate::tui::panels::PanelFooter;
 use crate::tui::task::TaskHandle;

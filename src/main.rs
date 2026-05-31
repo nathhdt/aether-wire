@@ -67,6 +67,6 @@ fn main() -> Result<()> {
         },
 
         // default to TUI
-        None => tui::app::run(),
+        None => tui::runner::run(),
     }
 }

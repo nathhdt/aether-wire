@@ -9,7 +9,9 @@ use ratatui::{
     widgets::{Block, Padding, Paragraph, Wrap},
 };
 
+use crate::tui::components::footer::FooterItem;
 use crate::tui::input::InputField;
+use crate::tui::panels::PanelFooter;
 use crate::tui::task::TaskHandle;
 use crate::utils::format::colors::{R_GREY, R_LAVENDER, R_TEXT};
 
@@ -82,5 +84,11 @@ impl QualifyPanel {
             );
 
         frame.render_widget(widget, area);
+    }
+}
+
+impl PanelFooter for QualifyPanel {
+    fn footer_items(&self) -> Vec<FooterItem> {
+        vec![]
     }
 }

@@ -10,7 +10,9 @@ use ratatui::{
 };
 
 use crate::protocol::stats::TcpStreamStats;
+use crate::tui::components::footer::FooterItem;
 use crate::tui::input::InputField;
+use crate::tui::panels::PanelFooter;
 use crate::tui::task::TaskHandle;
 use crate::utils::format::colors::{R_GREY, R_LAVENDER, R_TEXT};
 
@@ -88,5 +90,11 @@ impl BenchmarkTcpPanel {
             );
 
         frame.render_widget(widget, area);
+    }
+}
+
+impl PanelFooter for BenchmarkTcpPanel {
+    fn footer_items(&self) -> Vec<FooterItem> {
+        vec![]
     }
 }

@@ -15,7 +15,7 @@ use benchmark_udp::BenchmarkUdpPanel;
 use qualify::QualifyPanel;
 use server::ServerPanel;
 
-use crate::tui::footer::FooterItem;
+use crate::tui::components::footer::FooterItem;
 
 /// panel instances
 pub struct Panels {
@@ -95,23 +95,4 @@ impl Panels {
 /// panels that contribute footer items implement this
 pub trait PanelFooter {
     fn footer_items(&self) -> Vec<FooterItem>;
-}
-
-// stub impls for panels not yet implemented
-impl PanelFooter for BenchmarkTcpPanel {
-    fn footer_items(&self) -> Vec<FooterItem> {
-        vec![]
-    }
-}
-
-impl PanelFooter for BenchmarkUdpPanel {
-    fn footer_items(&self) -> Vec<FooterItem> {
-        vec![]
-    }
-}
-
-impl PanelFooter for QualifyPanel {
-    fn footer_items(&self) -> Vec<FooterItem> {
-        vec![]
-    }
 }
