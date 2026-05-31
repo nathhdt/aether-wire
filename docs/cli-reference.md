@@ -28,6 +28,7 @@ aw server -p 9000
 |---|---|---|
 | `-b, --bind` | bind address | `0.0.0.0` |
 | `-p, --port` | listening port | required |
+| `--udp-recv-buffer` | UDP receiving buffer size | `16M` |
 | `--once` | exit after serving one session | off |
 
 ### `--once`
