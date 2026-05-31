@@ -96,15 +96,13 @@ pub fn run_udp_benchmark(
     // wait for all threads to be ready
     barrier.wait();
 
-    warn!("data", "all {} UDP stream(s) ready, sending...", n_streams);
+    info!("aw", "all {} UDP stream(s) ready, sending...", n_streams);
 
     // wait for benchmark duration
     thread::sleep(duration);
 
     // signal end of benchmark
     stop.store(true, Ordering::Relaxed);
-
-    info!("data", "all UDP streams done");
 
     // collect stats from threads
     let mut client_stats: Vec<UdpStreamStats> = Vec::with_capacity(handles.len());

@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use crate::protocol::stats::TcpStreamStats;
 use crate::socket::tcp_maxseg::get_tcp_maxseg;
 use crate::utils::payload;
-use crate::{bail_error, info, warn};
+use crate::{bail_error, info};
 
 /// runs a multi-stream TCP benchmark
 pub fn run_tcp_benchmark(
@@ -48,8 +48,8 @@ pub fn run_tcp_benchmark(
     // waits for all threads to be ready
     barrier.wait();
 
-    warn!(
-        "data",
+    info!(
+        "aw",
         "all {} TCP stream(s) connected, session in progress...", n_streams
     );
 
@@ -58,8 +58,6 @@ pub fn run_tcp_benchmark(
 
     // signals end of benchmark for all threads
     stop.store(true, Ordering::Relaxed);
-
-    info!("data", "all TCP streams done");
 
     // gets statistics from threads
     let mut client_stats: Vec<TcpStreamStats> = Vec::with_capacity(handles.len());
@@ -87,12 +85,12 @@ fn run_single_tcp_stream(
     // data channel session establishment
     let mut data_sock = TcpStream::connect(data_addr)?;
 
+    // TCP stream info
+    info!("data", "TCP stream {stream_id} connected to {data_addr}");
+
     // TCP_MAXSEG info
     let mss = get_tcp_maxseg(&data_sock)?;
-    info!(
-        "data",
-        "TCP stream {stream_id} connected to {data_addr}, MSS = {mss}"
-    );
+    info!("data", "MSS = {mss}");
 
     // stream_id send through the wire before any benchmark starts
     data_sock.write_all(&stream_id.to_be_bytes())?;

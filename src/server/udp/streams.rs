@@ -7,7 +7,7 @@ use crate::protocol::stats::UdpStreamStats;
 use crate::server::udp::statistics::{StreamStatistics, compute_stats};
 use crate::server::udp::timestamp_recv::TimestampReceiver;
 use crate::utils::globals::UDP_STREAM_IDLE_TIMEOUT_MS;
-use crate::warn;
+use crate::{info, warn};
 
 /// receives UDP streams from client
 pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpStreamStats>> {
@@ -21,10 +21,12 @@ pub fn receive_udp_streams(sock: &UdpSocket, n_streams: u16) -> Result<Vec<UdpSt
     // enables kernel-level timestamps
     let (receiver, kernel_ts) = TimestampReceiver::new(sock);
     if !kernel_ts {
-        warn!("aw", "could not enable kernel-level timestamp")
+        warn!("aw", "could not enable kernel-level receiving timestamps")
+    } else {
+        info!("aw", "kernel-level receiving timestamps enabled")
     }
 
-    warn!("data", "waiting for UDP packets...");
+    info!("data", "waiting for UDP packets...");
 
     sock.set_read_timeout(Some(std::time::Duration::from_millis(
         UDP_STREAM_IDLE_TIMEOUT_MS,

@@ -15,7 +15,7 @@ use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::utils::format::bytes_formatting::human_bytes;
 use crate::utils::format::report::print_tcp_results;
 use crate::utils::system::random::rand_u64;
-use crate::{bail_error, info, warn};
+use crate::{bail_error, info, info_noprefix, warn};
 
 /// handles a TCP session
 pub fn handle_tcp_session(
@@ -26,7 +26,7 @@ pub fn handle_tcp_session(
     tui_tx: Option<Sender<ServerTuiEvent>>,
 ) -> Result<()> {
     info!(
-        "ctrl",
+        "aw",
         "client {} asked for a TCP session ({} stream(s), {}s, direction: {})",
         ctrl_client,
         config.n_streams,
@@ -89,7 +89,7 @@ pub fn handle_tcp_session(
             }
         };
 
-    info!("data", "session complete");
+    info!("aw", "session complete");
 
     // sends stats back to the client
     send_message(
@@ -99,7 +99,7 @@ pub fn handle_tcp_session(
             download: download_stats.clone(),
         }),
     )?;
-    info!("ctrl", "session statistics sent to the client");
+    info!("aw", "session statistics sent to the client");
 
     if let Some(ref stats) = upload_stats {
         print_tcp_results("receiver (server)", stats, false);
@@ -120,7 +120,7 @@ pub fn handle_tcp_session(
         }
     }
 
-    info!("ctrl", "session complete");
+    info_noprefix!("");
 
     Ok(())
 }

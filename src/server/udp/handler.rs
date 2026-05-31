@@ -23,7 +23,7 @@ pub fn handle_udp_session(
     tui_tx: Option<Sender<ServerTuiEvent>>,
 ) -> Result<()> {
     info!(
-        "ctrl",
+        "aw",
         "client {} asked for a UDP session ({} stream(s), {}s, {})",
         ctrl_client,
         config.n_streams,
@@ -42,13 +42,13 @@ pub fn handle_udp_session(
         Ok(allocated_bytes) => {
             if allocated_bytes == target_bytes {
                 info!(
-                    "data",
+                    "aw",
                     "socket receive buffer set to {} KB",
                     allocated_bytes / 1024
                 );
             } else {
                 warn!(
-                    "data",
+                    "aw",
                     "socket receive buffer requested {} KB but OS allocated {} KB",
                     target_bytes / 1024,
                     allocated_bytes / 1024
@@ -77,7 +77,7 @@ pub fn handle_udp_session(
     // receive UDP packets
     let stats = receive_udp_streams(&data_udp_sock, config.n_streams)?;
 
-    info!("ctrl", "session complete");
+    info!("aw", "session complete");
 
     // send stats back to client
     send_message(
@@ -87,7 +87,7 @@ pub fn handle_udp_session(
             download: None,
         }),
     )?;
-    info!("ctrl", "session statistics sent to the client");
+    info!("aw", "session statistics sent to the client");
 
     // print results server-side
     print_udp_results("receiver (server)", &stats, false);
@@ -96,7 +96,6 @@ pub fn handle_udp_session(
     }
 
     info_noprefix!("");
-    info!("ctrl", "session complete");
 
     Ok(())
 }

@@ -23,19 +23,19 @@ pub fn run(args: QualifyParameters) -> Result<()> {
     tcp_probe::tcp_probe(args.server, args.port)?;
 
     // TODO: step 2: MTU sweep
-    warn!("qualify", "step 2: MTU sweep (not yet implemented)");
+    warn!("qualify - s2", "step 2: MTU sweep (not yet implemented)");
 
     // TODO: step 3: health check
-    warn!("qualify", "step 3: health check (not yet implemented)");
+    warn!("qualify - s3", "step 3: health check (not yet implemented)");
 
     // TODO: step 4: stress test
-    warn!("qualify", "step 4: stress test (not yet implemented)");
+    warn!("qualify - s4", "step 4: stress test (not yet implemented)");
 
     // TODO: step 5: report
-    warn!("qualify", "step 5: report (not yet implemented)");
+    warn!("qualify - s5", "step 5: report (not yet implemented)");
 
     // TODO: step 6: diagnostic
-    warn!("qualify", "step 6: diagnostic (not yet implemented)");
+    warn!("qualify - s6", "step 6: diagnostic (not yet implemented)");
 
     if args.export_json {
         info!("qualify", "JSON export will be implemented in step 6");

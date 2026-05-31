@@ -8,7 +8,8 @@ use std::time::Instant;
 
 use crate::protocol::stats::TcpStreamStats;
 use crate::server::tcp::verify;
-use crate::{bail_error, info, warn};
+use crate::socket::tcp_maxseg::get_tcp_maxseg;
+use crate::{bail_error, info};
 
 /// receives TCP streams (client -> server)
 pub fn receive_tcp_streams(
@@ -28,7 +29,12 @@ pub fn receive_tcp_streams(
         data_sock.read_exact(&mut id_bytes)?;
         let stream_id = u16::from_be_bytes(id_bytes);
 
+        // TCP stream info
         info!("data", "stream {stream_id} connected from {client}");
+
+        // TCP_MAXSEG info
+        let mss = get_tcp_maxseg(&data_sock)?;
+        info!("data", "MSS = {mss}");
 
         let session_seed = seed;
 
@@ -38,7 +44,7 @@ pub fn receive_tcp_streams(
         handles.push(handle);
     }
 
-    warn!(
+    info!(
         "data",
         "all {} stream(s) connected, session in progress...", n_streams
     );

@@ -12,10 +12,10 @@ use crate::utils::format::bytes_formatting::human_bps;
 
 /// runs TCP probe to establish reference throughput (Tref)
 pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
-    info!("qualify", "step 1: TCP probe");
+    info!("qualify - s1", "step 1: TCP probe");
 
     // test 1: single stream
-    info!("qualify", "  running single stream test (15s)...");
+    info!("qualify - s1", "running single stream test (15s)...");
     let single_params = TcpBenchmarkParameters {
         server,
         port,
@@ -30,13 +30,16 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
         calculate_throughput(&single_server_stats.expect("server should return stats"))?;
 
     info!(
-        "qualify",
-        "  single stream: {}",
+        "qualify - s1",
+        "single stream: {}",
         human_bps(throughput_single)
     );
 
     // test 2: multi stream
-    info!("qualify", "  running multi stream test (4 streams, 15s)...");
+    info!(
+        "qualify - s1",
+        "running multi stream test (4 streams, 15s)..."
+    );
     let multi_params = TcpBenchmarkParameters {
         server,
         port,
@@ -50,17 +53,21 @@ pub fn tcp_probe(server: Ipv4Addr, port: u16) -> Result<f64> {
     let throughput_multi =
         calculate_throughput(&multi_server_stats.expect("server should return stats"))?;
 
-    info!("qualify", "  multi stream: {}", human_bps(throughput_multi));
+    info!(
+        "qualify - s1",
+        "multi stream: {}",
+        human_bps(throughput_multi)
+    );
 
     // Tref calculation
     let vref = throughput_single.max(throughput_multi);
 
     info!(
-        "qualify",
-        "  Tref = {} (reference throughput established)",
+        "qualify - s1",
+        "Tref = {} (reference throughput established)",
         human_bps(vref)
     );
-    info!("qualify", "step 1 complete");
+    info!("qualify - s1", "step 1 complete");
 
     Ok(vref)
 }

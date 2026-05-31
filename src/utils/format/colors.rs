@@ -2,16 +2,6 @@
 
 use ratatui::style::Color;
 
-/// ANSI terminal colors and style attributes
-pub const T_BLUE: &str = "\x1b[38;2;137;180;250m";
-pub const T_MAROON: &str = "\x1b[38;2;235;160;172m";
-pub const T_PINK: &str = "\x1b[38;2;245;194;231m";
-pub const T_RED: &str = "\x1b[91m";
-
-pub const T_BOLD: &str = "\x1b[1m";
-pub const T_NO_BOLD: &str = "\x1b[22m";
-pub const T_RESET: &str = "\x1b[0m";
-
 /// ratatui terminal colors
 pub const R_BLUE: Color = Color::Rgb(137, 180, 250);
 pub const R_DARK_GREY: Color = Color::Rgb(76, 79, 105);

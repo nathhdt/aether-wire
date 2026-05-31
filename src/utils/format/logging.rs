@@ -3,8 +3,6 @@
 use chrono::Local;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::utils::format::colors::*;
-
 pub enum LogLevel {
     Info,
     Warn,
@@ -18,30 +16,26 @@ pub fn set_tui_mode(enabled: bool) {
     TUI_MODE.store(enabled, Ordering::Relaxed);
 }
 
-pub fn is_tui_mode() -> bool {
-    TUI_MODE.load(Ordering::Relaxed)
-}
-
 /// internal method to generate formatted log
 pub fn log_message(level: LogLevel, prefix: Option<&str>, message: String) {
     if TUI_MODE.load(Ordering::Relaxed) {
         return;
     }
 
-    let color = match level {
-        LogLevel::Info => T_BLUE,
-        LogLevel::Warn => T_PINK,
-        LogLevel::Error => T_RED,
+    let level = match level {
+        LogLevel::Info => "INFO",
+        LogLevel::Warn => "WARN",
+        LogLevel::Error => "ERROR",
     };
 
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
 
     match prefix {
         Some(prefix) => {
-            println!("{color}{timestamp} [{prefix}] {message}{T_RESET}");
+            println!("{timestamp} - {level} - {prefix} - {message}");
         }
         None => {
-            println!("{color}{timestamp} {message}{T_RESET}");
+            println!("{timestamp} - {level} - {message}");
         }
     }
 }

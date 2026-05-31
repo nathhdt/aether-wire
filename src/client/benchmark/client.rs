@@ -46,8 +46,8 @@ pub fn run_tcp(args: TcpBenchmarkParameters) -> Result<()> {
     // runs benchmark and gets stats
     let (upload_stats, server_stats) = run_tcp_internal(args)?;
 
-    info!("ctrl", "TCP session done");
-    info!("ctrl", "session statistics received from the server");
+    info!("aw", "TCP session complete");
+    info!("aw", "session statistics received from the server");
 
     // result print
     if let (Some(client_up), Some(server_up)) = (&upload_stats, &server_stats) {
@@ -68,8 +68,8 @@ fn run_tcp_internal(args: TcpBenchmarkParameters) -> Result<TcpBenchmarkResult> 
     // control channel session establishment
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.server), args.port);
     let mut ctrl_sock = TcpStream::connect(ctrl_addr)?;
-    info!("ctrl", "connected to {}:{}", args.server, args.port);
-    info!("ctrl", "direction: {}", args.direction.description());
+    info!("aw", "connected to {}:{}", args.server, args.port);
+    info!("aw", "direction: {}", args.direction.description());
 
     // hello message with protocol
     let hello = Message::Hello(Hello {
@@ -125,8 +125,8 @@ pub fn run_udp(args: UdpBenchmarkParameters) -> Result<()> {
     // runs benchmark and gets stats
     let (upload_stats, server_stats) = run_udp_internal(args)?;
 
-    info!("ctrl", "UDP session done");
-    info!("ctrl", "session statistics received from the server");
+    info!("aw", "UDP session complete");
+    info!("aw", "session statistics received from the server");
 
     // result print
     if let (Some(client_up), Some(server_up)) = (&upload_stats, &server_stats) {
@@ -148,9 +148,9 @@ fn run_udp_internal(args: UdpBenchmarkParameters) -> Result<UdpBenchmarkResult> 
     // control channel session establishment
     let ctrl_addr = SocketAddr::new(IpAddr::V4(args.server), args.port);
     let mut ctrl_sock = TcpStream::connect(ctrl_addr)?;
-    info!("ctrl", "connected to {}:{}", args.server, args.port);
+    info!("aw", "connected to {}:{}", args.server, args.port);
     info!(
-        "ctrl",
+        "aw",
         "target bandwidth: {}, payload size: {} bytes",
         human_bps(args.bandwidth as f64),
         args.payload_size
