@@ -12,7 +12,7 @@ use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::socket::so_rcvbuf::set_so_rcvbuf;
 use crate::utils::format::bytes_formatting::human_bps;
 use crate::utils::format::report::print_udp_results;
-use crate::utils::random::rand_u64;
+use crate::utils::system::random::rand_u64;
 use crate::warn;
 
 /// handles a UDP session

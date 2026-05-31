@@ -14,7 +14,7 @@ use crate::server::tcp::streams::receive_tcp_streams;
 use crate::server::{ServerParameters, ServerTuiEvent};
 use crate::utils::format::bytes_formatting::human_bytes;
 use crate::utils::format::report::print_tcp_results;
-use crate::utils::random::rand_u64;
+use crate::utils::system::random::rand_u64;
 use crate::{bail_error, info, warn};
 
 /// handles a TCP session
