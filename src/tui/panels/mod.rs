@@ -1,19 +1,19 @@
 //! TUI panels
 
 pub mod about;
-pub mod benchmark_tcp;
-pub mod benchmark_udp;
 pub mod qualify;
 pub mod server;
+pub mod tcp_benchmark;
+pub mod udp_benchmark;
 
 use crossterm::event::KeyCode;
 use ratatui::{Frame, layout::Rect};
 
 use about::AboutPanel;
-use benchmark_tcp::BenchmarkTcpPanel;
-use benchmark_udp::BenchmarkUdpPanel;
 use qualify::QualifyPanel;
 use server::ServerPanel;
+use tcp_benchmark::BenchmarkTcpPanel;
+use udp_benchmark::BenchmarkUdpPanel;
 
 use crate::tui::components::footer::FooterItem;
 

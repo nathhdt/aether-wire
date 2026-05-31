@@ -80,7 +80,7 @@ impl QualifyPanel {
             .block(
                 Block::default()
                     .title(Line::from(" qualify ").fg(R_LAVENDER).bold())
-                    .padding(Padding::new(1, 2, 1, 0)),
+                    .padding(Padding::new(1, 3, 1, 0)),
             );
 
         frame.render_widget(widget, area);

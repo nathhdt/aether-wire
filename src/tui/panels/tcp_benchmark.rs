@@ -19,6 +19,7 @@ use crate::client::benchmark::client::{TcpBenchmarkParameters, run_tcp_silent};
 use crate::protocol::messages::Direction as BenchmarkDirection;
 use crate::protocol::stats::TcpStreamStats;
 use crate::tui::components::footer::FooterItem;
+use crate::tui::components::progress_bar::ProgressBar;
 use crate::tui::components::spinner::get_spinner_char;
 use crate::tui::format::tcp_benchmark_result::format_tcp_result;
 use crate::tui::input::{InputKind, InputList, PanelInputEntry, separator, text, toggle};
@@ -228,7 +229,7 @@ impl BenchmarkTcpPanel {
     pub fn draw(&self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .title(Line::from(" TCP benchmark ").fg(R_LAVENDER).bold())
-            .padding(Padding::new(1, 2, 1, 0));
+            .padding(Padding::new(1, 3, 1, 0));
 
         let inner = block.inner(area);
         frame.render_widget(block, area);
@@ -267,7 +268,7 @@ impl BenchmarkTcpPanel {
         frame: &mut Frame,
         area: Rect,
         start: Instant,
-        _duration: Duration,
+        duration: Duration,
         server: Ipv4Addr,
         port: u16,
     ) {
@@ -276,11 +277,17 @@ impl BenchmarkTcpPanel {
             .constraints([
                 Constraint::Length(1),
                 Constraint::Length(1),
+                Constraint::Length(1),
+                Constraint::Length(1),
                 Constraint::Min(0),
             ])
             .split(area);
 
         let spinner = get_spinner_char(start);
+
+        let elapsed = start.elapsed();
+        let total = duration;
+        let ratio = (elapsed.as_secs_f64() / total.as_secs_f64()).clamp(0.0, 1.0);
 
         frame.render_widget(
             Paragraph::new(format!("* sending to {server}:{port}"))
@@ -292,6 +299,14 @@ impl BenchmarkTcpPanel {
             Paragraph::new(format!("{spinner} session in progress"))
                 .style(Style::default().fg(R_BLUE)),
             chunks[1],
+        );
+
+        // unicode progress bar
+        frame.render_widget(
+            ProgressBar::new(ratio)
+                .style(Style::default().fg(R_LAVENDER))
+                .percent_style(Style::default().fg(R_BLUE)),
+            chunks[3],
         );
     }
 

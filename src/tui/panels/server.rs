@@ -65,7 +65,7 @@ impl ServerPanel {
                 separator(),
                 text("UDP recv. buffer", "16M", "16M", true),
                 separator(),
-                toggle("once", "once", false, true),
+                toggle("once", "once", false, false),
             ]),
             task: None,
             log: Vec::new(),
@@ -182,7 +182,7 @@ impl ServerPanel {
     pub fn draw(&self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .title(Line::from(" server ").fg(R_LAVENDER).bold())
-            .padding(Padding::new(1, 2, 1, 0));
+            .padding(Padding::new(1, 3, 1, 0));
 
         let inner = block.inner(area);
         frame.render_widget(block, area);
