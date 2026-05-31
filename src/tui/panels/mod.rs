@@ -15,6 +15,8 @@ use benchmark_udp::BenchmarkUdpPanel;
 use qualify::QualifyPanel;
 use server::ServerPanel;
 
+use crate::tui::footer::FooterItem;
+
 /// panel instances
 pub struct Panels {
     pub benchmark_tcp: BenchmarkTcpPanel,
@@ -35,7 +37,7 @@ impl Panels {
         }
     }
 
-    /// polls active panel's background task for events
+    /// polls active panel's events
     pub fn poll_active(&mut self, selected: usize) {
         match selected {
             0 => self.benchmark_tcp.poll_task(),
@@ -68,5 +70,48 @@ impl Panels {
             4 => self.about.draw(frame, area),
             _ => {}
         }
+    }
+
+    /// true if the active panel has a running background task
+    pub fn active_is_busy(&self, selected: usize) -> bool {
+        match selected {
+            3 => self.server.is_busy(),
+            _ => false,
+        }
+    }
+
+    /// returns the footer items for the active panel
+    pub fn active_footer_items(&self, selected: usize) -> Vec<FooterItem> {
+        match selected {
+            0 => self.benchmark_tcp.footer_items(),
+            1 => self.benchmark_udp.footer_items(),
+            2 => self.qualify.footer_items(),
+            3 => self.server.footer_items(),
+            _ => vec![],
+        }
+    }
+}
+
+/// panels that contribute footer items implement this
+pub trait PanelFooter {
+    fn footer_items(&self) -> Vec<FooterItem>;
+}
+
+// stub impls for panels not yet implemented
+impl PanelFooter for BenchmarkTcpPanel {
+    fn footer_items(&self) -> Vec<FooterItem> {
+        vec![]
+    }
+}
+
+impl PanelFooter for BenchmarkUdpPanel {
+    fn footer_items(&self) -> Vec<FooterItem> {
+        vec![]
+    }
+}
+
+impl PanelFooter for QualifyPanel {
+    fn footer_items(&self) -> Vec<FooterItem> {
+        vec![]
     }
 }

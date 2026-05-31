@@ -7,21 +7,20 @@ use std::thread;
 use std::time::Instant;
 
 use crossterm::event::KeyCode;
-use ratatui::symbols;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, Padding, Paragraph},
+    widgets::{Block, Padding, Paragraph},
 };
 
 use crate::server::{self, ServerParameters, ServerTuiEvent};
+use crate::tui::footer::FooterItem;
 use crate::tui::input::{InputList, separator, text, toggle};
+use crate::tui::panels::PanelFooter;
 use crate::tui::task::TaskHandle;
-use crate::utils::format::colors::{
-    R_BLUE, R_DARK_GREY, R_GREY, R_LAVENDER, R_LIGHT_GREY, R_PINK, R_RED,
-};
+use crate::utils::format::colors::{R_BLUE, R_GREY, R_LAVENDER, R_PINK, R_RED};
 use crate::utils::parser;
 
 pub enum ServerPanelState {
@@ -39,6 +38,20 @@ pub struct ServerPanel {
     pub session_start: Option<Instant>,
 }
 
+impl PanelFooter for ServerPanel {
+    fn footer_items(&self) -> Vec<FooterItem> {
+        match &self.state {
+            ServerPanelState::Idle => vec![
+                FooterItem::new("enter", "start"),
+                FooterItem::new("tab", "switch field"),
+                FooterItem::new("space", "toggle"),
+            ],
+            ServerPanelState::Running { .. } => vec![FooterItem::new("esc", "stop server")],
+            ServerPanelState::Error(_) => vec![FooterItem::new("esc", "back to idle")],
+        }
+    }
+}
+
 impl ServerPanel {
     pub fn new() -> Self {
         Self {
@@ -48,13 +61,18 @@ impl ServerPanel {
                 text("port", "", "9000", true),
                 separator(),
                 text("UDP recv. buffer", "16M", "16M", true),
-                toggle("once", "once", false, false),
+                separator(),
+                toggle("once", "once", false, true),
             ]),
             task: None,
             log: Vec::new(),
             session_in_progress: false,
             session_start: None,
         }
+    }
+
+    pub fn is_busy(&self) -> bool {
+        matches!(self.state, ServerPanelState::Running { .. })
     }
 
     pub fn on_key(&mut self, key: KeyCode) {
@@ -92,7 +110,7 @@ impl ServerPanel {
                         ("port", KeyCode::Char(c)) => {
                             c.is_ascii_digit() && self.inputs.get_text("port").len() < 5
                         }
-                        _ => true, // backspace, arrows, tab, space on toggle
+                        _ => true,
                     };
 
                     if valid {
@@ -160,7 +178,7 @@ impl ServerPanel {
 
     pub fn draw(&self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
-            .title(" server ".fg(R_LAVENDER))
+            .title(Line::from(" server ").fg(R_LAVENDER).bold())
             .padding(Padding::new(1, 2, 1, 0));
 
         let inner = block.inner(area);
@@ -177,8 +195,7 @@ impl ServerPanel {
         let n = self.inputs.visible_count();
 
         let mut constraints: Vec<Constraint> = (0..n).map(|_| Constraint::Length(1)).collect();
-        constraints.push(Constraint::Min(0)); // spacer
-        constraints.push(Constraint::Length(1)); // hint
+        constraints.push(Constraint::Min(0));
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -186,18 +203,6 @@ impl ServerPanel {
             .split(area);
 
         self.inputs.draw(frame, &chunks[..n], 18);
-
-        frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                Span::styled("enter", Style::default().fg(R_LIGHT_GREY)),
-                Span::styled(" start • ", Style::default().fg(R_GREY)),
-                Span::styled("tab", Style::default().fg(R_LIGHT_GREY)),
-                Span::styled(" switch field • ", Style::default().fg(R_GREY)),
-                Span::styled("space", Style::default().fg(R_LIGHT_GREY)),
-                Span::styled(" toggle selection", Style::default().fg(R_GREY)),
-            ])),
-            chunks[n + 1],
-        );
     }
 
     fn draw_running(&self, frame: &mut Frame, area: Rect, addr: &str) {
@@ -208,8 +213,6 @@ impl ServerPanel {
                 Constraint::Length(1),
                 Constraint::Length(1),
                 Constraint::Min(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
             ])
             .split(area);
 
@@ -238,7 +241,7 @@ impl ServerPanel {
                 _ => "⠏",
             };
 
-            Paragraph::new(format!("  {spinner} session in progress"))
+            Paragraph::new(format!("{spinner} session in progress"))
                 .style(Style::default().fg(R_BLUE))
         } else {
             Paragraph::new("  waiting for connection").style(Style::default().fg(R_GREY))
@@ -258,14 +261,6 @@ impl ServerPanel {
             .collect();
 
         frame.render_widget(Paragraph::new(log_lines), chunks[3]);
-
-        frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                Span::styled("esc", Style::default().fg(R_LIGHT_GREY)),
-                Span::styled(" stop server", Style::default().fg(R_GREY)),
-            ])),
-            chunks[5],
-        );
     }
 
     fn draw_error(&self, frame: &mut Frame, area: Rect, err: &str) {
@@ -276,13 +271,11 @@ impl ServerPanel {
                 Constraint::Length(1),
                 Constraint::Length(1),
                 Constraint::Min(1),
-                Constraint::Length(1),
             ])
             .split(area);
 
         frame.render_widget(
-            Paragraph::new("server error")
-                .style(Style::default().fg(R_RED).add_modifier(Modifier::BOLD)),
+            Paragraph::new("error").style(Style::default().fg(R_RED).add_modifier(Modifier::BOLD)),
             chunks[0],
         );
 
@@ -300,14 +293,6 @@ impl ServerPanel {
             .map(|s| Line::from(Span::styled(s.as_str(), Style::default().fg(R_GREY))))
             .collect();
         frame.render_widget(Paragraph::new(log_lines), chunks[3]);
-
-        frame.render_widget(
-            Paragraph::new(Line::from(vec![
-                Span::styled("esc", Style::default().fg(R_LIGHT_GREY)),
-                Span::styled(" back to idle", Style::default().fg(R_GREY)),
-            ])),
-            chunks[4],
-        );
     }
 
     fn start(&mut self) {
@@ -368,7 +353,6 @@ impl ServerPanel {
         });
 
         self.task = Some(TaskHandle::new(stop, thread, rx));
-        // state transitions when event arrives in poll_task
     }
 
     fn stop(&mut self) {

@@ -2,15 +2,15 @@
 
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style, Stylize},
-    symbols,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Padding, Paragraph},
+    widgets::{List, ListItem, Paragraph},
 };
 
 use crate::tui::app::{App, MENU_ITEMS};
-use crate::utils::format::colors::{R_BLUE, R_DARK_GREY, R_GREY, R_LAVENDER, R_LIGHT_GREY};
+use crate::tui::footer::{FooterItem, draw_footer};
+use crate::utils::format::colors::{R_BLUE, R_DARK_GREY, R_GREY, R_LAVENDER};
 
 /// draws top level TUI layout
 pub fn draw(frame: &mut Frame, app: &App) {
@@ -31,17 +31,19 @@ pub fn draw(frame: &mut Frame, app: &App) {
     draw_header(frame, layout[0]);
     draw_sidebar(frame, body[0], app);
     draw_content(frame, body[1], app);
-    draw_footer(frame, layout[2]);
+    draw_footer_bar(frame, layout[2], app);
 }
 
 /// header
 fn draw_header(frame: &mut Frame, area: Rect) {
-    let chunks = Layout::vertical([
-        Constraint::Length(1),
-        Constraint::Length(1),
-        Constraint::Length(1),
-    ])
-    .split(area);
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ])
+        .split(area);
 
     let border_style = Style::default().fg(R_DARK_GREY);
 
@@ -79,14 +81,16 @@ fn draw_header(frame: &mut Frame, area: Rect) {
 
 /// navigation sidebar
 fn draw_sidebar(frame: &mut Frame, area: Rect, app: &App) {
-    let chunks = Layout::vertical([
-        Constraint::Length(1), // bordure haute
-        Constraint::Length(1), // ligne vide
-        Constraint::Length(MENU_ITEMS.len() as u16),
-        Constraint::Length(1), // bordure basse
-        Constraint::Min(0),    // reste vide
-    ])
-    .split(area);
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1), // top border
+            Constraint::Length(1), // empty line
+            Constraint::Length(MENU_ITEMS.len() as u16),
+            Constraint::Length(1), // bottom border
+            Constraint::Min(0),    // remainder
+        ])
+        .split(area);
 
     let top_border = Line::from(vec![
         Span::styled("╭─ ", Style::default().fg(R_DARK_GREY)),
@@ -119,12 +123,13 @@ fn draw_sidebar(frame: &mut Frame, area: Rect, app: &App) {
 
     frame.render_widget(List::new(items), chunks[2]);
 
-    let bottom_border = Span::styled(
-        format!("╰{}╯", "─".repeat(area.width.saturating_sub(2) as usize)),
-        Style::default().fg(R_DARK_GREY),
+    frame.render_widget(
+        Paragraph::new(Span::styled(
+            format!("╰{}╯", "─".repeat(area.width.saturating_sub(2) as usize)),
+            Style::default().fg(R_DARK_GREY),
+        )),
+        chunks[4],
     );
-
-    frame.render_widget(Paragraph::new(bottom_border), chunks[4]);
 }
 
 /// dispatches content rendering to the active panel
@@ -133,21 +138,26 @@ fn draw_content(frame: &mut Frame, area: Rect, app: &App) {
         x: area.x + 3,
         y: area.y + 1,
         width: area.width.saturating_sub(2),
-        height: area.height.saturating_sub(2),
+        height: area.height.saturating_sub(3),
     };
 
     app.panels.draw_active(frame, app.selected_menu, area);
 }
 
-/// TUI footer
-fn draw_footer(frame: &mut Frame, area: Rect) {
-    let footer = Paragraph::new(Line::from(vec![
-        Span::styled("↑↓", Style::default().fg(R_LIGHT_GREY)),
-        Span::styled(" menu • ", Style::default().fg(R_GREY)),
-        Span::styled("q", Style::default().fg(R_LIGHT_GREY)),
-        Span::styled(" quit", Style::default().fg(R_GREY)),
-    ]))
-    .alignment(Alignment::Center);
+/// renders footer bar
+fn draw_footer_bar(frame: &mut Frame, area: Rect, app: &App) {
+    let nav_enabled = !app.panels.active_is_busy(app.selected_menu);
 
-    frame.render_widget(footer, area);
+    let mut items = vec![
+        FooterItem {
+            key: "↑↓",
+            label: "menu",
+            enabled: nav_enabled,
+        },
+        FooterItem::new("q", "quit"),
+    ];
+
+    items.extend(app.panels.active_footer_items(app.selected_menu));
+
+    draw_footer(frame, area, &items);
 }

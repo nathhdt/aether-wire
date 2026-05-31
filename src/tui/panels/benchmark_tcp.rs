@@ -5,15 +5,14 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Style, Stylize},
-    symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, Padding, Paragraph, Wrap},
+    widgets::{Block, Padding, Paragraph, Wrap},
 };
 
 use crate::protocol::stats::TcpStreamStats;
 use crate::tui::input::InputField;
 use crate::tui::task::TaskHandle;
-use crate::utils::format::colors::{R_DARK_GREY, R_GREY, R_LAVENDER};
+use crate::utils::format::colors::{R_GREY, R_LAVENDER, R_TEXT};
 
 #[allow(dead_code)]
 pub enum BenchmarkTcpEvent {
@@ -74,22 +73,19 @@ impl BenchmarkTcpPanel {
     }
 
     pub fn draw(&self, frame: &mut Frame, area: Rect) {
-        let text = vec![
-            Line::from(""),
-            Line::from(Span::styled(
-                "not implemented yet",
-                Style::default().fg(R_GREY),
-            )),
-        ];
+        let text = vec![Line::from(Span::styled(
+            "not implemented yet",
+            Style::default().fg(R_GREY),
+        ))];
 
-        let widget = Paragraph::new(text).wrap(Wrap { trim: true }).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_set(symbols::border::ROUNDED)
-                .title(" TCP benchmark ".fg(R_LAVENDER))
-                .border_style(Style::default().fg(R_DARK_GREY))
-                .padding(Padding::new(2, 2, 0, 0)),
-        );
+        let widget = Paragraph::new(text)
+            .wrap(Wrap { trim: true })
+            .style(Style::default().fg(R_TEXT))
+            .block(
+                Block::default()
+                    .title(Line::from(" TCP benchmark ").fg(R_LAVENDER).bold())
+                    .padding(Padding::new(1, 2, 1, 0)),
+            );
 
         frame.render_widget(widget, area);
     }

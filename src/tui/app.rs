@@ -42,18 +42,22 @@ impl App {
     // handles keyboard input
     pub fn on_key(&mut self, key: KeyCode) {
         match key {
-            // global navigation — not forwarded to panels
+            // global navigation
             KeyCode::Char('q') => self.should_quit = true,
 
             KeyCode::Down => {
-                self.selected_menu = (self.selected_menu + 1) % MENU_ITEMS.len();
+                if !self.panels.active_is_busy(self.selected_menu) {
+                    self.selected_menu = (self.selected_menu + 1) % MENU_ITEMS.len();
+                }
             }
 
             KeyCode::Up => {
-                if self.selected_menu == 0 {
-                    self.selected_menu = MENU_ITEMS.len() - 1;
-                } else {
-                    self.selected_menu -= 1;
+                if !self.panels.active_is_busy(self.selected_menu) {
+                    if self.selected_menu == 0 {
+                        self.selected_menu = MENU_ITEMS.len() - 1;
+                    } else {
+                        self.selected_menu -= 1;
+                    }
                 }
             }
 

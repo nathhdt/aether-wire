@@ -19,7 +19,6 @@ impl AboutPanel {
 
     pub fn draw(&self, frame: &mut Frame, area: Rect) {
         let text = vec![
-            Line::from(""),
             Line::from(Span::styled(
                 "aether-wire is a lightweight native \
 cross-platform tool written in Rust for \
@@ -44,7 +43,7 @@ measurement.",
             .style(Style::default().fg(R_TEXT))
             .block(
                 Block::default()
-                    .title(" about ".fg(R_LAVENDER))
+                    .title(Line::from(" about ").fg(R_LAVENDER).bold())
                     .padding(Padding::new(1, 2, 1, 0)),
             );
 
