@@ -1,11 +1,5 @@
 //! server panel
 
-use std::net::Ipv4Addr;
-use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, mpsc};
-use std::thread;
-use std::time::Instant;
-
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -14,12 +8,17 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Padding, Paragraph},
 };
+use std::net::Ipv4Addr;
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, mpsc};
+use std::thread;
+use std::time::Instant;
 
 use crate::server::{self, ServerParameters, ServerTuiEvent};
 use crate::tui::components::footer::FooterItem;
 use crate::tui::components::spinner::get_spinner_char;
-use crate::tui::format::tcp_benchmark_result::format_tcp_result;
-use crate::tui::format::udp_benchmark_result::format_udp_result;
+use crate::tui::format::tcp_benchmark_result::format_tcp_benchmark_result;
+use crate::tui::format::udp_benchmark_result::format_udp_benchmark_result;
 use crate::tui::input::{InputList, separator, text, toggle};
 use crate::tui::panels::PanelFooter;
 use crate::tui::task::TaskHandle;
@@ -145,12 +144,12 @@ impl ServerPanel {
                     self.session_start = Some(Instant::now());
                 }
                 ServerTuiEvent::TcpSessionResult { stats, is_sender } => {
-                    for line in format_tcp_result(&stats, is_sender) {
+                    for line in format_tcp_benchmark_result(&stats, is_sender) {
                         self.log.push(line);
                     }
                 }
                 ServerTuiEvent::UdpSessionResult(stats) => {
-                    for line in format_udp_result(&stats) {
+                    for line in format_udp_benchmark_result(&stats, false) {
                         self.log.push(line);
                     }
                 }

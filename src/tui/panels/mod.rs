@@ -12,15 +12,15 @@ use ratatui::{Frame, layout::Rect};
 use about::AboutPanel;
 use qualify::QualifyPanel;
 use server::ServerPanel;
-use tcp_benchmark::BenchmarkTcpPanel;
-use udp_benchmark::BenchmarkUdpPanel;
+use tcp_benchmark::TcpBenchmarkPanel;
+use udp_benchmark::UdpBenchmarkPanel;
 
 use crate::tui::components::footer::FooterItem;
 
 /// panel instances
 pub struct Panels {
-    pub benchmark_tcp: BenchmarkTcpPanel,
-    pub benchmark_udp: BenchmarkUdpPanel,
+    pub benchmark_tcp: TcpBenchmarkPanel,
+    pub benchmark_udp: UdpBenchmarkPanel,
     pub qualify: QualifyPanel,
     pub server: ServerPanel,
     pub about: AboutPanel,
@@ -29,8 +29,8 @@ pub struct Panels {
 impl Panels {
     pub fn new() -> Self {
         Self {
-            benchmark_tcp: BenchmarkTcpPanel::new(),
-            benchmark_udp: BenchmarkUdpPanel::new(),
+            benchmark_tcp: TcpBenchmarkPanel::new(),
+            benchmark_udp: UdpBenchmarkPanel::new(),
             qualify: QualifyPanel::new(),
             server: ServerPanel::new(),
             about: AboutPanel::new(),
@@ -76,6 +76,7 @@ impl Panels {
     pub fn active_is_busy(&self, selected: usize) -> bool {
         match selected {
             0 => self.benchmark_tcp.is_busy(),
+            1 => self.benchmark_udp.is_busy(),
             3 => self.server.is_busy(),
             _ => false,
         }

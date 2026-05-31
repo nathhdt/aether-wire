@@ -249,7 +249,7 @@ impl InputList {
 
     /// propagates focused flag to each entry
     fn sync_focus(&mut self) {
-        // clamp in case focusable count shrank (e.g. after a visibility change)
+        // clamp in case focusable count shrank
         let count = self.focusable_count();
         if count > 0 && self.focused >= count {
             self.focused = count - 1;

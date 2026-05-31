@@ -4,7 +4,7 @@ use crate::protocol::stats::TcpStreamStats;
 use crate::utils::format::bytes_formatting::{human_bps, human_bytes};
 
 /// formats TCP stats for TUI display
-pub fn format_tcp_result(stats: &[TcpStreamStats], is_sender: bool) -> Vec<String> {
+pub fn format_tcp_benchmark_result(stats: &[TcpStreamStats], is_sender: bool) -> Vec<String> {
     let direction = if is_sender { "sent" } else { "received" };
     let mut lines = Vec::new();
     let mut total_bytes: u64 = 0;
