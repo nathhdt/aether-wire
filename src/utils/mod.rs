@@ -1,5 +1,4 @@
+//! aether-wire utils module
+
+pub mod constants;
 pub mod format;
-pub mod globals;
-pub mod parser;
-pub mod payload;
-pub mod system;
