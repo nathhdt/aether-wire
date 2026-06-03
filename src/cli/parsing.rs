@@ -32,7 +32,7 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
     if total_bandwidth > MAX_BANDWIDTH_BPS {
         return Err(format!(
             "bandwidth exceeds maximum allowed limit of {}",
-            human_bps(MAX_BANDWIDTH_BPS as f64)
+            human_bps(MAX_BANDWIDTH_BPS)
         ));
     }
 
