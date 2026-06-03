@@ -1,4 +1,4 @@
-//! ather-wire server entrypoint
+//! aether-wire server entrypoint
 
 use anyhow::Result;
 
