@@ -1,6 +1,6 @@
 //! command line parsing module
 
-use crate::utils::{constants::udp::MAX_BANDWIDTH_BYTES, format::human_bps};
+use crate::utils::{constants::udp::MAX_BANDWIDTH_BPS, format::human_bps};
 
 /// parses bandwidth specifications (K, M, G)
 pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
@@ -29,10 +29,10 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
 
     let total_bandwidth = num * multiplier;
 
-    if total_bandwidth > MAX_BANDWIDTH_BYTES {
+    if total_bandwidth > MAX_BANDWIDTH_BPS {
         return Err(format!(
             "bandwidth exceeds maximum allowed limit of {}",
-            human_bps(MAX_BANDWIDTH_BYTES as f64)
+            human_bps(MAX_BANDWIDTH_BPS as f64)
         ));
     }
 

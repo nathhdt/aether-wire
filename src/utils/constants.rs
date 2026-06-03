@@ -2,6 +2,6 @@
 
 /// UDP-related constants
 pub mod udp {
-    /// maximum UDP benchmark bandwidth in bytes per second
-    pub const MAX_BANDWIDTH_BYTES: u64 = 5_000_000_000;
+    /// maximum UDP benchmark bandwidth in bits per second
+    pub const MAX_BANDWIDTH_BPS: u64 = 2_500_000_000;
 }
