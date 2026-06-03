@@ -1,3 +1,24 @@
 # aether-wire
 
 native linux E2E network performance and benchmarking tool
+
+# build requirements
+
+optimized for max throughput & min latency: **Fat LTO** | **codegen-units = 1** | **Clang + LLD** | **x86-64-v3** (AVX2, FMA3, BMI2).
+
+> [!warn]
+> target CPU restriction: running on architectures < x86-64-v3 will trigger `SIGILL`.
+
+## prerequisites
+
+requires a C toolchain with `clang` and the `lld` linker:
+
+* **Ubuntu/Debian:** `sudo apt install clang lld build-essential`
+* **Fedora/RHEL:** `sudo dnf install clang lld gcc g++`
+* **Arch Linux:** `sudo pacman -S clang lld base-devel`
+
+## build
+
+```bash
+cargo build --release
+```
