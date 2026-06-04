@@ -15,14 +15,14 @@ pub fn check_privileges() -> Result<Vec<Check>> {
             label: "RLIMIT_MEMLOCK".into(),
             value: "unlimited".into(),
             status: Status::Ok,
-            note: Some("no lockable-memory restriction".into()),
+            note: Some("no memory-locking restriction".into()),
         },
 
         MemlockLimitValue::Bytes(bytes) => Check {
             label: "RLIMIT_MEMLOCK".into(),
             value: human_bytes(bytes),
             status: Status::Warn,
-            note: Some("lockable memory is capped".into()),
+            note: Some("memory locking is limited".into()),
         },
     };
 

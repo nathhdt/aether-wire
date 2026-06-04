@@ -1,6 +1,7 @@
 //! aether-wire check entrypoint
 
 pub mod kernel;
+pub mod memory;
 pub mod print;
 pub mod privileges;
 
@@ -37,6 +38,7 @@ pub fn run(_config: CheckConfig) -> Result<()> {
 
     print::print_section("kernel", &kernel::check_kernel()?);
     print::print_section("privileges", &privileges::check_privileges()?);
+    print::print_section("memory", &memory::check_memory()?);
 
     Ok(())
 }
