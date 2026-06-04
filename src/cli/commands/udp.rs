@@ -6,6 +6,7 @@ use std::net::IpAddr;
 
 use crate::cli::parsing::parse_bandwidth;
 use crate::udp;
+use crate::utils::system::host::ensure_root;
 
 #[derive(Debug)]
 pub struct UdpConfig {
@@ -76,6 +77,7 @@ pub struct UdpArgs {
 
 impl UdpArgs {
     pub fn run(self) -> Result<()> {
+        ensure_root();
         udp::run(self.into())
     }
 }

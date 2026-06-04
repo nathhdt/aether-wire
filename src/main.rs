@@ -7,7 +7,5 @@ mod udp;
 mod utils;
 
 fn main() {
-    utils::system::host::ensure_root();
-
     cli::run();
 }

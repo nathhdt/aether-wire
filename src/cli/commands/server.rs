@@ -5,6 +5,7 @@ use clap::{Args, value_parser};
 use std::net::IpAddr;
 
 use crate::server;
+use crate::utils::system::host::ensure_root;
 
 #[derive(Debug)]
 pub struct ServerConfig {
@@ -53,6 +54,7 @@ pub struct ServerArgs {
 
 impl ServerArgs {
     pub fn run(self) -> Result<()> {
+        ensure_root();
         server::run(self.into())
     }
 }
