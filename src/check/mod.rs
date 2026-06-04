@@ -2,6 +2,7 @@
 
 pub mod kernel;
 pub mod print;
+pub mod privileges;
 
 use anyhow::Result;
 
@@ -35,6 +36,7 @@ pub fn run(_config: CheckConfig) -> Result<()> {
     println!("system compatibility check for aether-wire\n");
 
     print::print_section("kernel", &kernel::check_kernel()?);
+    print::print_section("privileges", &privileges::check_privileges()?);
 
     Ok(())
 }
