@@ -4,12 +4,31 @@ use anyhow::Result;
 
 use crate::utils::format::human_bytes;
 use crate::utils::system::host::get_hugepages_info;
+use crate::utils::system::sysctl;
 
 use super::{Check, Status};
 
 pub fn check_memory() -> Result<Vec<Check>> {
     let mut checks = Vec::new();
 
+    // bpf_jit_enable
+    let bpf_jit_enable = sysctl::read("net.core.bpf_jit_enable").ok();
+
+    checks.push(Check {
+        label: "bpf_jit_enable".into(),
+        value: bpf_jit_enable.clone().unwrap_or_else(|| "unknown".into()),
+        status: match bpf_jit_enable.as_deref() {
+            Some("1") | Some("2") => Status::Ok,
+            _ => Status::Warn,
+        },
+        note: match bpf_jit_enable.as_deref() {
+            Some("0") => Some("eBPF JIT disabled".into()),
+            None => Some("unable to read sysctl".into()),
+            _ => None,
+        },
+    });
+
+    // hugepages
     let hugepages = get_hugepages_info();
 
     checks.push(Check {
