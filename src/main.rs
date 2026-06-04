@@ -1,18 +1,13 @@
 //! aether-wire entrypoint
 
+mod check;
 mod cli;
 mod server;
 mod udp;
 mod utils;
 
-use std::process::ExitCode;
-
-fn main() -> ExitCode {
-    if let Err(exit_code) = utils::system::host::ensure_root() {
-        return exit_code;
-    }
+fn main() {
+    utils::system::host::ensure_root();
 
     cli::run();
-
-    ExitCode::SUCCESS
 }

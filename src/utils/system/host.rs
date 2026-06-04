@@ -1,13 +1,11 @@
 //! host utilities module
 
 use rustix::process;
-use std::process::ExitCode;
 
-/// checks if the current process is running with root privileges
-pub fn ensure_root() -> Result<(), ExitCode> {
+/// ensures the current process is running with root privileges
+pub fn ensure_root() {
     if !process::getuid().is_root() {
         eprintln!("error: aether-wire requires root privileges");
-        return Err(ExitCode::FAILURE);
+        std::process::exit(1);
     }
-    Ok(())
 }
