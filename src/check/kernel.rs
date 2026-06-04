@@ -71,6 +71,7 @@ pub fn check_kernel() -> Result<Vec<Check>> {
                     "minimum required kernel version is {}.{}",
                     KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR
                 )),
+                Status::None => None,
             };
 
             Check {
