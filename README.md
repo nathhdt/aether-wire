@@ -2,11 +2,22 @@
 
 native linux E2E network performance and benchmarking tool
 
+# runtime requirements
+
+* Linux kernel **5.15+** required
+* Linux kernel **6.2+** recommended (XDP metadata support)
+
+you can verify system compatibility with:
+
+```bash
+aw check
+```
+
 # build requirements
 
 optimized for max throughput & min latency: **Fat LTO** | **codegen-units = 1** | **Clang + LLD** | **x86-64-v3** (AVX2, FMA3, BMI2).
 
-> [!warn]
+> [warn]
 > target CPU restriction: running on architectures < x86-64-v3 will trigger `SIGILL`.
 
 ## prerequisites
