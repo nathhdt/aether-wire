@@ -16,7 +16,7 @@ pub fn print_check(check: &Check, indent: usize) {
     let pad = " ".repeat(indent);
     match &check.note {
         Some(note) => println!(
-            "{}{:<22} {:<16} {}  {}",
+            "{}{:<23} {:<16} {}  {}",
             pad,
             check.label,
             check.value,
@@ -24,7 +24,7 @@ pub fn print_check(check: &Check, indent: usize) {
             note
         ),
         None => println!(
-            "{}{:<22} {:<16} {}",
+            "{}{:<23} {:<16} {}",
             pad,
             check.label,
             check.value,

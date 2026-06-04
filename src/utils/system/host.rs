@@ -1,4 +1,4 @@
-//! host utilities module
+//! system host utilities module
 
 use rustix::process;
 
