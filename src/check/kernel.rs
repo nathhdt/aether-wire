@@ -2,7 +2,9 @@
 
 use anyhow::Result;
 
-use crate::utils::constants::system::{KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR};
+use crate::utils::constants::system::{
+    KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR, KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR,
+};
 use crate::utils::system::kernel::KernelVersion;
 
 use super::{Check, Status};
@@ -10,31 +12,53 @@ use super::{Check, Status};
 pub fn check_kernel() -> Result<Vec<Check>> {
     let mut checks = Vec::new();
 
+    // kernel version
     let check = match KernelVersion::current() {
         Some(version) => {
-            let supported = version.major > KERNEL_MIN_MAJOR
-                || (version.major == KERNEL_MIN_MAJOR && version.minor >= KERNEL_MIN_MINOR);
+            let status = if (version.major, version.minor)
+                >= (KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR)
+            {
+                Status::Ok
+            } else if (version.major, version.minor) >= (KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR) {
+                Status::Warn
+            } else {
+                Status::Fail
+            };
+
+            let note = match status {
+                Status::Ok => Some(format!(
+                    "XDP metadata available (≥{}.{})",
+                    KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR
+                )),
+                Status::Warn => Some(format!(
+                    "XDP multi-buffer available (≥{}.{})",
+                    KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR
+                )),
+                Status::Fail => Some(format!(
+                    "minimum required kernel version is {}.{}",
+                    KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR
+                )),
+            };
 
             Check {
-                label: "kernel version".into(),
+                label: "version".into(),
                 value: format!("{}.{}", version.major, version.minor),
-                status: if supported { Status::Ok } else { Status::Fail },
-                note: if supported {
-                    None
-                } else {
-                    Some(format!(
-                        "minimum required kernel version is {}.{}",
-                        KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR
-                    ))
-                },
+                status,
+                note,
             }
         }
 
         None => Check {
-            label: "kernel version".into(),
+            label: "version".into(),
             value: "unknown".into(),
             status: Status::Warn,
-            note: Some("unable to determine kernel version".into()),
+            note: Some(format!(
+                "min {}.{}, recommended {}.{}",
+                KERNEL_MIN_MAJOR,
+                KERNEL_MIN_MINOR,
+                KERNEL_RECOMMENDED_MAJOR,
+                KERNEL_RECOMMENDED_MINOR
+            )),
         },
     };
 
