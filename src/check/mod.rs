@@ -41,10 +41,10 @@ pub struct InterfaceChecks {
 }
 
 /// run system compatibility checks
-pub fn run(_config: CheckConfig) -> Result<()> {
+pub fn run(config: CheckConfig) -> Result<()> {
     println!("system compatibility check for aether-wire\n");
 
-    print::print_section("kernel", &kernel::check_kernel()?);
+    print::print_section("kernel", &kernel::check_kernel(config.load_modules)?);
     print::print_section("privileges", &privileges::check_privileges()?);
     print::print_section("memory", &memory::check_memory()?);
     print::print_section_interfaces(&interfaces::check_interfaces()?);

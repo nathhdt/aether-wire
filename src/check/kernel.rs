@@ -6,7 +6,7 @@ use crate::utils::constants::system::{
     KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR, KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR,
 };
 use crate::utils::kernel::flags::{KernelConfigError, KernelFlagValue, get_kernel_flag};
-use crate::utils::kernel::modules::ensure_module_loaded;
+use crate::utils::kernel::modules::is_module_loaded;
 use crate::utils::kernel::version::KernelVersion;
 
 use super::{Check, Status};
@@ -45,7 +45,7 @@ const FLAGS: &[FlagCheck] = &[
     },
 ];
 
-pub fn check_kernel() -> Result<Vec<Check>> {
+pub fn check_kernel(load_modules: bool) -> Result<Vec<Check>> {
     let mut checks = Vec::new();
 
     // kernel version
@@ -106,15 +106,11 @@ pub fn check_kernel() -> Result<Vec<Check>> {
                     KernelFlagValue::Yes => (true, None),
                     KernelFlagValue::Module => {
                         if let Some(module) = flag.module {
-                            match ensure_module_loaded(module) {
-                                Ok(true) => (true, Some(format!("module '{module}' loaded"))),
-                                _ => (false, Some(format!("module '{module}' not loaded"))),
-                            }
+                            check_module(module, load_modules)
                         } else {
                             (true, None)
                         }
                     }
-
                     _ => (false, None),
                 };
 
@@ -164,4 +160,13 @@ pub fn check_kernel() -> Result<Vec<Check>> {
     }
 
     Ok(checks)
+}
+
+/// checks whether a module is loaded, optionally attempting to load it first
+fn check_module(module: &str, load: bool) -> (bool, Option<String>) {
+    match is_module_loaded(module, load) {
+        Ok(true) => (true, Some(format!("module '{module}' loaded"))),
+        Ok(false) => (false, Some(format!("module '{module}' not loaded"))),
+        Err(_) => (false, Some(format!("module '{module}' not loaded"))),
+    }
 }

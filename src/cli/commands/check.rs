@@ -1,19 +1,23 @@
-//! server subcommand arguments and execution
+//! check subcommand arguments and execution
 
 use anyhow::Result;
 use clap::Args;
 
 use crate::check;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct CheckConfig {
+    #[allow(dead_code)]
     pub iface: Option<String>,
+    pub load_modules: bool,
 }
 
 impl From<CheckArgs> for CheckConfig {
     fn from(args: CheckArgs) -> Self {
-        Self { iface: args.iface }
+        Self {
+            iface: args.iface,
+            load_modules: args.load_modules,
+        }
     }
 }
 
@@ -33,6 +37,12 @@ pub struct CheckArgs {
         help = "network interface to check (default: all)"
     )]
     iface: Option<String>,
+
+    #[arg(
+        long = "load-modules",
+        help = "attempt to load required kernel modules if not already loaded"
+    )]
+    load_modules: bool,
 }
 
 impl CheckArgs {
