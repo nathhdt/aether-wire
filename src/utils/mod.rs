@@ -1,5 +1,6 @@
-//! aether-wire utils module
+//! aether-wire utilities module
 
 pub mod constants;
 pub mod format;
+pub mod kernel;
 pub mod system;

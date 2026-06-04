@@ -1,4 +1,4 @@
-//! generic kernel utilities module
+//! kernel version utilities module
 
 use rustix::system::uname;
 
@@ -9,7 +9,6 @@ pub struct KernelVersion {
 }
 
 impl KernelVersion {
-    /// fetches current kernel version
     pub fn current() -> Option<Self> {
         let uts = uname();
         let release = uts.release().to_string_lossy();
