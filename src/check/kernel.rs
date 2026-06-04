@@ -6,13 +6,14 @@ use crate::utils::constants::system::{
     KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR, KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR,
 };
 use crate::utils::kernel::flags::{KernelConfigError, KernelFlagValue, get_kernel_flag};
+use crate::utils::kernel::modules::ensure_module_loaded;
 use crate::utils::kernel::version::KernelVersion;
 
 use super::{Check, Status};
 
 struct FlagCheck {
     flag: &'static str,
-    allow_module: bool,
+    module: Option<&'static str>,
     required: bool,
     note: &'static str,
 }
@@ -20,27 +21,27 @@ struct FlagCheck {
 const FLAGS: &[FlagCheck] = &[
     FlagCheck {
         flag: "CONFIG_BPF_SYSCALL",
-        allow_module: false,
+        module: None,
         required: true,
         note: "required for eBPF program loading",
     },
     FlagCheck {
         flag: "CONFIG_XDP_SOCKETS",
-        allow_module: false,
+        module: None,
         required: true,
         note: "required for AF_XDP support",
     },
     FlagCheck {
         flag: "CONFIG_BPF_JIT",
-        allow_module: false,
+        module: None,
         required: false,
         note: "recommended for optimal performance",
     },
     FlagCheck {
         flag: "CONFIG_XDP_SOCKETS_DIAG",
-        allow_module: true,
-        required: false,
-        note: "optional AF_XDP diagnostics support",
+        module: Some("xsk_diag"),
+        required: true,
+        note: "required for AF_XDP diagnostics",
     },
 ];
 
@@ -61,13 +62,10 @@ pub fn check_kernel() -> Result<Vec<Check>> {
             };
 
             let note = match status {
-                Status::Ok => Some(format!(
-                    "XDP metadata available (≥{}.{})",
-                    KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR
-                )),
+                Status::Ok => None,
                 Status::Warn => Some(format!(
-                    "XDP multi-buffer available (≥{}.{})",
-                    KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR
+                    "XDP metadata unavailable (needs ≥ {}.{})",
+                    KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR
                 )),
                 Status::Fail => Some(format!(
                     "minimum required kernel version is {}.{}",
@@ -103,8 +101,21 @@ pub fn check_kernel() -> Result<Vec<Check>> {
     for flag in FLAGS {
         let check = match get_kernel_flag(flag.flag) {
             Ok(value) => {
-                let valid = matches!(value, KernelFlagValue::Yes)
-                    || (flag.allow_module && matches!(value, KernelFlagValue::Module));
+                let (valid, note) = match &value {
+                    KernelFlagValue::Yes => (true, None),
+                    KernelFlagValue::Module => {
+                        if let Some(module) = flag.module {
+                            match ensure_module_loaded(module) {
+                                Ok(true) => (true, Some(format!("module '{module}' loaded"))),
+                                _ => (false, Some(format!("module '{module}' not loaded"))),
+                            }
+                        } else {
+                            (true, None)
+                        }
+                    }
+
+                    _ => (false, None),
+                };
 
                 let status = if valid {
                     Status::Ok
@@ -125,7 +136,11 @@ pub fn check_kernel() -> Result<Vec<Check>> {
                     label: flag.flag.into(),
                     value,
                     status,
-                    note: Some(flag.note.into()),
+                    note: if valid {
+                        note
+                    } else {
+                        note.or_else(|| Some(flag.note.into()))
+                    },
                 }
             }
 
