@@ -2,6 +2,9 @@
 
 native Linux end-to-end network performance and benchmarking tool
 
+> [!NOTE]
+> under active development; interfaces may change before the first stable release.
+
 # runtime requirements
 
 * Linux kernel **5.15+** required
@@ -15,10 +18,16 @@ aw check
 
 # build requirements
 
-optimized for max throughput & min latency: **Fat LTO** | **codegen-units = 1** | **Clang + LLD** | **x86-64-v3** (AVX2, FMA3, BMI2).
+optimized for maximum throughput and minimum latency.
 
-> [warn]
-> target CPU restriction: running on architectures < x86-64-v3 will trigger `SIGILL`.
+build configuration:
+- fat LTO
+- codegen-units = 1
+- clang + lld
+- x86-64-v3 (AVX2, FMA3, BMI2)
+
+> [!IMPORTANT]
+> CPU restriction: running on architectures < x86-64-v3 will trigger `SIGILL`.
 
 ## prerequisites
 
