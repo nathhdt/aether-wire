@@ -13,13 +13,13 @@ use udp::UdpArgs;
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    #[command(about = "check system and interface XDP compatibility")]
+    #[command(about = "check system and interface compatibility")]
     Check(CheckArgs),
 
     #[command(about = "run a UDP performance test")]
     Udp(UdpArgs),
 
-    #[command(about = "run a benchmark server")]
+    #[command(about = "run a benchmarking server")]
     Server(ServerArgs),
 }
 

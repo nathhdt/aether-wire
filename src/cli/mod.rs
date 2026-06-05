@@ -15,7 +15,7 @@ pub use run::run;
 #[derive(Parser, Debug)]
 #[command(
     name = "aw",
-    about = "native linux E2E network performance and benchmarking tool",
+    about = "native Linux end-to-end network performance and benchmarking tool",
     disable_help_flag = true,
     disable_help_subcommand = true,
     disable_version_flag = true,
