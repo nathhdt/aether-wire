@@ -1,6 +1,6 @@
 # aether-wire
 
-native linux E2E network performance and benchmarking tool
+native Linux end-to-end network performance and benchmarking tool
 
 # runtime requirements
 
