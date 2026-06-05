@@ -23,7 +23,7 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
                 InterfaceKind::Tunnel => "tunnel".into(),
                 InterfaceKind::Other(kind) => format!("other ({kind})"),
             },
-            status: Status::None,
+            status: Status::Info,
             note: None,
         };
 
@@ -33,7 +33,7 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
                 InterfaceClass::Device => "device".into(),
                 InterfaceClass::Virtual => "virtual".into(),
             },
-            status: Status::None,
+            status: Status::Info,
             note: None,
         };
 
@@ -41,7 +41,7 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
             InterfaceKind::Loopback => Check {
                 label: "driver".into(),
                 value: "-".into(),
-                status: Status::None,
+                status: Status::Info,
                 note: None,
             },
 
@@ -49,14 +49,14 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
                 Ok(Some(driver)) => Check {
                     label: "driver".into(),
                     value: driver,
-                    status: Status::None,
+                    status: Status::Info,
                     note: None,
                 },
 
                 Ok(None) => Check {
                     label: "driver".into(),
                     value: "unknown".into(),
-                    status: Status::None,
+                    status: Status::Info,
                     note: Some("no driver associated".into()),
                 },
 

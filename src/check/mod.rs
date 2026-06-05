@@ -14,7 +14,7 @@ pub enum Status {
     Ok,
     Warn,
     Fail,
-    None,
+    Info,
 }
 
 impl Status {
@@ -23,7 +23,7 @@ impl Status {
             Status::Ok => "✓",
             Status::Warn => "⚠",
             Status::Fail => "✗",
-            Status::None => " ",
+            Status::Info => " ",
         }
     }
 }
@@ -40,9 +40,9 @@ pub struct InterfaceChecks {
     pub checks: Vec<Check>,
 }
 
-/// run system compatibility checks
+/// run system compatibility check
 pub fn run(config: CheckConfig) -> Result<()> {
-    println!("system compatibility check for aether-wire\n");
+    println!("system compatibility check\n");
 
     print::print_section("kernel", &kernel::check_kernel(config.load_modules)?);
     print::print_section("privileges", &privileges::check_privileges()?);
