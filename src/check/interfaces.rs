@@ -21,6 +21,7 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
                 InterfaceKind::Loopback => "loopback".into(),
                 InterfaceKind::Ppp => "ppp".into(),
                 InterfaceKind::Tunnel => "tunnel".into(),
+                InterfaceKind::RawIp => "none (raw IP)".into(),
                 InterfaceKind::Other(kind) => format!("other ({kind})"),
             },
             status: Status::Info,

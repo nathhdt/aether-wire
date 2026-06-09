@@ -28,6 +28,7 @@ pub enum InterfaceKind {
     Loopback,
     Ppp,
     Tunnel,
+    RawIp,
     Other(u32),
 }
 
@@ -82,6 +83,7 @@ fn get_interface_kind(path: &Path) -> std::io::Result<InterfaceKind> {
         512 => InterfaceKind::Ppp,
         768 | 769 | 776 | 778 => InterfaceKind::Tunnel,
         772 => InterfaceKind::Loopback,
+        65534 => InterfaceKind::RawIp,
         other => InterfaceKind::Other(other),
     })
 }
