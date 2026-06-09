@@ -16,6 +16,7 @@ impl From<std::io::Error> for InterfaceError {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Interface {
+    pub index: i32,
     pub name: String,
     pub kind: InterfaceKind,
     pub class: InterfaceClass,
@@ -46,15 +47,30 @@ pub fn get_interfaces() -> std::io::Result<Vec<Interface>> {
         let name = entry.file_name().to_string_lossy().into_owned();
         let path = entry.path();
 
+        let index = get_interface_index(&path)?;
         let kind = get_interface_kind(&path)?;
         let class = get_interface_class(&path);
 
-        interfaces.push(Interface { name, kind, class });
+        interfaces.push(Interface {
+            index,
+            name,
+            kind,
+            class,
+        });
     }
 
     interfaces.sort_unstable_by(|a, b| a.name.cmp(&b.name));
 
     Ok(interfaces)
+}
+
+fn get_interface_index(path: &Path) -> std::io::Result<i32> {
+    let index_str = fs::read_to_string(path.join("ifindex"))?;
+
+    index_str
+        .trim()
+        .parse::<i32>()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
 
 fn get_interface_kind(path: &Path) -> std::io::Result<InterfaceKind> {
