@@ -44,7 +44,7 @@ pub struct InterfaceChecks {
 pub fn run(config: CheckConfig) -> Result<()> {
     println!("system compatibility check\n");
 
-    print::print_section("kernel", &kernel::check_kernel(config.load_modules)?);
+    print::print_section("kernel", &kernel::check_kernel()?);
     print::print_section("privileges", &privileges::check_privileges()?);
     print::print_section("memory", &memory::check_memory()?);
     print::print_section_interfaces(&interfaces::check_interfaces()?);

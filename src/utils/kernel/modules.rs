@@ -36,20 +36,9 @@ fn is_in_proc_modules(module: &str) -> Result<bool, KernelModuleError> {
     Ok(false)
 }
 
-/// checks whether a module is loaded, optionally attempting to load it via modprobe first
-pub fn is_module_loaded(module: &str, load: bool) -> Result<bool, KernelModuleError> {
-    if is_in_proc_modules(module)? {
-        return Ok(true);
-    }
+/// checks whether a module is loaded
+pub fn is_module_loaded(module: &str) -> Result<bool, KernelModuleError> {
+    if is_in_proc_modules(module)? { return Ok(true) }
 
-    if !load {
-        return Ok(false);
-    }
-
-    let _ = Command::new("modprobe")
-        .arg(module)
-        .status()
-        .is_ok_and(|status| status.success());
-
-    is_in_proc_modules(module)
+    Ok(false)
 }

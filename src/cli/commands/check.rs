@@ -10,15 +10,11 @@ use crate::utils::system::host::ensure_root;
 pub struct CheckConfig {
     #[allow(dead_code)]
     pub iface: Option<String>,
-    pub load_modules: bool,
 }
 
 impl From<CheckArgs> for CheckConfig {
     fn from(args: CheckArgs) -> Self {
-        Self {
-            iface: args.iface,
-            load_modules: args.load_modules,
-        }
+        Self { iface: args.iface }
     }
 }
 
@@ -38,12 +34,6 @@ pub struct CheckArgs {
         help = "network interface to check (default: all)"
     )]
     iface: Option<String>,
-
-    #[arg(
-        long = "load-modules",
-        help = "attempt to load required kernel modules if not already loaded"
-    )]
-    load_modules: bool,
 }
 
 impl CheckArgs {

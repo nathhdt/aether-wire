@@ -45,7 +45,7 @@ const FLAGS: &[FlagCheck] = &[
     },
 ];
 
-pub fn check_kernel(load_modules: bool) -> Result<Vec<Check>> {
+pub fn check_kernel() -> Result<Vec<Check>> {
     let mut checks = Vec::new();
 
     // kernel version
@@ -106,7 +106,7 @@ pub fn check_kernel(load_modules: bool) -> Result<Vec<Check>> {
                     KernelFlagValue::Yes => (true, None),
                     KernelFlagValue::Module => {
                         if let Some(module) = flag.module {
-                            check_module(module, load_modules)
+                            check_module(module)
                         } else {
                             (true, None)
                         }
@@ -163,8 +163,8 @@ pub fn check_kernel(load_modules: bool) -> Result<Vec<Check>> {
 }
 
 /// checks whether a module is loaded, optionally attempting to load it first
-fn check_module(module: &str, load: bool) -> (bool, Option<String>) {
-    match is_module_loaded(module, load) {
+fn check_module(module: &str) -> (bool, Option<String>) {
+    match is_module_loaded(module) {
         Ok(true) => (true, Some(format!("module '{module}' loaded"))),
         Ok(false) => (false, Some(format!("module '{module}' not loaded"))),
         Err(_) => (false, Some(format!("module '{module}' not loaded"))),
