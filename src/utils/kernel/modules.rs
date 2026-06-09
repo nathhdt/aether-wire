@@ -2,7 +2,6 @@
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::process::Command;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -38,7 +37,9 @@ fn is_in_proc_modules(module: &str) -> Result<bool, KernelModuleError> {
 
 /// checks whether a module is loaded
 pub fn is_module_loaded(module: &str) -> Result<bool, KernelModuleError> {
-    if is_in_proc_modules(module)? { return Ok(true) }
+    if is_in_proc_modules(module)? {
+        return Ok(true);
+    }
 
     Ok(false)
 }

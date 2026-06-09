@@ -41,7 +41,7 @@ pub struct InterfaceChecks {
 }
 
 /// run system compatibility check
-pub fn run(config: CheckConfig) -> Result<()> {
+pub fn run(_config: CheckConfig) -> Result<()> {
     println!("system compatibility check\n");
 
     print::print_section("kernel", &kernel::check_kernel()?);
