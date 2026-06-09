@@ -40,7 +40,7 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
         let driver_check = match interface.kind {
             InterfaceKind::Loopback => Check {
                 label: "driver".into(),
-                value: "-".into(),
+                value: "n/a".into(),
                 status: Status::Info,
                 note: None,
             },
