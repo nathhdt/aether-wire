@@ -3,7 +3,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-#[allow(dead_code)]
+#[allow(unused)]
 #[derive(Debug)]
 pub enum KernelModuleError {
     Io(std::io::Error),

@@ -8,7 +8,7 @@ use crate::utils::system::host::ensure_root;
 
 #[derive(Debug)]
 pub struct CheckConfig {
-    #[allow(dead_code)]
+    #[allow(unused)]
     pub iface: Option<String>,
 }
 
