@@ -34,14 +34,14 @@ pub fn print_check(check: &Check, indent: usize) {
 
     match &check.note {
         Some(note) => println!(
-            "{:<25} {:<16} {}  {}",
+            "{:<25} {:<14} {}  {}",
             label,
             check.value,
             check.status.symbol(),
             note
         ),
         None => println!(
-            "{:<25} {:<16} {}",
+            "{:<25} {:<14} {}",
             label,
             check.value,
             check.status.symbol()
