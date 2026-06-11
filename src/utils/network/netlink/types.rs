@@ -1,4 +1,4 @@
-//! Netlink types and structures
+//! Netlink types and structures module
 
 /// Netlink message header
 #[repr(C)]
@@ -31,6 +31,20 @@ impl IfInfoMsg {
     pub const SIZE: usize = core::mem::size_of::<Self>();
 }
 
+/// Netlink error message
+#[allow(unused)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct NlMsgErr {
+    pub error: i32,
+    pub msg: NlMsgHdr,
+}
+
+impl NlMsgErr {
+    #[allow(unused)]
+    pub const SIZE: usize = core::mem::size_of::<Self>();
+}
+
 /// routing attribute
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -40,16 +54,5 @@ pub struct RtAttr {
 }
 
 impl RtAttr {
-    pub const SIZE: usize = core::mem::size_of::<Self>();
-}
-
-/// Netlink message error
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct NlMsgErr {
-    pub error: i32,
-}
-
-impl NlMsgErr {
     pub const SIZE: usize = core::mem::size_of::<Self>();
 }
