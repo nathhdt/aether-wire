@@ -9,15 +9,18 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
         return Err("bandwidth cannot be empty".to_string());
     }
 
-    let (num_str, unit) = if let Some(pos) = s.find(|c: char| c.is_alphabetic()) {
-        (&s[..pos], &s[pos..])
-    } else {
-        (s, "")
+    let (num_str, unit) = match s.find(|c: char| c.is_alphabetic()) {
+        Some(pos) => s.split_at(pos),
+        None => (s, ""),
     };
 
     let num: u64 = num_str
         .parse()
         .map_err(|_| format!("invalid number: {}", num_str))?;
+
+    if num == 0 {
+        return Err("bandwidth must be positive".to_string());
+    }
 
     let multiplier = match unit.to_uppercase().as_str() {
         "" | "BPS" => 1,
