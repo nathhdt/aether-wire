@@ -6,7 +6,7 @@ use crate::utils::constants::system::{
     KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR, KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR,
 };
 use crate::utils::kernel::flags::{KernelConfigError, KernelFlagValue, get_kernel_flag};
-use crate::utils::kernel::modules::is_module_loaded;
+use crate::utils::kernel::modules::is_in_proc_modules;
 use crate::utils::kernel::version::KernelVersion;
 
 use super::{Check, Status};
@@ -164,7 +164,7 @@ pub fn check_kernel() -> Result<Vec<Check>> {
 
 /// checks whether a module is loaded, optionally attempting to load it first
 fn check_module(module: &str) -> (bool, Option<String>) {
-    match is_module_loaded(module) {
+    match is_in_proc_modules(module) {
         Ok(true) => (true, Some(format!("module '{module}' loaded"))),
         Ok(false) => (false, Some(format!("module '{module}' not loaded"))),
         Err(_) => (false, Some(format!("module '{module}' not loaded"))),

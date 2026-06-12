@@ -16,7 +16,7 @@ impl From<std::io::Error> for KernelModuleError {
 }
 
 /// checks whether a module is currently listed in /proc/modules
-fn is_in_proc_modules(module: &str) -> Result<bool, KernelModuleError> {
+pub fn is_in_proc_modules(module: &str) -> Result<bool, KernelModuleError> {
     let file = File::open("/proc/modules")?;
     let reader = BufReader::new(file);
 
@@ -30,15 +30,6 @@ fn is_in_proc_modules(module: &str) -> Result<bool, KernelModuleError> {
         {
             return Ok(true);
         }
-    }
-
-    Ok(false)
-}
-
-/// checks whether a module is loaded
-pub fn is_module_loaded(module: &str) -> Result<bool, KernelModuleError> {
-    if is_in_proc_modules(module)? {
-        return Ok(true);
     }
 
     Ok(false)
