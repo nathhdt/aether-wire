@@ -27,14 +27,12 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
         _ => return Err(format!("unknown unit: {}. Use K, M, or G", unit)),
     };
 
-    let total_bandwidth = num * multiplier;
-
-    if total_bandwidth > MAX_BANDWIDTH_BPS {
+    if num > MAX_BANDWIDTH_BPS / multiplier {
         return Err(format!(
             "bandwidth exceeds maximum allowed limit of {}",
             human_bps(MAX_BANDWIDTH_BPS)
         ));
     }
 
-    Ok(total_bandwidth)
+    Ok(num * multiplier)
 }
