@@ -144,7 +144,11 @@ pub fn parse_nlmsg_error(buf: &[u8]) -> Option<i32> {
     let err: NlMsgErr =
         unsafe { core::ptr::read_unaligned(buf[NlMsgHdr::SIZE..].as_ptr() as *const NlMsgErr) };
 
-    Some(err.error)
+    if err.error != 0 {
+        Some(err.error)
+    } else {
+        None
+    }
 }
 
 /// returns true if the chunk contains an end message
