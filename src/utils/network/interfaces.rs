@@ -2,6 +2,8 @@
 
 use std::{fs, path::Path};
 
+use super::constants::*;
+
 #[derive(Debug)]
 pub enum InterfaceError {
     InterfaceNotFound,
@@ -52,11 +54,11 @@ fn get_interface_kind(path: &Path) -> std::io::Result<InterfaceKind> {
     let ty = ty.trim().parse::<u32>().unwrap_or_default();
 
     Ok(match ty {
-        1 => InterfaceKind::Ethernet,
-        512 => InterfaceKind::Ppp,
-        768 | 769 | 776 | 778 => InterfaceKind::Tunnel,
-        772 => InterfaceKind::Loopback,
-        65534 => InterfaceKind::RawIp,
+        ARPHRD_ETHER => InterfaceKind::Ethernet,
+        ARPHRD_PPP => InterfaceKind::Ppp,
+        ARPHRD_IPGRE | ARPHRD_IP6GRE | ARPHRD_SIT | ARPHRD_TUNNEL6 => InterfaceKind::Tunnel,
+        ARPHRD_LOOPBACK => InterfaceKind::Loopback,
+        ARPHRD_RAWIP => InterfaceKind::RawIp,
         other => InterfaceKind::Other(other),
     })
 }
