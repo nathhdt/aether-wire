@@ -32,7 +32,6 @@ impl IfInfoMsg {
 }
 
 /// Netlink error message
-#[allow(unused)]
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct NlMsgErr {
@@ -41,7 +40,6 @@ pub struct NlMsgErr {
 }
 
 impl NlMsgErr {
-    #[allow(unused)]
     pub const SIZE: usize = core::mem::size_of::<Self>();
 }
 
