@@ -33,7 +33,6 @@ fn build_request(nlmsg_type: u16, nlmsg_flags: u16, info: IfInfoMsg, seq: u32) -
 }
 
 /// builds a RTM_GETLINK request for a specific interface by index
-#[allow(unused)]
 pub fn build_getlink_request(ifindex: i32, seq: u32) -> Vec<u8> {
     build_request(
         RTM_GETLINK,

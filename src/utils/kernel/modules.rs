@@ -3,9 +3,9 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-#[allow(unused)]
 #[derive(Debug)]
 pub enum KernelModuleError {
+    #[allow(unused)]
     Io(std::io::Error),
 }
 
