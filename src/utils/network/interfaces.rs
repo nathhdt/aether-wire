@@ -38,33 +38,6 @@ pub enum InterfaceClass {
     Virtual,
 }
 
-/// returns all network interfaces
-pub fn get_interfaces() -> std::io::Result<Vec<Interface>> {
-    let mut interfaces = Vec::new();
-
-    for entry in fs::read_dir("/sys/class/net")? {
-        let entry = entry?;
-
-        let name = entry.file_name().to_string_lossy().into_owned();
-        let path = entry.path();
-
-        let index = get_interface_index(&path)?;
-        let kind = get_interface_kind(&path)?;
-        let class = get_interface_class(&path);
-
-        interfaces.push(Interface {
-            index,
-            name,
-            kind,
-            class,
-        });
-    }
-
-    interfaces.sort_unstable_by(|a, b| a.name.cmp(&b.name));
-
-    Ok(interfaces)
-}
-
 fn get_interface_index(path: &Path) -> std::io::Result<i32> {
     let index_str = fs::read_to_string(path.join("ifindex"))?;
 
@@ -120,4 +93,36 @@ pub fn get_interface_driver(name: &str) -> Result<Option<String>, InterfaceError
 
         Err(err) => Err(err.into()),
     }
+}
+
+/// returns all network interfaces
+pub fn get_interfaces() -> std::io::Result<Vec<Interface>> {
+    let mut interfaces = Vec::new();
+
+    for entry in fs::read_dir("/sys/class/net")? {
+        let entry = entry?;
+
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let path = entry.path();
+
+        let index = get_interface_index(&path)?;
+        let kind = get_interface_kind(&path)?;
+        let class = get_interface_class(&path);
+
+        interfaces.push(Interface {
+            index,
+            name,
+            kind,
+            class,
+        });
+    }
+
+    interfaces.sort_unstable_by(|a, b| a.name.cmp(&b.name));
+
+    Ok(interfaces)
+}
+
+/// returns whether a network interface exists
+pub fn interface_exists(name: &str) -> bool {
+    Path::new("/sys/class/net").join(name).exists()
 }
