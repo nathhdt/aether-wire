@@ -16,12 +16,9 @@ pub struct HugePagesInfo {
     pub total_pages: u64,
 }
 
-/// ensures the current process is running with root privileges
-pub fn ensure_root() {
-    if !process::getuid().is_root() {
-        eprintln!("error: this command requires root privileges");
-        std::process::exit(1);
-    }
+/// checks if the process running with root privileges
+pub fn is_root_process() -> bool {
+    process::getuid().is_root()
 }
 
 /// retrieves memlock hard limit

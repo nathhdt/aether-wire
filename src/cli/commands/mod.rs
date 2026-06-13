@@ -7,6 +7,8 @@ pub mod udp;
 use anyhow::Result;
 use clap::Subcommand;
 
+use crate::utils::system::host::is_root_process;
+
 use check::CheckArgs;
 use server::ServerArgs;
 use udp::UdpArgs;
@@ -31,4 +33,12 @@ impl Commands {
             Self::Server(args) => args.run(),
         }
     }
+}
+
+/// ensures the current process is running with root privileges
+pub fn ensure_root() -> Result<()> {
+    if !is_root_process() {
+        anyhow::bail!("this command requires root privileges");
+    }
+    Ok(())
 }

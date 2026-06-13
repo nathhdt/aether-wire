@@ -4,7 +4,6 @@ use anyhow::Result;
 use clap::Args;
 
 use crate::check;
-use crate::utils::system::host::ensure_root;
 
 #[derive(Debug)]
 pub struct CheckConfig {
@@ -38,7 +37,7 @@ pub struct CheckArgs {
 
 impl CheckArgs {
     pub fn run(self) -> Result<()> {
-        ensure_root();
+        super::ensure_root()?;
         check::run(self.into())
     }
 }
