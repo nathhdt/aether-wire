@@ -7,7 +7,6 @@ use crate::check;
 
 #[derive(Debug)]
 pub struct CheckConfig {
-    #[allow(unused)]
     pub iface: Option<String>,
 }
 

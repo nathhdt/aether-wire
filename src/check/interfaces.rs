@@ -7,7 +7,7 @@ use crate::utils::network::interfaces::{
     InterfaceClass, InterfaceError, InterfaceKind, get_interface_driver, get_interfaces,
 };
 use crate::utils::network::netlink::{
-    builder::build_getlink_dump_request,
+    builder::{build_getlink_dump_request, build_getlink_request},
     constants::{
         IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE, IFLA_XDP,
         IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID, NETDEV_XDP_ACT_BASIC,
@@ -72,8 +72,81 @@ struct InterfaceInfo {
     tx_queues: Option<u32>,
 }
 
+/// parses a RTM_NEWLINK payload into an interface index and info
+fn parse_interface_info(payload: &[u8]) -> Option<(i32, InterfaceInfo)> {
+    let (ifinfo, attrs) = parse_ifinfomsg(payload)?;
+
+    let mut operstate = None;
+    let mut xdp_features = None;
+    let mut xdp_attached = None;
+    let mut xdp_prog_id = None;
+    let mut mtu = None;
+    let mut rx_queues = None;
+    let mut tx_queues = None;
+
+    for (attr_type, attr_data) in RtAttrIter::new(attrs) {
+        match attr_type {
+            t if t == IFLA_OPERSTATE && !attr_data.is_empty() => {
+                operstate = Some(attr_data[0]);
+            }
+            t if t == IFLA_XDP => {
+                for (xdp_type, xdp_data) in RtAttrIter::new(attr_data) {
+                    if xdp_type == IFLA_XDP_FEATURES
+                        && xdp_data.len() >= 8
+                        && let Ok(bytes) = xdp_data[..8].try_into()
+                    {
+                        xdp_features = Some(u64::from_ne_bytes(bytes));
+                    }
+                    if xdp_type == IFLA_XDP_ATTACHED && !xdp_data.is_empty() {
+                        xdp_attached = Some(xdp_data[0]);
+                    }
+                    if xdp_type == IFLA_XDP_PROG_ID
+                        && xdp_data.len() >= 4
+                        && let Ok(bytes) = xdp_data[..4].try_into()
+                    {
+                        xdp_prog_id = Some(u32::from_ne_bytes(bytes));
+                    }
+                }
+            }
+            t if t == IFLA_MTU && attr_data.len() >= 4 => {
+                if let Ok(bytes) = attr_data[..4].try_into() {
+                    mtu = Some(u32::from_ne_bytes(bytes));
+                }
+            }
+            t if t == IFLA_NUM_RX_QUEUES && attr_data.len() >= 4 => {
+                if let Ok(bytes) = attr_data[..4].try_into() {
+                    rx_queues = Some(u32::from_ne_bytes(bytes));
+                }
+            }
+            t if t == IFLA_NUM_TX_QUEUES && attr_data.len() >= 4 => {
+                if let Ok(bytes) = attr_data[..4].try_into() {
+                    tx_queues = Some(u32::from_ne_bytes(bytes));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Some((
+        ifinfo.ifi_index,
+        InterfaceInfo {
+            operstate: operstate
+                .map(OperState::from_u8)
+                .unwrap_or(OperState::Unknown),
+            xdp_basic: xdp_features.map(|f| f & NETDEV_XDP_ACT_BASIC as u64 != 0),
+            xdp_zerocopy: xdp_features.map(|f| f & NETDEV_XDP_ACT_XSK_ZEROCOPY as u64 != 0),
+            xdp_multi_buffer: xdp_features.map(|f| f & NETDEV_XDP_ACT_RX_SG as u64 != 0),
+            xdp_attached,
+            xdp_prog_id,
+            mtu,
+            rx_queues,
+            tx_queues,
+        },
+    ))
+}
+
 /// queries all interfaces via a single RTM_GETLINK dump
-fn dump_interfaces() -> Result<HashMap<i32, InterfaceInfo>, std::io::Error> {
+fn dump_all() -> Result<HashMap<i32, InterfaceInfo>, std::io::Error> {
     let response = request(&build_getlink_dump_request(1337))?;
     let mut map = HashMap::new();
 
@@ -82,88 +155,45 @@ fn dump_interfaces() -> Result<HashMap<i32, InterfaceInfo>, std::io::Error> {
             continue;
         }
 
-        let (ifinfo, attrs) = match parse_ifinfomsg(payload) {
-            Some(r) => r,
-            None => continue,
-        };
-
-        let mut operstate = None;
-        let mut xdp_features = None;
-        let mut xdp_attached = None;
-        let mut xdp_prog_id = None;
-        let mut mtu = None;
-        let mut rx_queues = None;
-        let mut tx_queues = None;
-
-        for (attr_type, attr_data) in RtAttrIter::new(attrs) {
-            match attr_type {
-                t if t == IFLA_OPERSTATE && !attr_data.is_empty() => {
-                    operstate = Some(attr_data[0]);
-                }
-                t if t == IFLA_XDP => {
-                    for (xdp_type, xdp_data) in RtAttrIter::new(attr_data) {
-                        if xdp_type == IFLA_XDP_FEATURES
-                            && xdp_data.len() >= 8
-                            && let Ok(bytes) = xdp_data[..8].try_into()
-                        {
-                            xdp_features = Some(u64::from_ne_bytes(bytes));
-                        }
-                        if xdp_type == IFLA_XDP_ATTACHED && !xdp_data.is_empty() {
-                            xdp_attached = Some(xdp_data[0]);
-                        }
-                        if xdp_type == IFLA_XDP_PROG_ID
-                            && xdp_data.len() >= 4
-                            && let Ok(bytes) = xdp_data[..4].try_into()
-                        {
-                            xdp_prog_id = Some(u32::from_ne_bytes(bytes));
-                        }
-                    }
-                }
-                t if t == IFLA_MTU && attr_data.len() >= 4 => {
-                    if let Ok(bytes) = attr_data[..4].try_into() {
-                        mtu = Some(u32::from_ne_bytes(bytes));
-                    }
-                }
-                t if t == IFLA_NUM_RX_QUEUES && attr_data.len() >= 4 => {
-                    if let Ok(bytes) = attr_data[..4].try_into() {
-                        rx_queues = Some(u32::from_ne_bytes(bytes));
-                    }
-                }
-                t if t == IFLA_NUM_TX_QUEUES && attr_data.len() >= 4 => {
-                    if let Ok(bytes) = attr_data[..4].try_into() {
-                        tx_queues = Some(u32::from_ne_bytes(bytes));
-                    }
-                }
-                _ => {}
-            }
+        if let Some((ifindex, info)) = parse_interface_info(payload) {
+            map.insert(ifindex, info);
         }
-
-        map.insert(
-            ifinfo.ifi_index,
-            InterfaceInfo {
-                operstate: operstate
-                    .map(OperState::from_u8)
-                    .unwrap_or(OperState::Unknown),
-                xdp_basic: xdp_features.map(|f| f & NETDEV_XDP_ACT_BASIC as u64 != 0),
-                xdp_zerocopy: xdp_features.map(|f| f & NETDEV_XDP_ACT_XSK_ZEROCOPY as u64 != 0),
-                xdp_multi_buffer: xdp_features.map(|f| f & NETDEV_XDP_ACT_RX_SG as u64 != 0),
-                xdp_attached,
-                xdp_prog_id,
-                mtu,
-                rx_queues,
-                tx_queues,
-            },
-        );
     }
 
     Ok(map)
 }
 
-pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
+/// queries a single interface via a RTM_GETLINK request
+fn query_one(ifindex: i32) -> Result<HashMap<i32, InterfaceInfo>, std::io::Error> {
+    let response = request(&build_getlink_request(ifindex, 1337))?;
+    let mut map = HashMap::new();
+
+    for (msg_type, payload) in NlMsgIter::new(&response) {
+        if msg_type != RTM_NEWLINK {
+            continue;
+        }
+
+        if let Some((idx, info)) = parse_interface_info(payload) {
+            map.insert(idx, info);
+        }
+    }
+
+    Ok(map)
+}
+
+pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceChecks>> {
     let mut interfaces_checks = Vec::new();
 
-    let interfaces = get_interfaces()?;
-    let netlink_data = dump_interfaces();
+    let mut interfaces = get_interfaces()?;
+
+    if let Some(name) = iface_filter {
+        interfaces.retain(|i| i.name == name);
+    }
+
+    let netlink_data = match interfaces.as_slice() {
+        [iface] if iface_filter.is_some() => query_one(iface.index),
+        _ => dump_all(),
+    };
 
     for interface in interfaces {
         let type_check = Check {
