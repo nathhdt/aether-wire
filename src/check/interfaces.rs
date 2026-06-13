@@ -340,10 +340,7 @@ pub fn check_interfaces() -> Result<Vec<InterfaceChecks>> {
                         (None, Some(tx)) => format!("{tx} tx"),
                         (None, None) => "unknown".into(),
                     },
-                    status: match info.rx_queues {
-                        Some(n) if n > 1 => Status::Ok,
-                        _ => Status::Info,
-                    },
+                    status: Status::Info,
                     note: None,
                 },
             ],
