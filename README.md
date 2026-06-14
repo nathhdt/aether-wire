@@ -5,7 +5,10 @@ native Linux end-to-end network performance and benchmarking tool
 > [!NOTE]
 > under active development; interfaces may change before the first stable release.
 
-# runtime requirements
+documentation:
+- [CLI reference](docs/cli-reference.md)
+
+## runtime requirements
 
 * Linux kernel **5.15+** required
 * Linux kernel **6.2+** recommended (XDP metadata support)
@@ -16,7 +19,7 @@ you can verify system compatibility with:
 aw check
 ```
 
-# build requirements
+## build requirements
 
 optimized for maximum throughput and minimum latency.
 
@@ -29,7 +32,7 @@ build configuration:
 > [!IMPORTANT]
 > CPU restriction: running on architectures < x86-64-v3 will trigger `SIGILL`.
 
-## prerequisites
+### prerequisites
 
 requires a C toolchain with `clang` and the `lld` linker:
 
@@ -37,7 +40,7 @@ requires a C toolchain with `clang` and the `lld` linker:
 * **Fedora/RHEL:** `sudo dnf install clang lld gcc g++`
 * **Arch Linux:** `sudo pacman -S clang lld base-devel`
 
-## build
+### build
 
 ```bash
 cargo build --release
