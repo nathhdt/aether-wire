@@ -4,7 +4,8 @@ use anyhow::Result;
 use std::collections::HashMap;
 
 use crate::utils::network::interfaces::{
-    InterfaceClass, InterfaceError, InterfaceKind, get_interface_driver, get_interfaces,
+    InterfaceClass, InterfaceError, InterfaceKind, get_interface, get_interface_driver,
+    get_interfaces,
 };
 use crate::utils::network::netlink::{
     builder::{build_getlink_dump_request, build_getlink_request},
@@ -184,11 +185,10 @@ fn query_one(ifindex: i32) -> Result<HashMap<i32, InterfaceInfo>, std::io::Error
 pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceChecks>> {
     let mut interfaces_checks = Vec::new();
 
-    let mut interfaces = get_interfaces()?;
-
-    if let Some(name) = iface_filter {
-        interfaces.retain(|i| i.name == name);
-    }
+    let interfaces = match iface_filter {
+        Some(name) => vec![get_interface(name)?],
+        None => get_interfaces()?,
+    };
 
     let netlink_data = match interfaces.as_slice() {
         [iface] if iface_filter.is_some() => query_one(iface.index),

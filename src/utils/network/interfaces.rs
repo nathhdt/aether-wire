@@ -1,6 +1,6 @@
 //! network interfaces utilities module
 
-use std::{fs, path::Path};
+use std::{fmt, fs, path::Path};
 
 use super::constants::*;
 
@@ -9,6 +9,17 @@ pub enum InterfaceError {
     InterfaceNotFound,
     Io(std::io::Error),
 }
+
+impl fmt::Display for InterfaceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InterfaceNotFound => write!(f, "interface not found"),
+            Self::Io(err) => write!(f, "{err}"),
+        }
+    }
+}
+
+impl std::error::Error for InterfaceError {}
 
 impl From<std::io::Error> for InterfaceError {
     fn from(err: std::io::Error) -> Self {
@@ -122,6 +133,26 @@ pub fn get_interfaces() -> std::io::Result<Vec<Interface>> {
     interfaces.sort_unstable_by(|a, b| a.name.cmp(&b.name));
 
     Ok(interfaces)
+}
+
+/// returns a network interface
+pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
+    let path = Path::new("/sys/class/net").join(name);
+
+    if !path.exists() {
+        return Err(InterfaceError::InterfaceNotFound);
+    }
+
+    let index = get_interface_index(&path)?;
+    let kind = get_interface_kind(&path)?;
+    let class = get_interface_class(&path);
+
+    Ok(Interface {
+        index,
+        name: name.to_owned(),
+        kind,
+        class,
+    })
 }
 
 /// returns whether a network interface exists
