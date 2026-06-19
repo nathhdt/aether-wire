@@ -2,7 +2,10 @@
 
 use std::{fmt, fs, path::Path};
 
-use super::constants::*;
+use super::constants::{
+    ARPHRD_ETHER, ARPHRD_IP6GRE, ARPHRD_IPGRE, ARPHRD_LOOPBACK, ARPHRD_PPP, ARPHRD_RAWIP,
+    ARPHRD_SIT, ARPHRD_TUNNEL6,
+};
 
 #[derive(Debug)]
 pub enum InterfaceError {
