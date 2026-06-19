@@ -1,5 +1,6 @@
 //! kernel modules utilities module
 
+use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -7,6 +8,16 @@ use std::io::{BufRead, BufReader};
 pub enum KernelModuleError {
     Io(std::io::Error),
 }
+
+impl fmt::Display for KernelModuleError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(err) => write!(f, "{err}"),
+        }
+    }
+}
+
+impl std::error::Error for KernelModuleError {}
 
 impl From<std::io::Error> for KernelModuleError {
     fn from(err: std::io::Error) -> Self {

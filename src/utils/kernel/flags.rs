@@ -1,6 +1,7 @@
 //! kernel flags utilities module
 
 use rustix::system::uname;
+use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -9,6 +10,17 @@ pub enum KernelConfigError {
     ConfigNotFound,
     Io(std::io::Error),
 }
+
+impl fmt::Display for KernelConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ConfigNotFound => write!(f, "kernel config not found"),
+            Self::Io(err) => write!(f, "{err}"),
+        }
+    }
+}
+
+impl std::error::Error for KernelConfigError {}
 
 impl From<std::io::Error> for KernelConfigError {
     fn from(err: std::io::Error) -> Self {
