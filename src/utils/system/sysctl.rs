@@ -1,4 +1,4 @@
-//! sysctl host utilities module
+//! sysctl utilities module
 
 use std::fs;
 use std::path::PathBuf;
