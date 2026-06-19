@@ -5,7 +5,6 @@ use std::io::{BufRead, BufReader};
 
 #[derive(Debug)]
 pub enum KernelModuleError {
-    #[allow(unused)]
     Io(std::io::Error),
 }
 
