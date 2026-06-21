@@ -2,14 +2,13 @@
 
 use anyhow::Result;
 use clap::{Args, value_parser};
-use std::net::IpAddr;
 
 use crate::cli::parsing::{parse_bandwidth, parse_duration};
 use crate::udp;
 
 #[derive(Debug)]
 pub struct UdpConfig {
-    pub server_ip: IpAddr,
+    pub server: String,
     pub port: u16,
     pub length: u16,
     pub bandwidth: u64,
@@ -21,7 +20,7 @@ pub struct UdpConfig {
 impl From<UdpArgs> for UdpConfig {
     fn from(args: UdpArgs) -> Self {
         Self {
-            server_ip: args.server_ip,
+            server: args.server,
             port: args.port,
             length: args.length,
             bandwidth: args.bandwidth,
@@ -47,10 +46,10 @@ pub struct UdpArgs {
     #[arg(
         short = 's',
         long = "server",
-        value_name = "ip",
-        help = "target server IP address"
+        value_name = "host",
+        help = "target server hostname or IP address"
     )]
-    server_ip: IpAddr,
+    server: String,
 
     #[arg(
         short = 'p',
