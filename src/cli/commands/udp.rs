@@ -10,11 +10,11 @@ use crate::udp;
 pub struct UdpConfig {
     pub server: String,
     pub port: u16,
-    pub length: u16,
+    pub iface: String,
     pub bandwidth: u64,
+    pub length: u16,
     pub duration_secs: u64,
     pub streams: u16,
-    pub iface: Option<String>,
 }
 
 impl From<UdpArgs> for UdpConfig {
@@ -22,11 +22,11 @@ impl From<UdpArgs> for UdpConfig {
         Self {
             server: args.server,
             port: args.port,
-            length: args.length,
+            iface: args.iface,
             bandwidth: args.bandwidth,
+            length: args.length,
             duration_secs: args.duration_secs,
             streams: args.streams,
-            iface: args.iface,
         }
     }
 }
@@ -61,13 +61,12 @@ pub struct UdpArgs {
     port: u16,
 
     #[arg(
-        short = 'l',
-        long = "length",
-        value_name = "bytes",
-        value_parser = value_parser!(u16).range(1..=65507),
-        help = "payload length"
+        short = 'i',
+        long = "iface",
+        value_name = "interface",
+        help = "network interface to use"
     )]
-    length: u16,
+    iface: String,
 
     #[arg(
         short = 'b',
@@ -77,6 +76,15 @@ pub struct UdpArgs {
         help = "bandwidth limit (e.g. 400K, 20M, 1G)"
     )]
     bandwidth: u64,
+
+    #[arg(
+        short = 'l',
+        long = "length",
+        value_name = "bytes",
+        value_parser = value_parser!(u16).range(1..=65507),
+        help = "UDP payload length"
+    )]
+    length: u16,
 
     #[arg(
         short = 't',
@@ -97,14 +105,6 @@ pub struct UdpArgs {
         help = "number of parallel UDP streams"
     )]
     streams: u16,
-
-    #[arg(
-        short = 'i',
-        long = "iface",
-        value_name = "interface",
-        help = "network interface to use"
-    )]
-    iface: Option<String>,
 }
 
 impl UdpArgs {

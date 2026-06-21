@@ -8,15 +8,17 @@ use crate::server;
 
 #[derive(Debug)]
 pub struct ServerConfig {
-    pub bind_ip: IpAddr,
+    pub iface: String,
     pub port: u16,
+    pub source_addr: Option<IpAddr>,
 }
 
 impl From<ServerArgs> for ServerConfig {
     fn from(args: ServerArgs) -> Self {
         Self {
-            bind_ip: args.bind_ip,
+            iface: args.iface,
             port: args.port,
+            source_addr: args.source_addr,
         }
     }
 }
@@ -34,12 +36,12 @@ options:
 )]
 pub struct ServerArgs {
     #[arg(
-        short = 'b',
-        long = "bind",
-        value_name = "ip",
-        help = "IP address to bind to"
+        short = 'i',
+        long = "iface",
+        value_name = "interface",
+        help = "network interface to use"
     )]
-    bind_ip: IpAddr,
+    iface: String,
 
     #[arg(
         short = 'p',
@@ -49,6 +51,14 @@ pub struct ServerArgs {
         help = "port to listen on"
     )]
     port: u16,
+
+    #[arg(
+        short = 's',
+        long = "source",
+        value_name = "ip",
+        help = "source IP address"
+    )]
+    source_addr: Option<IpAddr>,
 }
 
 impl ServerArgs {
