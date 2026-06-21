@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::{Args, value_parser};
 use std::net::IpAddr;
 
-use crate::cli::parsing::parse_bandwidth;
+use crate::cli::parsing::{parse_bandwidth, parse_duration};
 use crate::udp;
 
 #[derive(Debug)]
@@ -13,6 +13,9 @@ pub struct UdpConfig {
     pub port: u16,
     pub length: u16,
     pub bandwidth: u64,
+    pub duration_secs: u64,
+    pub streams: u16,
+    pub iface: Option<String>,
 }
 
 impl From<UdpArgs> for UdpConfig {
@@ -22,6 +25,9 @@ impl From<UdpArgs> for UdpConfig {
             port: args.port,
             length: args.length,
             bandwidth: args.bandwidth,
+            duration_secs: args.duration_secs,
+            streams: args.streams,
+            iface: args.iface,
         }
     }
 }
@@ -72,6 +78,34 @@ pub struct UdpArgs {
         help = "bandwidth limit (e.g. 400K, 20M, 1G)"
     )]
     bandwidth: u64,
+
+    #[arg(
+        short = 't',
+        long = "duration",
+        value_name = "duration",
+        value_parser = parse_duration,
+        default_value = "10s",
+        help = "test duration (e.g. 8s, 4m, 2h, 1d)"
+    )]
+    duration_secs: u64,
+
+    #[arg(
+        short = 'n',
+        long = "streams",
+        value_name = "count",
+        value_parser = value_parser!(u16).range(1..),
+        default_value_t = 1,
+        help = "number of parallel UDP streams"
+    )]
+    streams: u16,
+
+    #[arg(
+        short = 'i',
+        long = "iface",
+        value_name = "interface",
+        help = "network interface to use"
+    )]
+    iface: Option<String>,
 }
 
 impl UdpArgs {

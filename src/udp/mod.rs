@@ -7,11 +7,14 @@ use crate::utils::format::human_bps;
 
 pub fn run(config: UdpConfig) -> Result<()> {
     println!(
-        "UDP client ({}:{}), payload size: {}, requested bandwidth: {}",
+        "UDP client ({}:{}), payload size: {}, requested bandwidth: {}, duration: {}, {} streams, interface: {}",
         config.server_ip,
         config.port,
         config.length,
-        human_bps(config.bandwidth)
+        human_bps(config.bandwidth),
+        config.duration_secs,
+        config.streams,
+        config.iface.as_deref().unwrap_or("auto"),
     );
 
     Ok(())
