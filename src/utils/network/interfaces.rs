@@ -254,7 +254,7 @@ pub fn interface_exists(name: &str) -> bool {
 }
 
 /// queries interface details via Netlink RTM_GETLINK
-pub fn get_interface_details(ifindex: i32) -> Result<Option<InterfaceDetails>, std::io::Error> {
+pub fn get_interface_details(ifindex: i32) -> Result<Option<InterfaceDetails>, InterfaceError> {
     let response = request(&build_getlink_request(ifindex, 1337))?;
 
     for (msg_type, payload) in NlMsgIter::new(&response) {
@@ -271,7 +271,7 @@ pub fn get_interface_details(ifindex: i32) -> Result<Option<InterfaceDetails>, s
 }
 
 /// queries all interface details via a Netlink RTM_GETLINK dump
-pub fn get_all_interface_details() -> Result<HashMap<i32, InterfaceDetails>, std::io::Error> {
+pub fn get_all_interface_details() -> Result<HashMap<i32, InterfaceDetails>, InterfaceError> {
     let response = request(&build_getlink_dump_request(1337))?;
     let mut map = HashMap::new();
 

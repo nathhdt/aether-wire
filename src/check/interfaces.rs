@@ -1,7 +1,6 @@
 //! network interfaces check module
 
 use anyhow::Result;
-use std::collections::HashMap;
 
 use crate::utils::network::interfaces::{
     InterfaceClass, InterfaceError, InterfaceKind, get_all_interface_details, get_interface,
@@ -56,23 +55,27 @@ impl OperState {
 pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceChecks>> {
     let mut interfaces_checks = Vec::new();
 
-    let interfaces = match iface_filter {
-        Some(name) => vec![get_interface(name)?],
-        None => get_interfaces()?,
+    let pairs: Vec<_> = match iface_filter {
+        Some(name) => {
+            let iface = get_interface(name)?;
+            let details = get_interface_details(iface.index).ok().flatten();
+            vec![(iface, details)]
+        }
+
+        None => {
+            let interfaces = get_interfaces()?;
+            let mut all_details = get_all_interface_details().unwrap_or_default();
+            interfaces
+                .into_iter()
+                .map(|iface| {
+                    let details = all_details.remove(&iface.index);
+                    (iface, details)
+                })
+                .collect()
+        }
     };
 
-    let netlink_data = match interfaces.as_slice() {
-        [iface] if iface_filter.is_some() => get_interface_details(iface.index).map(|opt| {
-            let mut map = HashMap::new();
-            if let Some(details) = opt {
-                map.insert(iface.index, details);
-            }
-            map
-        }),
-        _ => get_all_interface_details(),
-    };
-
-    for interface in interfaces {
+    for (interface, details) in pairs {
         let type_check = Check {
             label: "type".into(),
             value: match interface.kind {
@@ -136,22 +139,15 @@ pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceCheck
             },
         };
 
-        let netlink_checks = match netlink_data.as_ref().map(|m| m.get(&interface.index)) {
-            Err(err) => vec![Check {
-                label: "netlink".into(),
-                value: "error".into(),
-                status: Status::Warn,
-                note: Some(err.to_string()),
-            }],
-
-            Ok(None) => vec![Check {
+        let netlink_checks = match details {
+            None => vec![Check {
                 label: "netlink".into(),
                 value: "no response".into(),
                 status: Status::Warn,
                 note: None,
             }],
 
-            Ok(Some(details)) => {
+            Some(details) => {
                 let operstate = details
                     .operstate
                     .map(OperState::from_u8)
