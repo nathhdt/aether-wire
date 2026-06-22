@@ -4,19 +4,12 @@ use anyhow::Result;
 use std::collections::HashMap;
 
 use crate::utils::network::interfaces::{
-    InterfaceClass, InterfaceError, InterfaceKind, get_interface, get_interface_driver,
-    get_interfaces,
+    InterfaceClass, InterfaceError, InterfaceKind, get_all_interface_details, get_interface,
+    get_interface_details, get_interface_driver, get_interfaces,
 };
-use crate::utils::network::netlink::{
-    builder::{build_getlink_dump_request, build_getlink_request},
-    constants::{
-        IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE, IFLA_XDP,
-        IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID, NETDEV_XDP_ACT_BASIC,
-        NETDEV_XDP_ACT_RX_SG, NETDEV_XDP_ACT_XSK_ZEROCOPY, RTM_NEWLINK, XDP_ATTACHED_DRV,
-        XDP_ATTACHED_HW, XDP_ATTACHED_MULTI, XDP_ATTACHED_NONE, XDP_ATTACHED_SKB,
-    },
-    parser::{NlMsgIter, RtAttrIter, parse_ifinfomsg},
-    request,
+use crate::utils::network::netlink::constants::{
+    NETDEV_XDP_ACT_BASIC, NETDEV_XDP_ACT_RX_SG, NETDEV_XDP_ACT_XSK_ZEROCOPY, XDP_ATTACHED_DRV,
+    XDP_ATTACHED_HW, XDP_ATTACHED_MULTI, XDP_ATTACHED_NONE, XDP_ATTACHED_SKB,
 };
 
 use super::{Check, InterfaceChecks, Status};
@@ -60,128 +53,6 @@ impl OperState {
     }
 }
 
-/// interface informations
-struct InterfaceInfo {
-    operstate: OperState,
-    xdp_basic: Option<bool>,
-    xdp_zerocopy: Option<bool>,
-    xdp_multi_buffer: Option<bool>,
-    xdp_attached: Option<u8>,
-    xdp_prog_id: Option<u32>,
-    mtu: Option<u32>,
-    rx_queues: Option<u32>,
-    tx_queues: Option<u32>,
-}
-
-/// parses a RTM_NEWLINK payload into an interface index and info
-fn parse_interface_info(payload: &[u8]) -> Option<(i32, InterfaceInfo)> {
-    let (ifinfo, attrs) = parse_ifinfomsg(payload)?;
-
-    let mut operstate = None;
-    let mut xdp_features = None;
-    let mut xdp_attached = None;
-    let mut xdp_prog_id = None;
-    let mut mtu = None;
-    let mut rx_queues = None;
-    let mut tx_queues = None;
-
-    for (attr_type, attr_data) in RtAttrIter::new(attrs) {
-        match attr_type {
-            t if t == IFLA_OPERSTATE && !attr_data.is_empty() => {
-                operstate = Some(attr_data[0]);
-            }
-            t if t == IFLA_XDP => {
-                for (xdp_type, xdp_data) in RtAttrIter::new(attr_data) {
-                    if xdp_type == IFLA_XDP_FEATURES
-                        && xdp_data.len() >= 8
-                        && let Ok(bytes) = xdp_data[..8].try_into()
-                    {
-                        xdp_features = Some(u64::from_ne_bytes(bytes));
-                    }
-                    if xdp_type == IFLA_XDP_ATTACHED && !xdp_data.is_empty() {
-                        xdp_attached = Some(xdp_data[0]);
-                    }
-                    if xdp_type == IFLA_XDP_PROG_ID
-                        && xdp_data.len() >= 4
-                        && let Ok(bytes) = xdp_data[..4].try_into()
-                    {
-                        xdp_prog_id = Some(u32::from_ne_bytes(bytes));
-                    }
-                }
-            }
-            t if t == IFLA_MTU && attr_data.len() >= 4 => {
-                if let Ok(bytes) = attr_data[..4].try_into() {
-                    mtu = Some(u32::from_ne_bytes(bytes));
-                }
-            }
-            t if t == IFLA_NUM_RX_QUEUES && attr_data.len() >= 4 => {
-                if let Ok(bytes) = attr_data[..4].try_into() {
-                    rx_queues = Some(u32::from_ne_bytes(bytes));
-                }
-            }
-            t if t == IFLA_NUM_TX_QUEUES && attr_data.len() >= 4 => {
-                if let Ok(bytes) = attr_data[..4].try_into() {
-                    tx_queues = Some(u32::from_ne_bytes(bytes));
-                }
-            }
-            _ => {}
-        }
-    }
-
-    Some((
-        ifinfo.ifi_index,
-        InterfaceInfo {
-            operstate: operstate
-                .map(OperState::from_u8)
-                .unwrap_or(OperState::Unknown),
-            xdp_basic: xdp_features.map(|f| f & NETDEV_XDP_ACT_BASIC as u64 != 0),
-            xdp_zerocopy: xdp_features.map(|f| f & NETDEV_XDP_ACT_XSK_ZEROCOPY as u64 != 0),
-            xdp_multi_buffer: xdp_features.map(|f| f & NETDEV_XDP_ACT_RX_SG as u64 != 0),
-            xdp_attached,
-            xdp_prog_id,
-            mtu,
-            rx_queues,
-            tx_queues,
-        },
-    ))
-}
-
-/// queries all interfaces via a single RTM_GETLINK dump
-fn dump_all() -> Result<HashMap<i32, InterfaceInfo>, std::io::Error> {
-    let response = request(&build_getlink_dump_request(1337))?;
-    let mut map = HashMap::new();
-
-    for (msg_type, payload) in NlMsgIter::new(&response) {
-        if msg_type != RTM_NEWLINK {
-            continue;
-        }
-
-        if let Some((ifindex, info)) = parse_interface_info(payload) {
-            map.insert(ifindex, info);
-        }
-    }
-
-    Ok(map)
-}
-
-/// queries a single interface via a RTM_GETLINK request
-fn query_one(ifindex: i32) -> Result<HashMap<i32, InterfaceInfo>, std::io::Error> {
-    let response = request(&build_getlink_request(ifindex, 1337))?;
-    let mut map = HashMap::new();
-
-    for (msg_type, payload) in NlMsgIter::new(&response) {
-        if msg_type != RTM_NEWLINK {
-            continue;
-        }
-
-        if let Some((idx, info)) = parse_interface_info(payload) {
-            map.insert(idx, info);
-        }
-    }
-
-    Ok(map)
-}
-
 pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceChecks>> {
     let mut interfaces_checks = Vec::new();
 
@@ -191,8 +62,14 @@ pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceCheck
     };
 
     let netlink_data = match interfaces.as_slice() {
-        [iface] if iface_filter.is_some() => query_one(iface.index),
-        _ => dump_all(),
+        [iface] if iface_filter.is_some() => get_interface_details(iface.index).map(|opt| {
+            let mut map = HashMap::new();
+            if let Some(details) = opt {
+                map.insert(iface.index, details);
+            }
+            map
+        }),
+        _ => get_all_interface_details(),
     };
 
     for interface in interfaces {
@@ -274,106 +151,122 @@ pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceCheck
                 note: None,
             }],
 
-            Ok(Some(info)) => vec![
-                Check {
-                    label: "state".into(),
-                    value: info.operstate.as_str().into(),
-                    status: info.operstate.status(),
-                    note: None,
-                },
-                {
-                    let (status, value, note) = if info.xdp_basic.is_none() {
-                        (Status::Warn, String::new(), Some("unavailable".into()))
-                    } else {
-                        let mut present = Vec::new();
-                        let mut missing = Vec::new();
+            Ok(Some(details)) => {
+                let operstate = details
+                    .operstate
+                    .map(OperState::from_u8)
+                    .unwrap_or(OperState::Unknown);
+                let xdp_basic = details
+                    .xdp_features
+                    .map(|f| f & NETDEV_XDP_ACT_BASIC as u64 != 0);
+                let xdp_zerocopy = details
+                    .xdp_features
+                    .map(|f| f & NETDEV_XDP_ACT_XSK_ZEROCOPY as u64 != 0);
+                let xdp_multi_buffer = details
+                    .xdp_features
+                    .map(|f| f & NETDEV_XDP_ACT_RX_SG as u64 != 0);
 
-                        if info.xdp_basic == Some(true) {
-                            present.push("basic");
-                        } else {
-                            missing.push("basic");
-                        }
-                        if info.xdp_zerocopy == Some(true) {
-                            present.push("xsk-zc");
-                        } else {
-                            missing.push("xsk-zc");
-                        }
-                        if info.xdp_multi_buffer == Some(true) {
-                            present.push("rx-sg");
-                        } else {
-                            missing.push("rx-sg");
-                        }
-
-                        if missing.is_empty() {
-                            (Status::Ok, present.join(","), None)
-                        } else if present.is_empty() {
-                            (Status::Warn, String::new(), Some("none advertised".into()))
-                        } else {
-                            (
-                                Status::Warn,
-                                present.join(","),
-                                Some(format!("{} not advertised", missing.join(","))),
-                            )
-                        }
-                    };
-
+                vec![
                     Check {
-                        label: "XDP features".into(),
-                        value,
-                        status,
-                        note,
-                    }
-                },
-                Check {
-                    label: "XDP attached".into(),
-                    value: match info.xdp_attached {
-                        None | Some(XDP_ATTACHED_NONE) => "none".into(),
-                        Some(XDP_ATTACHED_DRV) => match info.xdp_prog_id {
-                            Some(id) => format!("drv (prog #{id})"),
-                            None => "drv".into(),
+                        label: "state".into(),
+                        value: operstate.as_str().into(),
+                        status: operstate.status(),
+                        note: None,
+                    },
+                    {
+                        let (status, value, note) = if xdp_basic.is_none() {
+                            (Status::Warn, String::new(), Some("unavailable".into()))
+                        } else {
+                            let mut present = Vec::new();
+                            let mut missing = Vec::new();
+
+                            if xdp_basic == Some(true) {
+                                present.push("basic");
+                            } else {
+                                missing.push("basic");
+                            }
+                            if xdp_zerocopy == Some(true) {
+                                present.push("xsk-zc");
+                            } else {
+                                missing.push("xsk-zc");
+                            }
+                            if xdp_multi_buffer == Some(true) {
+                                present.push("rx-sg");
+                            } else {
+                                missing.push("rx-sg");
+                            }
+
+                            if missing.is_empty() {
+                                (Status::Ok, present.join(","), None)
+                            } else if present.is_empty() {
+                                (Status::Warn, String::new(), Some("none advertised".into()))
+                            } else {
+                                (
+                                    Status::Warn,
+                                    present.join(","),
+                                    Some(format!("{} not advertised", missing.join(","))),
+                                )
+                            }
+                        };
+
+                        Check {
+                            label: "XDP features".into(),
+                            value,
+                            status,
+                            note,
+                        }
+                    },
+                    Check {
+                        label: "XDP attached".into(),
+                        value: match details.xdp_attached {
+                            None | Some(XDP_ATTACHED_NONE) => "none".into(),
+                            Some(XDP_ATTACHED_DRV) => match details.xdp_prog_id {
+                                Some(id) => format!("drv (prog #{id})"),
+                                None => "drv".into(),
+                            },
+                            Some(XDP_ATTACHED_SKB) => match details.xdp_prog_id {
+                                Some(id) => format!("skb (prog #{id})"),
+                                None => "skb".into(),
+                            },
+                            Some(XDP_ATTACHED_HW) => match details.xdp_prog_id {
+                                Some(id) => format!("hw (prog #{id})"),
+                                None => "hw".into(),
+                            },
+                            Some(XDP_ATTACHED_MULTI) => "multi".into(),
+                            Some(_) => "unknown".into(),
                         },
-                        Some(XDP_ATTACHED_SKB) => match info.xdp_prog_id {
-                            Some(id) => format!("skb (prog #{id})"),
-                            None => "skb".into(),
+                        status: match details.xdp_attached {
+                            Some(XDP_ATTACHED_DRV) | Some(XDP_ATTACHED_HW) => Status::Ok,
+                            Some(XDP_ATTACHED_SKB) => Status::Warn,
+                            _ => Status::Info,
                         },
-                        Some(XDP_ATTACHED_HW) => match info.xdp_prog_id {
-                            Some(id) => format!("hw (prog #{id})"),
-                            None => "hw".into(),
+                        note: match details.xdp_attached {
+                            Some(XDP_ATTACHED_SKB) => Some("generic mode".into()),
+                            _ => None,
                         },
-                        Some(XDP_ATTACHED_MULTI) => "multi".into(),
-                        Some(_) => "unknown".into(),
                     },
-                    status: match info.xdp_attached {
-                        Some(XDP_ATTACHED_DRV) | Some(XDP_ATTACHED_HW) => Status::Ok,
-                        Some(XDP_ATTACHED_SKB) => Status::Warn,
-                        _ => Status::Info,
+                    Check {
+                        label: "MTU".into(),
+                        value: details
+                            .mtu
+                            .map(|v| v.to_string())
+                            .unwrap_or_else(|| "unknown".into()),
+                        status: Status::Info,
+                        note: None,
                     },
-                    note: match info.xdp_attached {
-                        Some(XDP_ATTACHED_SKB) => Some("generic mode".into()),
-                        _ => None,
+                    Check {
+                        label: "queues".into(),
+                        value: match (details.rx_queues, details.tx_queues) {
+                            (Some(rx), Some(tx)) => format!("{rx} rx / {tx} tx"),
+                            (Some(rx), None) => format!("{rx} rx"),
+                            (None, Some(tx)) => format!("{tx} tx"),
+                            (None, None) => "unknown".into(),
+                        },
+                        status: Status::Info,
+                        note: None,
                     },
-                },
-                Check {
-                    label: "MTU".into(),
-                    value: info
-                        .mtu
-                        .map(|v| v.to_string())
-                        .unwrap_or_else(|| "unknown".into()),
-                    status: Status::Info,
-                    note: None,
-                },
-                Check {
-                    label: "queues".into(),
-                    value: match (info.rx_queues, info.tx_queues) {
-                        (Some(rx), Some(tx)) => format!("{rx} rx / {tx} tx"),
-                        (Some(rx), None) => format!("{rx} rx"),
-                        (None, Some(tx)) => format!("{tx} tx"),
-                        (None, None) => "unknown".into(),
-                    },
-                    status: Status::Info,
-                    note: None,
-                },
-            ],
+                ]
+            }
         };
 
         let mut checks = vec![type_check, class_check, driver_check];

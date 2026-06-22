@@ -1,10 +1,20 @@
 //! network interfaces utilities module
 
+use std::collections::HashMap;
 use std::{fmt, fs, path::Path};
 
 use super::constants::{
     ARPHRD_ETHER, ARPHRD_IP6GRE, ARPHRD_IPGRE, ARPHRD_LOOPBACK, ARPHRD_PPP, ARPHRD_RAWIP,
     ARPHRD_SIT, ARPHRD_TUNNEL6,
+};
+use super::netlink::{
+    builder::{build_getlink_dump_request, build_getlink_request},
+    constants::{
+        IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE, IFLA_XDP,
+        IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID, RTM_NEWLINK,
+    },
+    parser::{NlMsgIter, RtAttrIter, parse_ifinfomsg},
+    request,
 };
 
 #[derive(Debug)]
@@ -54,6 +64,17 @@ pub enum InterfaceClass {
     Virtual,
 }
 
+/// interface details from Netlink RTM_GETLINK
+pub struct InterfaceDetails {
+    pub mtu: Option<u32>,
+    pub operstate: Option<u8>,
+    pub rx_queues: Option<u32>,
+    pub tx_queues: Option<u32>,
+    pub xdp_features: Option<u64>,
+    pub xdp_attached: Option<u8>,
+    pub xdp_prog_id: Option<u32>,
+}
+
 fn get_interface_index(path: &Path) -> std::io::Result<i32> {
     let index_str = fs::read_to_string(path.join("ifindex"))?;
 
@@ -83,6 +104,75 @@ fn get_interface_class(path: &Path) -> InterfaceClass {
     } else {
         InterfaceClass::Virtual
     }
+}
+
+/// parses a RTM_NEWLINK payload into an interface index and details
+fn parse_interface_details(payload: &[u8]) -> Option<(i32, InterfaceDetails)> {
+    let (ifinfo, attrs) = parse_ifinfomsg(payload)?;
+
+    let mut mtu = None;
+    let mut operstate = None;
+    let mut rx_queues = None;
+    let mut tx_queues = None;
+    let mut xdp_features = None;
+    let mut xdp_attached = None;
+    let mut xdp_prog_id = None;
+
+    for (attr_type, attr_data) in RtAttrIter::new(attrs) {
+        match attr_type {
+            t if t == IFLA_OPERSTATE && !attr_data.is_empty() => {
+                operstate = Some(attr_data[0]);
+            }
+            t if t == IFLA_XDP => {
+                for (xdp_type, xdp_data) in RtAttrIter::new(attr_data) {
+                    if xdp_type == IFLA_XDP_FEATURES
+                        && xdp_data.len() >= 8
+                        && let Ok(bytes) = xdp_data[..8].try_into()
+                    {
+                        xdp_features = Some(u64::from_ne_bytes(bytes));
+                    }
+                    if xdp_type == IFLA_XDP_ATTACHED && !xdp_data.is_empty() {
+                        xdp_attached = Some(xdp_data[0]);
+                    }
+                    if xdp_type == IFLA_XDP_PROG_ID
+                        && xdp_data.len() >= 4
+                        && let Ok(bytes) = xdp_data[..4].try_into()
+                    {
+                        xdp_prog_id = Some(u32::from_ne_bytes(bytes));
+                    }
+                }
+            }
+            t if t == IFLA_MTU && attr_data.len() >= 4 => {
+                if let Ok(bytes) = attr_data[..4].try_into() {
+                    mtu = Some(u32::from_ne_bytes(bytes));
+                }
+            }
+            t if t == IFLA_NUM_RX_QUEUES && attr_data.len() >= 4 => {
+                if let Ok(bytes) = attr_data[..4].try_into() {
+                    rx_queues = Some(u32::from_ne_bytes(bytes));
+                }
+            }
+            t if t == IFLA_NUM_TX_QUEUES && attr_data.len() >= 4 => {
+                if let Ok(bytes) = attr_data[..4].try_into() {
+                    tx_queues = Some(u32::from_ne_bytes(bytes));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Some((
+        ifinfo.ifi_index,
+        InterfaceDetails {
+            mtu,
+            operstate,
+            rx_queues,
+            tx_queues,
+            xdp_features,
+            xdp_attached,
+            xdp_prog_id,
+        },
+    ))
 }
 
 /// returns the driver associated with a network interface
@@ -161,4 +251,39 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
 /// returns whether a network interface exists
 pub fn interface_exists(name: &str) -> bool {
     Path::new("/sys/class/net").join(name).exists()
+}
+
+/// queries interface details via Netlink RTM_GETLINK
+pub fn get_interface_details(ifindex: i32) -> Result<Option<InterfaceDetails>, std::io::Error> {
+    let response = request(&build_getlink_request(ifindex, 1337))?;
+
+    for (msg_type, payload) in NlMsgIter::new(&response) {
+        if msg_type != RTM_NEWLINK {
+            continue;
+        }
+
+        if let Some((_, details)) = parse_interface_details(payload) {
+            return Ok(Some(details));
+        }
+    }
+
+    Ok(None)
+}
+
+/// queries all interface details via a Netlink RTM_GETLINK dump
+pub fn get_all_interface_details() -> Result<HashMap<i32, InterfaceDetails>, std::io::Error> {
+    let response = request(&build_getlink_dump_request(1337))?;
+    let mut map = HashMap::new();
+
+    for (msg_type, payload) in NlMsgIter::new(&response) {
+        if msg_type != RTM_NEWLINK {
+            continue;
+        }
+
+        if let Some((ifindex, details)) = parse_interface_details(payload) {
+            map.insert(ifindex, details);
+        }
+    }
+
+    Ok(map)
 }
