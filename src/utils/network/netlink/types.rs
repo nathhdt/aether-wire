@@ -31,6 +31,21 @@ impl IfInfoMsg {
     pub const SIZE: usize = core::mem::size_of::<Self>();
 }
 
+/// interface address message
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct IfAddrMsg {
+    pub ifa_family: u8,
+    pub ifa_prefixlen: u8,
+    pub ifa_flags: u8,
+    pub ifa_scope: u8,
+    pub ifa_index: u32,
+}
+
+impl IfAddrMsg {
+    pub const SIZE: usize = core::mem::size_of::<Self>();
+}
+
 /// Netlink error message
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]

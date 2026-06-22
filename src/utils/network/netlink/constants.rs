@@ -16,6 +16,8 @@ pub const NLM_F_DUMP: u16 = NLM_F_ROOT | NLM_F_MATCH;
 /// RTNetlink message types
 pub const RTM_NEWLINK: u16 = 16;
 pub const RTM_GETLINK: u16 = 18;
+pub const RTM_NEWADDR: u16 = 20;
+pub const RTM_GETADDR: u16 = 22;
 
 /// ifinfomsg attribute types
 pub const IFLA_MTU: u16 = 4;
@@ -47,3 +49,6 @@ pub const NLA_F_NET_BYTEORDER: u16 = 1 << 14;
 
 /// base attribute type mask
 pub const NLA_TYPE_MASK: u16 = !(NLA_F_NESTED | NLA_F_NET_BYTEORDER);
+
+/// ifaddrmsg attribute types (linux/if_addr.h)
+pub const IFA_LOCAL: u16 = 2;

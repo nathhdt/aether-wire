@@ -1,20 +1,22 @@
 //! network interfaces utilities module
 
 use std::collections::HashMap;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::{fmt, fs, path::Path};
 
 use super::constants::{
-    ARPHRD_ETHER, ARPHRD_IP6GRE, ARPHRD_IPGRE, ARPHRD_LOOPBACK, ARPHRD_PPP, ARPHRD_RAWIP,
-    ARPHRD_SIT, ARPHRD_TUNNEL6,
+    AF_INET, AF_INET6, ARPHRD_ETHER, ARPHRD_IP6GRE, ARPHRD_IPGRE, ARPHRD_LOOPBACK, ARPHRD_PPP,
+    ARPHRD_RAWIP, ARPHRD_SIT, ARPHRD_TUNNEL6,
 };
 use super::netlink::{
-    builder::{build_getlink_dump_request, build_getlink_request},
+    builder::{build_getaddr_dump_request, build_getlink_dump_request, build_getlink_request},
     constants::{
-        IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE, IFLA_XDP,
-        IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID, RTM_NEWLINK,
+        IFA_LOCAL, IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE, IFLA_XDP,
+        IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID, RTM_NEWADDR, RTM_NEWLINK,
     },
     parser::{NlMsgIter, RtAttrIter, parse_ifinfomsg},
     request,
+    types::IfAddrMsg,
 };
 
 #[derive(Debug)]
@@ -73,6 +75,14 @@ pub struct InterfaceDetails {
     pub xdp_features: Option<u64>,
     pub xdp_attached: Option<u8>,
     pub xdp_prog_id: Option<u32>,
+}
+
+/// interface address from Netlink RTM_GETADDR
+pub struct InterfaceAddress {
+    #[allow(unused)]
+    pub addr: IpAddr,
+    #[allow(unused)]
+    pub prefix_len: u8,
 }
 
 fn get_interface_index(path: &Path) -> std::io::Result<i32> {
@@ -173,6 +183,43 @@ fn parse_interface_details(payload: &[u8]) -> Option<(i32, InterfaceDetails)> {
             xdp_prog_id,
         },
     ))
+}
+
+/// parses a RTM_NEWADDR payload into an interface address
+fn parse_interface_address(payload: &[u8]) -> Option<(i32, InterfaceAddress)> {
+    if payload.len() < IfAddrMsg::SIZE {
+        return None;
+    }
+
+    let msg: IfAddrMsg = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfAddrMsg) };
+
+    let attrs = &payload[IfAddrMsg::SIZE..];
+
+    for (attr_type, attr_data) in RtAttrIter::new(attrs) {
+        if attr_type != IFA_LOCAL {
+            continue;
+        }
+
+        let addr = if msg.ifa_family == AF_INET && attr_data.len() >= 4 {
+            let bytes: [u8; 4] = attr_data[..4].try_into().ok()?;
+            IpAddr::V4(Ipv4Addr::from(bytes))
+        } else if msg.ifa_family == AF_INET6 && attr_data.len() >= 16 {
+            let bytes: [u8; 16] = attr_data[..16].try_into().ok()?;
+            IpAddr::V6(Ipv6Addr::from(bytes))
+        } else {
+            continue;
+        };
+
+        return Some((
+            msg.ifa_index as i32,
+            InterfaceAddress {
+                addr,
+                prefix_len: msg.ifa_prefixlen,
+            },
+        ));
+    }
+
+    None
 }
 
 /// returns the driver associated with a network interface
@@ -286,4 +333,24 @@ pub fn get_all_interface_details() -> Result<HashMap<i32, InterfaceDetails>, Int
     }
 
     Ok(map)
+}
+
+/// queries addresses for a specific interface via Netlink RTM_GETADDR
+pub fn get_interface_addresses(ifindex: i32) -> Result<Vec<InterfaceAddress>, InterfaceError> {
+    let response = request(&build_getaddr_dump_request(1337))?;
+    let mut addresses = Vec::new();
+
+    for (msg_type, payload) in NlMsgIter::new(&response) {
+        if msg_type != RTM_NEWADDR {
+            continue;
+        }
+
+        if let Some((idx, addr)) = parse_interface_address(payload)
+            && idx == ifindex
+        {
+            addresses.push(addr);
+        }
+    }
+
+    Ok(addresses)
 }
