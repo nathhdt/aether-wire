@@ -43,6 +43,7 @@ pub struct InterfaceChecks {
 
 /// run system compatibility check
 pub fn run(config: CheckConfig) -> Result<()> {
+    // check if interface exists
     if let Some(name) = &config.iface
         && !interface_exists(name)
     {
