@@ -26,6 +26,17 @@ pub fn run(config: ServerConfig) -> Result<()> {
         anyhow::bail!("interface '{}' has no configured addresses", config.iface);
     }
 
+    // --source address must be configured on the interface
+    if let Some(source) = config.source_addr
+        && !addresses.iter().any(|a| a.addr == source)
+    {
+        anyhow::bail!(
+            "address '{}' is not configured on interface '{}'",
+            source,
+            config.iface
+        );
+    }
+
     println!(
         "server ({:?}:{}), interface: {}",
         config.source_addr, config.port, config.iface
