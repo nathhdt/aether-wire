@@ -9,18 +9,26 @@ pub fn human_bps(bps: u64) -> String {
     const P: u64 = K * T;
     const E: u64 = K * P;
 
+    fn fmt(bps: u64, divisor: u64, unit: &str) -> String {
+        if bps.is_multiple_of(divisor) {
+            format!("{} {}", bps / divisor, unit)
+        } else {
+            format!("{:.2} {}", bps as f64 / divisor as f64, unit)
+        }
+    }
+
     if bps >= E {
-        format!("{:.2} Ebit/s", bps as f64 / E as f64)
+        fmt(bps, E, "Ebit/s")
     } else if bps >= P {
-        format!("{:.2} Pbit/s", bps as f64 / P as f64)
+        fmt(bps, P, "Pbit/s")
     } else if bps >= T {
-        format!("{:.2} Tbit/s", bps as f64 / T as f64)
+        fmt(bps, T, "Tbit/s")
     } else if bps >= G {
-        format!("{:.2} Gbit/s", bps as f64 / G as f64)
+        fmt(bps, G, "Gbit/s")
     } else if bps >= M {
-        format!("{:.2} Mbit/s", bps as f64 / M as f64)
+        fmt(bps, M, "Mbit/s")
     } else if bps >= K {
-        format!("{:.2} kbit/s", bps as f64 / K as f64)
+        fmt(bps, K, "kbit/s")
     } else {
         format!("{bps} bit/s")
     }
