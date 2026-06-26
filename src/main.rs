@@ -2,6 +2,7 @@
 
 mod check;
 mod cli;
+mod protocol;
 mod server;
 mod udp;
 mod utils;

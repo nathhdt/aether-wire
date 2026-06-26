@@ -1,6 +1,9 @@
 //! command line parsing module
 
-use crate::utils::{constants::benchmark::MAX_BANDWIDTH_BPS, format::human_bps};
+use crate::{
+    protocol::constants::AW_UDP_PAYLOAD_MIN_LENGTH_BYTES,
+    utils::{constants::benchmark::MAX_BANDWIDTH_BPS, format::human_bps},
+};
 
 /// parses bandwidth specifications (K, M, G)
 pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
@@ -70,4 +73,25 @@ pub fn parse_duration(s: &str) -> Result<u64, String> {
 
     num.checked_mul(multiplier)
         .ok_or_else(|| "duration is too large".to_string())
+}
+
+/// parses UDP payload length in bytes
+pub fn parse_udp_payload_length(s: &str) -> Result<u16, String> {
+    let s = s.trim();
+    if s.is_empty() {
+        return Err("UDP payload length cannot be empty".to_string());
+    }
+
+    let length: u16 = s
+        .parse()
+        .map_err(|_| format!("invalid UDP payload length: {}", s))?;
+
+    if length < AW_UDP_PAYLOAD_MIN_LENGTH_BYTES {
+        return Err(format!(
+            "UDP payload length must be at least {} bytes",
+            AW_UDP_PAYLOAD_MIN_LENGTH_BYTES
+        ));
+    }
+
+    Ok(length)
 }

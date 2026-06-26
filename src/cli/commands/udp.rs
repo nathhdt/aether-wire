@@ -3,7 +3,7 @@
 use anyhow::Result;
 use clap::{Args, value_parser};
 
-use crate::cli::parsing::{parse_bandwidth, parse_duration};
+use crate::cli::parsing::{parse_bandwidth, parse_duration, parse_udp_payload_length};
 use crate::udp;
 
 #[derive(Debug)]
@@ -81,7 +81,7 @@ pub struct UdpArgs {
         short = 'l',
         long = "length",
         value_name = "bytes",
-        value_parser = value_parser!(u16).range(1..=65507),
+        value_parser = parse_udp_payload_length,
         help = "UDP payload length"
     )]
     length: u16,
