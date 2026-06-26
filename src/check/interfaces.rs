@@ -79,9 +79,9 @@ pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceCheck
         let type_check = Check {
             label: "type".into(),
             value: match interface.kind {
-                InterfaceKind::Ethernet => "ethernet".into(),
+                InterfaceKind::Ethernet => "Ethernet".into(),
                 InterfaceKind::Loopback => "loopback".into(),
-                InterfaceKind::Ppp => "ppp".into(),
+                InterfaceKind::Ppp => "PPP".into(),
                 InterfaceKind::Tunnel => "tunnel".into(),
                 InterfaceKind::RawIp => "none (raw IP)".into(),
                 InterfaceKind::Other(kind) => format!("other ({kind})"),
