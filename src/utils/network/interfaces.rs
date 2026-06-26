@@ -294,11 +294,6 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     })
 }
 
-/// returns whether a network interface exists
-pub fn interface_exists(name: &str) -> bool {
-    Path::new("/sys/class/net").join(name).exists()
-}
-
 /// queries interface details via Netlink RTM_GETLINK
 pub fn get_interface_details(ifindex: i32) -> Result<Option<InterfaceDetails>, InterfaceError> {
     let response = request(&build_getlink_request(ifindex, 1337))?;

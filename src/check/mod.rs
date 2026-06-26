@@ -9,7 +9,7 @@ pub mod privileges;
 use anyhow::Result;
 
 use crate::cli::commands::check::CheckConfig;
-use crate::utils::network::interfaces::interface_exists;
+use crate::utils::network::interfaces::get_interface;
 
 pub enum Status {
     Ok,
@@ -44,10 +44,8 @@ pub struct InterfaceChecks {
 /// run system compatibility check
 pub fn run(config: CheckConfig) -> Result<()> {
     // check if interface exists
-    if let Some(name) = &config.iface
-        && !interface_exists(name)
-    {
-        anyhow::bail!("interface '{name}' not found");
+    if let Some(iface) = &config.iface {
+        get_interface(iface)?;
     }
 
     println!("system compatibility check\n");
