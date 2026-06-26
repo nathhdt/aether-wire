@@ -1,6 +1,6 @@
 //! command line parsing module
 
-use crate::utils::{constants::udp::MAX_BANDWIDTH_BPS, format::human_bps};
+use crate::utils::{constants::benchmark::MAX_BANDWIDTH_BPS, format::human_bps};
 
 /// parses bandwidth specifications (K, M, G)
 pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
