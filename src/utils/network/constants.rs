@@ -1,4 +1,4 @@
-//! network constants module
+//! network constants utilities module
 
 /// interface link-layer types (linux/if_arp.h)
 pub const ARPHRD_ETHER: u32 = 1;
