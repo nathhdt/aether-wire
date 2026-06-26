@@ -1,5 +1,9 @@
 //! network constants utilities module
 
+/// address family values (linux/socket.h)
+pub const AF_INET: u8 = 2;
+pub const AF_INET6: u8 = 10;
+
 /// interface link-layer types (linux/if_arp.h)
 pub const ARPHRD_ETHER: u32 = 1;
 pub const ARPHRD_PPP: u32 = 512;
@@ -12,7 +16,3 @@ pub const ARPHRD_RAWIP: u32 = 65534;
 
 /// interface operational state values (linux/if.h)
 pub const IF_OPER_UP: u8 = 6;
-
-/// address family values (linux/socket.h)
-pub const AF_INET: u8 = 2;
-pub const AF_INET6: u8 = 10;
