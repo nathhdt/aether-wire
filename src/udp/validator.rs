@@ -7,6 +7,7 @@ use crate::cli::commands::udp::UdpConfig;
 use crate::protocol::constants::{
     ETHERNET_IPV4_UDP_OVERHEAD_BYTES, ETHERNET_IPV6_UDP_OVERHEAD_BYTES,
 };
+use crate::utils::format::human_bps;
 use crate::utils::logging::warn;
 use crate::utils::network::interfaces::constants::IF_OPER_UP;
 use crate::utils::network::interfaces::get_interface;
@@ -18,6 +19,18 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
     // interface must be up
     if iface.operstate != Some(IF_OPER_UP) {
         anyhow::bail!("interface '{}' is not up", config.iface);
+    }
+
+    // requested bandwidth must not exceed interface speed
+    if let Some(speed) = iface.speed
+        && config.bandwidth > speed
+    {
+        anyhow::bail!(
+            "requested bandwidth ({}) exceeds interface '{}' speed ({})",
+            human_bps(config.bandwidth),
+            config.iface,
+            human_bps(speed)
+        );
     }
 
     // interface must have at least one address
