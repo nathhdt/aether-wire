@@ -10,7 +10,7 @@ use crate::server;
 pub struct ServerConfig {
     pub iface: String,
     pub port: u16,
-    pub source_addr: Option<IpAddr>,
+    pub local_addr: Option<IpAddr>,
 }
 
 impl From<ServerArgs> for ServerConfig {
@@ -18,7 +18,7 @@ impl From<ServerArgs> for ServerConfig {
         Self {
             iface: args.iface,
             port: args.port,
-            source_addr: args.source_addr,
+            local_addr: args.local_addr,
         }
     }
 }
@@ -53,12 +53,12 @@ pub struct ServerArgs {
     port: u16,
 
     #[arg(
-        short = 's',
-        long = "source",
+        short = 'l',
+        long = "local-ip",
         value_name = "ip",
-        help = "source IP address"
+        help = "local IP address to use [default: first address on selected interface]"
     )]
-    source_addr: Option<IpAddr>,
+    local_addr: Option<IpAddr>,
 }
 
 impl ServerArgs {
