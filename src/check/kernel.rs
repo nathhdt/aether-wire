@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-use crate::utils::constants::system::{
+use crate::utils::kernel::constants::{
     KERNEL_MIN_MAJOR, KERNEL_MIN_MINOR, KERNEL_RECOMMENDED_MAJOR, KERNEL_RECOMMENDED_MINOR,
 };
 use crate::utils::kernel::flags::{KernelConfigError, KernelFlagValue, get_kernel_flag};
