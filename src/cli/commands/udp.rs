@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use clap::{Args, value_parser};
+use std::net::IpAddr;
 
 use crate::cli::parsing::{parse_bandwidth, parse_duration, parse_udp_payload_length};
 use crate::udp;
@@ -11,6 +12,7 @@ pub struct UdpConfig {
     pub server: String,
     pub port: u16,
     pub iface: String,
+    pub source_addr: Option<IpAddr>,
     pub bandwidth: u64,
     pub length: u16,
     pub duration_secs: u64,
@@ -23,6 +25,7 @@ impl From<UdpArgs> for UdpConfig {
             server: args.server,
             port: args.port,
             iface: args.iface,
+            source_addr: args.source_addr,
             bandwidth: args.bandwidth,
             length: args.length,
             duration_secs: args.duration_secs,
@@ -67,6 +70,14 @@ pub struct UdpArgs {
         help = "network interface to use"
     )]
     iface: String,
+
+    #[arg(
+        short = 'S',
+        long = "source-ip",
+        value_name = "ip",
+        help = "source IP address to use [default: first address on selected interface]"
+    )]
+    source_addr: Option<IpAddr>,
 
     #[arg(
         short = 'b',
