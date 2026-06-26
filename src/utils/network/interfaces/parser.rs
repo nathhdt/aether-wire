@@ -168,3 +168,17 @@ pub fn parse_interface_kind(path: &Path) -> std::io::Result<InterfaceKind> {
         other => InterfaceKind::Other(other),
     })
 }
+
+/// parses interface link speed (bps)
+pub fn parse_interface_speed(path: &Path) -> std::io::Result<Option<u64>> {
+    let path = path.join("speed");
+
+    match fs::read_to_string(path) {
+        Ok(speed) => Ok(speed
+            .trim()
+            .parse::<u64>()
+            .ok()
+            .map(|speed| speed * 1_000_000)),
+        Err(_) => Ok(None),
+    }
+}

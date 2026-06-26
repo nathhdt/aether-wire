@@ -19,7 +19,8 @@ use super::netlink::{
 use error::InterfaceError;
 use parser::{
     parse_interface_class, parse_interface_driver, parse_interface_index, parse_interface_kind,
-    parse_netlink_ifindex, parse_netlink_interface_address, parse_netlink_interface_details,
+    parse_interface_speed, parse_netlink_ifindex, parse_netlink_interface_address,
+    parse_netlink_interface_details,
 };
 use types::Interface;
 
@@ -36,6 +37,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     let kind = parse_interface_kind(&path)?;
     let class = parse_interface_class(&path);
     let driver = parse_interface_driver(&path)?;
+    let speed = parse_interface_speed(&path)?;
 
     let mut interface = Interface {
         index,
@@ -43,6 +45,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
         kind,
         class,
         driver,
+        speed,
 
         mtu: None,
         operstate: None,
@@ -100,6 +103,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
         let kind = parse_interface_kind(&path)?;
         let class = parse_interface_class(&path);
         let driver = parse_interface_driver(&path)?;
+        let speed = parse_interface_speed(&path)?;
 
         interfaces.push(Interface {
             index,
@@ -107,6 +111,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
             kind,
             class,
             driver,
+            speed,
 
             mtu: None,
             operstate: None,

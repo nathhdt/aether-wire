@@ -10,6 +10,7 @@ pub struct Interface {
     pub kind: InterfaceKind,
     pub class: InterfaceClass,
     pub driver: Option<String>,
+    pub speed: Option<u64>,
 
     // netlink (RTM_GETLINK)
     pub mtu: Option<u32>,
