@@ -8,8 +8,8 @@ use std::{
 
 use crate::utils::network::netlink::{
     constants::{
-        IFA_LOCAL, IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE, IFLA_XDP,
-        IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID,
+        IFA_ADDRESS, IFA_LOCAL, IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE,
+        IFLA_XDP, IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID,
     },
     parser::{RtAttrIter, parse_ifinfomsg},
     types::IfAddrMsg,
@@ -31,8 +31,15 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
 
     let attrs = &payload[IfAddrMsg::SIZE..];
 
+    // IFA_LOCAL for IPv4, IFA_ADDRESS for IPv6
+    let target_attr = if msg.ifa_family == AF_INET6 {
+        IFA_ADDRESS
+    } else {
+        IFA_LOCAL
+    };
+
     for (attr_type, attr_data) in RtAttrIter::new(attrs) {
-        if attr_type != IFA_LOCAL {
+        if attr_type != target_attr {
             continue;
         }
 

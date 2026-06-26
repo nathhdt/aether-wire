@@ -51,4 +51,5 @@ pub const NLA_F_NET_BYTEORDER: u16 = 1 << 14;
 pub const NLA_TYPE_MASK: u16 = !(NLA_F_NESTED | NLA_F_NET_BYTEORDER);
 
 /// ifaddrmsg attribute types (linux/if_addr.h)
+pub const IFA_ADDRESS: u16 = 1;
 pub const IFA_LOCAL: u16 = 2;
