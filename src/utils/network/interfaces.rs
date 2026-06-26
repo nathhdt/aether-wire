@@ -79,7 +79,6 @@ pub struct InterfaceDetails {
 
 /// interface address from Netlink RTM_GETADDR
 pub struct InterfaceAddress {
-    #[allow(unused)]
     pub addr: IpAddr,
     #[allow(unused)]
     pub prefix_len: u8,
