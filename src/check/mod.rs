@@ -9,7 +9,6 @@ pub mod privileges;
 use anyhow::Result;
 
 use crate::cli::commands::check::CheckConfig;
-use crate::utils::network::interfaces::get_interface;
 
 pub enum Status {
     Ok,
@@ -43,17 +42,18 @@ pub struct InterfaceChecks {
 
 /// run system compatibility check
 pub fn run(config: CheckConfig) -> Result<()> {
-    // check if interface exists
-    if let Some(iface) = &config.iface {
-        get_interface(iface)?;
-    }
+    // check if interface exists first
+    let interfaces = interfaces::check_interfaces(config.iface.as_deref())?;
+    let kernel = kernel::check_kernel()?;
+    let privileges = privileges::check_privileges()?;
+    let memory = memory::check_memory()?;
 
     println!("system compatibility check\n");
 
-    print::print_section("kernel", &kernel::check_kernel()?);
-    print::print_section("privileges", &privileges::check_privileges()?);
-    print::print_section("memory", &memory::check_memory()?);
-    print::print_section_interfaces(&interfaces::check_interfaces(config.iface.as_deref())?);
+    print::print_section("kernel", &kernel);
+    print::print_section("privileges", &privileges);
+    print::print_section("memory", &memory);
+    print::print_section_interfaces(&interfaces);
 
     Ok(())
 }
