@@ -6,6 +6,7 @@ use std::net::IpAddr;
 use crate::cli::commands::udp::UdpConfig;
 use crate::protocol::constants::{
     ETHERNET_IPV4_UDP_OVERHEAD_BYTES, ETHERNET_IPV6_UDP_OVERHEAD_BYTES,
+    IPV4_UDP_MAX_PAYLOAD_LENGTH_BYTES, IPV6_UDP_MAX_PAYLOAD_LENGTH_BYTES,
 };
 use crate::utils::format::human_bps;
 use crate::utils::logging::warn;
@@ -78,6 +79,24 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
                 config.server
             );
         }
+    }
+
+    // UDP payload length must not exceed the protocol maximum
+    let max_payload = match server_addr {
+        IpAddr::V4(_) => IPV4_UDP_MAX_PAYLOAD_LENGTH_BYTES,
+        IpAddr::V6(_) => IPV6_UDP_MAX_PAYLOAD_LENGTH_BYTES,
+    };
+
+    if config.length >= max_payload {
+        anyhow::bail!(
+            "UDP payload length ({} bytes) exceeds the maximum for {} ({} bytes)",
+            config.length,
+            match server_addr {
+                IpAddr::V4(_) => "IPv4",
+                IpAddr::V6(_) => "IPv6",
+            },
+            max_payload
+        );
     }
 
     // streams must not exceed available queues
