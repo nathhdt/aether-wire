@@ -9,24 +9,38 @@ use super::{Check, Status};
 
 pub fn check_privileges() -> Result<Vec<Check>> {
     let mut checks = Vec::new();
+    let memlock = get_memlock_limit();
 
-    let memlock = match get_memlock_limit() {
-        MemlockLimitValue::Unlimited => Check {
-            label: "RLIMIT_MEMLOCK".into(),
-            value: "unlimited".into(),
-            status: Status::Ok,
-            note: Some("no memory-locking restriction".into()),
-        },
-
-        MemlockLimitValue::Bytes(bytes) => Check {
-            label: "RLIMIT_MEMLOCK".into(),
-            value: human_bytes(bytes),
-            status: Status::Warn,
-            note: Some("memory locking is limited".into()),
-        },
+    let (value, status) = match memlock.current {
+        MemlockLimitValue::Unlimited => ("unlimited".into(), Status::Ok),
+        MemlockLimitValue::Bytes(bytes) => (human_bytes(bytes), Status::Warn),
     };
 
-    checks.push(memlock);
+    let note = match (memlock.current, memlock.hard) {
+        (MemlockLimitValue::Unlimited, MemlockLimitValue::Unlimited) => None,
+
+        (MemlockLimitValue::Bytes(_), MemlockLimitValue::Bytes(_))
+            if memlock.current == memlock.hard =>
+        {
+            Some("memory locking is limited".into())
+        }
+
+        (_, MemlockLimitValue::Unlimited) => {
+            Some("current limit can be increased up to unlimited".into())
+        }
+
+        (_, MemlockLimitValue::Bytes(bytes)) => Some(format!(
+            "current limit can be increased up to {}",
+            human_bytes(bytes)
+        )),
+    };
+
+    checks.push(Check {
+        label: "RLIMIT_MEMLOCK".into(),
+        value,
+        status,
+        note,
+    });
 
     Ok(checks)
 }
