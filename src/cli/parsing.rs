@@ -65,7 +65,7 @@ pub fn parse_duration(s: &str) -> Result<u64, String> {
         .ok_or_else(|| "duration is too large".to_string())
 }
 
-/// parses UDP payload length in bytes
+/// parses UDP payload length in bytes (does not check max bound)
 pub fn parse_udp_payload_length(s: &str) -> Result<u16, String> {
     let s = s.trim();
     if s.is_empty() {
