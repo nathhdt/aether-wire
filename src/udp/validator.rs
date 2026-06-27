@@ -39,7 +39,7 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         anyhow::bail!("interface '{}' has no configured addresses", config.iface);
     }
 
-    // --source-ip address must be configured on the interface
+    // --source-ip address must be configured on the chosen interface
     if let Some(source_addr) = config.source_addr
         && !iface.addresses.iter().any(|a| a.addr == source_addr)
     {
@@ -50,36 +50,38 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         );
     }
 
-    // source address family must match server address family
-    let server_addr = resolve(&config.server)?;
+    let server_addrs = resolve(&config.server)?;
 
-    if let Some(source_addr) = config.source_addr {
-        let compatible = matches!(
-            (source_addr, server_addr),
-            (IpAddr::V4(_), IpAddr::V4(_)) | (IpAddr::V6(_), IpAddr::V6(_))
-        );
-        if !compatible {
-            anyhow::bail!(
-                "source address '{}' is not compatible with server '{}' (address family mismatch)",
-                source_addr,
-                config.server
-            );
-        }
+    // select server address compatible with source/interface address
+    let server_addr = if let Some(source_addr) = config.source_addr {
+        server_addrs
+            .iter()
+            .copied()
+            .find(|server_addr| source_addr.is_ipv4() == server_addr.is_ipv4())
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "source address '{}' is not compatible with server '{}' (address family mismatch)",
+                    source_addr,
+                    config.server
+                )
+            })?
     } else {
-        let compatible_addr = iface.addresses.iter().find(|a| {
-            matches!(
-                (a.addr, server_addr),
-                (IpAddr::V4(_), IpAddr::V4(_)) | (IpAddr::V6(_), IpAddr::V6(_))
-            )
-        });
-        if compatible_addr.is_none() {
-            anyhow::bail!(
-                "interface '{}' has no address compatible with server '{}' (no matching address family)",
-                config.iface,
-                config.server
-            );
-        }
-    }
+        iface.addresses
+            .iter()
+            .find_map(|iface_addr| {
+                server_addrs
+                    .iter()
+                    .copied()
+                    .find(|server_addr| iface_addr.addr.is_ipv4() == server_addr.is_ipv4())
+            })
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "interface '{}' has no address compatible with server '{}' (no matching address family)",
+                    config.iface,
+                    config.server
+                )
+            })?
+    };
 
     // UDP payload length must not exceed the protocol maximum
     let max_payload = match server_addr {
@@ -87,7 +89,7 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         IpAddr::V6(_) => IPV6_UDP_MAX_PAYLOAD_LENGTH_BYTES,
     };
 
-    if config.length >= max_payload {
+    if config.length > max_payload {
         anyhow::bail!(
             "UDP payload length ({} bytes) exceeds the maximum for {} ({} bytes)",
             config.length,
@@ -116,7 +118,7 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         );
     }
 
-    // streams beyond cpu count causes context switching
+    // streams beyond CPU count causes context switching
     let cpu_count = std::thread::available_parallelism()
         .map(|n| n.get() as u32)
         .unwrap_or(u32::MAX);
@@ -130,10 +132,11 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
 
     // warn if resulting frame exceeds interface MTU
     if let Some(mtu) = iface.mtu {
-        let overhead = match resolve(&config.server)? {
+        let overhead = match server_addr {
             IpAddr::V4(_) => ETHERNET_IPV4_UDP_OVERHEAD_BYTES,
             IpAddr::V6(_) => ETHERNET_IPV6_UDP_OVERHEAD_BYTES,
         };
+
         let frame_size = config.length as u32 + overhead;
 
         if frame_size > mtu {
