@@ -5,11 +5,10 @@ use crate::{
     utils::{constants::benchmark::MAX_BANDWIDTH_BPS, format::human_bps},
 };
 
-/// parses bandwidth specifications (K, M, G)
-pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
+fn split_value_unit<'a>(s: &'a str, what: &str) -> Result<(u64, &'a str), String> {
     let s = s.trim();
     if s.is_empty() {
-        return Err("bandwidth cannot be empty".to_string());
+        return Err(format!("{what} cannot be empty"));
     }
 
     let (num_str, unit) = match s.find(|c: char| c.is_alphabetic()) {
@@ -22,15 +21,22 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
         .map_err(|_| format!("invalid number: {}", num_str))?;
 
     if num == 0 {
-        return Err("bandwidth must be positive".to_string());
+        return Err(format!("{what} must be positive"));
     }
+
+    Ok((num, unit))
+}
+
+/// parses bandwidth specifications (K, M, G)
+pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
+    let (num, unit) = split_value_unit(s, "bandwidth")?;
 
     let multiplier = match unit.to_uppercase().as_str() {
         "" | "BPS" => 1,
         "K" | "KBPS" => 1_000,
         "M" | "MBPS" => 1_000_000,
         "G" | "GBPS" => 1_000_000_000,
-        _ => return Err(format!("unknown unit: {}. Use K, M, or G", unit)),
+        _ => return Err(format!("unknown unit '{}', use K, M, or G", unit)),
     };
 
     if num > MAX_BANDWIDTH_BPS / multiplier {
@@ -45,30 +51,14 @@ pub fn parse_bandwidth(s: &str) -> Result<u64, String> {
 
 /// parses duration specifications (s, m, h, d)
 pub fn parse_duration(s: &str) -> Result<u64, String> {
-    let s = s.trim();
-    if s.is_empty() {
-        return Err("duration cannot be empty".to_string());
-    }
-
-    let (num_str, unit) = match s.find(|c: char| c.is_alphabetic()) {
-        Some(pos) => s.split_at(pos),
-        None => (s, ""),
-    };
-
-    let num: u64 = num_str
-        .parse()
-        .map_err(|_| format!("invalid number: {}", num_str))?;
-
-    if num == 0 {
-        return Err("duration must be positive".to_string());
-    }
+    let (num, unit) = split_value_unit(s, "duration")?;
 
     let multiplier = match unit.to_lowercase().as_str() {
         "" | "s" => 1,
         "m" => 60,
         "h" => 60 * 60,
         "d" => 60 * 60 * 24,
-        _ => return Err(format!("unknown unit: {}. Use s, m, h, or d", unit)),
+        _ => return Err(format!("unknown unit '{}', use s, m, h, or d", unit)),
     };
 
     num.checked_mul(multiplier)
