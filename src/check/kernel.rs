@@ -162,7 +162,7 @@ pub fn check_kernel() -> Result<Vec<Check>> {
     Ok(checks)
 }
 
-/// checks whether a module is loaded, optionally attempting to load it first
+/// checks whether a module is loaded
 fn check_module(module: &str) -> (bool, Option<String>) {
     match is_in_proc_modules(module) {
         Ok(true) => (true, Some(format!("module '{module}' loaded"))),
