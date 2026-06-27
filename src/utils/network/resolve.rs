@@ -35,20 +35,25 @@ fn is_valid_hostname(hostname: &str) -> bool {
     })
 }
 
-/// resolves a server string (IPv4, IPv6 or hostname)
-pub fn resolve(server: &str) -> Result<IpAddr, ResolveError> {
+/// resolves a host identifier (IPv4, IPv6 or hostname)
+pub fn resolve(server: &str) -> Result<Vec<IpAddr>, ResolveError> {
     if let Ok(ip) = server.parse::<IpAddr>() {
-        return Ok(ip);
+        return Ok(vec![ip]);
     }
 
     if !is_valid_hostname(server) {
         return Err(ResolveError::InvalidAddress(server.to_owned()));
     }
 
-    (server, 0u16)
+    let addrs: Vec<IpAddr> = (server, 0u16)
         .to_socket_addrs()
         .map_err(|_| ResolveError::NotFound(server.to_owned()))?
-        .next()
         .map(|addr| addr.ip())
-        .ok_or_else(|| ResolveError::NotFound(server.to_owned()))
+        .collect();
+
+    if addrs.is_empty() {
+        Err(ResolveError::NotFound(server.to_owned()))
+    } else {
+        Ok(addrs)
+    }
 }
