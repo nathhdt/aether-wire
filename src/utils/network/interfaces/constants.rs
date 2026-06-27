@@ -15,4 +15,7 @@ pub const ARPHRD_LOOPBACK: u32 = 772;
 pub const ARPHRD_RAWIP: u32 = 65534;
 
 /// interface operational state values (linux/if.h)
+pub const IF_OPER_DOWN: u8 = 2;
+pub const IF_OPER_LOWERLAYERDOWN: u8 = 3;
+pub const IF_OPER_DORMANT: u8 = 5;
 pub const IF_OPER_UP: u8 = 6;

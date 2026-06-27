@@ -4,6 +4,7 @@ use anyhow::Result;
 
 use crate::utils::network::{
     interfaces::{
+        constants::{IF_OPER_DORMANT, IF_OPER_DOWN, IF_OPER_LOWERLAYERDOWN, IF_OPER_UP},
         get_all_interfaces, get_interface,
         types::{InterfaceClass, InterfaceKind},
     },
@@ -27,10 +28,10 @@ enum OperState {
 impl OperState {
     fn from_u8(value: u8) -> Self {
         match value {
-            2 => Self::Down,
-            3 => Self::LowerLayerDown,
-            5 => Self::Dormant,
-            6 => Self::Up,
+            IF_OPER_DOWN => Self::Down,
+            IF_OPER_LOWERLAYERDOWN => Self::LowerLayerDown,
+            IF_OPER_DORMANT => Self::Dormant,
+            IF_OPER_UP => Self::Up,
             _ => Self::Unknown,
         }
     }
