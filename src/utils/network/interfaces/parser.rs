@@ -29,6 +29,10 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
 
     let msg: IfAddrMsg = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfAddrMsg) };
 
+    if msg.ifa_index as i32 != interface.index {
+        return None;
+    }
+
     let attrs = &payload[IfAddrMsg::SIZE..];
 
     // IFA_LOCAL for IPv4, IFA_ADDRESS for IPv6
