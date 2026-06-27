@@ -5,9 +5,16 @@ use crate::utils::network::netlink::{
     types::{IfAddrMsg, IfInfoMsg, NlMsgHdr},
 };
 
-/// builds a raw Netlink request from a header and a ifinfomsg
-fn build_request(nlmsg_type: u16, nlmsg_flags: u16, info: IfInfoMsg, seq: u32) -> Vec<u8> {
-    let nlmsg_len = (NlMsgHdr::SIZE + IfInfoMsg::SIZE) as u32;
+/// returns raw byte slice from POD structure
+fn as_bytes<T: Copy>(value: &T) -> &[u8] {
+    unsafe {
+        core::slice::from_raw_parts(value as *const T as *const u8, core::mem::size_of::<T>())
+    }
+}
+
+/// builds raw Netlink request from a header & body
+fn build<T: Copy>(nlmsg_type: u16, nlmsg_flags: u16, body: T, seq: u32) -> Vec<u8> {
+    let nlmsg_len = (NlMsgHdr::SIZE + core::mem::size_of::<T>()) as u32;
 
     let header = NlMsgHdr {
         nlmsg_len,
@@ -19,49 +26,15 @@ fn build_request(nlmsg_type: u16, nlmsg_flags: u16, info: IfInfoMsg, seq: u32) -
 
     let mut buf = Vec::with_capacity(nlmsg_len as usize);
 
-    unsafe {
-        let header_bytes =
-            core::slice::from_raw_parts(&header as *const NlMsgHdr as *const u8, NlMsgHdr::SIZE);
-        let info_bytes =
-            core::slice::from_raw_parts(&info as *const IfInfoMsg as *const u8, IfInfoMsg::SIZE);
-
-        buf.extend_from_slice(header_bytes);
-        buf.extend_from_slice(info_bytes);
-    }
+    buf.extend_from_slice(as_bytes(&header));
+    buf.extend_from_slice(as_bytes(&body));
 
     buf
 }
 
-/// builds a raw Netlink request from a header and a ifaddrmsg
-fn build_addr_request(nlmsg_type: u16, nlmsg_flags: u16, addr: IfAddrMsg, seq: u32) -> Vec<u8> {
-    let nlmsg_len = (NlMsgHdr::SIZE + IfAddrMsg::SIZE) as u32;
-
-    let header = NlMsgHdr {
-        nlmsg_len,
-        nlmsg_type,
-        nlmsg_flags,
-        nlmsg_seq: seq,
-        nlmsg_pid: 0,
-    };
-
-    let mut buf = Vec::with_capacity(nlmsg_len as usize);
-
-    unsafe {
-        let header_bytes =
-            core::slice::from_raw_parts(&header as *const NlMsgHdr as *const u8, NlMsgHdr::SIZE);
-        let addr_bytes =
-            core::slice::from_raw_parts(&addr as *const IfAddrMsg as *const u8, IfAddrMsg::SIZE);
-
-        buf.extend_from_slice(header_bytes);
-        buf.extend_from_slice(addr_bytes);
-    }
-
-    buf
-}
-
-/// builds a RTM_GETLINK request for a specific interface by index
+/// builds RTM_GETLINK request for specific interface
 pub fn build_getlink_request(ifindex: i32, seq: u32) -> Vec<u8> {
-    build_request(
+    build(
         RTM_GETLINK,
         NLM_F_REQUEST,
         IfInfoMsg {
@@ -76,9 +49,9 @@ pub fn build_getlink_request(ifindex: i32, seq: u32) -> Vec<u8> {
     )
 }
 
-/// builds a RTM_GETLINK dump request for all interfaces
+/// builds RTM_GETLINK dump request for all interfaces
 pub fn build_getlink_dump_request(seq: u32) -> Vec<u8> {
-    build_request(
+    build(
         RTM_GETLINK,
         NLM_F_REQUEST | NLM_F_DUMP,
         IfInfoMsg {
@@ -93,9 +66,9 @@ pub fn build_getlink_dump_request(seq: u32) -> Vec<u8> {
     )
 }
 
-/// builds a RTM_GETADDR dump request for all interface addresses
+/// builds RTM_GETADDR dump request for all interface addresses
 pub fn build_getaddr_dump_request(seq: u32) -> Vec<u8> {
-    build_addr_request(
+    build(
         RTM_GETADDR,
         NLM_F_REQUEST | NLM_F_DUMP,
         IfAddrMsg {
