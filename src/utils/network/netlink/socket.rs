@@ -11,8 +11,7 @@ pub fn open_netlink_socket() -> std::io::Result<rustix::fd::OwnedFd> {
         SocketType::RAW,
         SocketFlags::empty(),
         None,
-    )
-    .map_err(|e| std::io::Error::from_raw_os_error(e.raw_os_error()))?;
+    )?;
 
     let addr = SocketAddrNetlink::new(0, 0);
     bind(&fd, &addr)?;

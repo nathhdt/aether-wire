@@ -15,16 +15,13 @@ use socket::open_netlink_socket;
 pub fn request(req: &[u8]) -> std::io::Result<Vec<u8>> {
     let fd = open_netlink_socket()?;
 
-    send(&fd, req, SendFlags::empty())
-        .map_err(|e| std::io::Error::from_raw_os_error(e.raw_os_error()))?;
+    send(&fd, req, SendFlags::empty())?;
 
     let mut result = Vec::new();
     let mut buf = vec![0u8; 8192];
 
     loop {
-        let (len, _) = recv(&fd, &mut buf, RecvFlags::empty())
-            .map_err(|e| std::io::Error::from_raw_os_error(e.raw_os_error()))?;
-
+        let (len, _) = recv(&fd, &mut buf, RecvFlags::empty())?;
         let chunk = &buf[..len];
 
         if let Some(errno) = parse_nlmsg_error(chunk) {
