@@ -11,6 +11,12 @@ pub enum MemlockLimitValue {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MemlockLimit {
+    pub current: MemlockLimitValue,
+    pub hard: MemlockLimitValue,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HugePagesInfo {
     pub page_size_bytes: u64,
     pub total_pages: u64,
@@ -21,11 +27,19 @@ pub fn is_root_process() -> bool {
     process::getuid().is_root()
 }
 
-/// retrieves memlock hard limit
-pub fn get_memlock_limit() -> MemlockLimitValue {
-    match process::getrlimit(process::Resource::Memlock).maximum {
-        None => MemlockLimitValue::Unlimited,
-        Some(value) => MemlockLimitValue::Bytes(value),
+/// retrieves memlock limits
+pub fn get_memlock_limit() -> MemlockLimit {
+    let limit = process::getrlimit(process::Resource::Memlock);
+
+    MemlockLimit {
+        current: match limit.current {
+            None => MemlockLimitValue::Unlimited,
+            Some(value) => MemlockLimitValue::Bytes(value),
+        },
+        hard: match limit.maximum {
+            None => MemlockLimitValue::Unlimited,
+            Some(value) => MemlockLimitValue::Bytes(value),
+        },
     }
 }
 
