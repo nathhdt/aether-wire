@@ -54,10 +54,6 @@ pub struct NlMsgErr {
     pub msg: NlMsgHdr,
 }
 
-impl NlMsgErr {
-    pub const SIZE: usize = core::mem::size_of::<Self>();
-}
-
 /// routing attribute
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
