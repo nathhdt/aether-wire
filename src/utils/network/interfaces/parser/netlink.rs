@@ -1,11 +1,9 @@
-//! network interfaces parsing utilities module
+//! network interfaces Netlink parsing utilities module
 
-use std::{
-    fs,
-    net::{IpAddr, Ipv4Addr, Ipv6Addr},
-    path::Path,
-};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
+use crate::utils::network::interfaces::constants::{AF_INET, AF_INET6};
+use crate::utils::network::interfaces::types::{Interface, InterfaceAddress};
 use crate::utils::network::netlink::{
     constants::{
         IFA_ADDRESS, IFA_LOCAL, IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE,
@@ -15,13 +13,13 @@ use crate::utils::network::netlink::{
     types::IfAddrMsg,
 };
 
-use super::constants::{
-    AF_INET, AF_INET6, ARPHRD_ETHER, ARPHRD_IP6GRE, ARPHRD_IPGRE, ARPHRD_LOOPBACK, ARPHRD_PPP,
-    ARPHRD_RAWIP, ARPHRD_SIT, ARPHRD_TUNNEL6,
-};
-use super::types::{Interface, InterfaceAddress, InterfaceClass, InterfaceKind};
+/// extracts the ifindex from a RTM_NEWLINK payload
+pub fn extract_netlink_ifindex(payload: &[u8]) -> Option<i32> {
+    let (ifinfo, _) = parse_ifinfomsg(payload)?;
+    Some(ifinfo.ifi_index)
+}
 
-/// parses a RTM_NEWADDR payload, returns ifindex if an address was pushed
+/// parses a RTM_NEWADDR payload into an Interface
 pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface) -> Option<i32> {
     if payload.len() < IfAddrMsg::SIZE {
         return None;
@@ -68,22 +66,7 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
     None
 }
 
-/// parses interface class
-pub fn parse_interface_class(path: &Path) -> InterfaceClass {
-    if path.join("device").exists() {
-        InterfaceClass::Device
-    } else {
-        InterfaceClass::Virtual
-    }
-}
-
-/// extracts the ifindex from a RTM_NEWLINK payload
-pub fn parse_netlink_ifindex(payload: &[u8]) -> Option<i32> {
-    let (ifinfo, _) = parse_ifinfomsg(payload)?;
-    Some(ifinfo.ifi_index)
-}
-
-/// parses a RTM_NEWLINK payload into an interface
+/// parses a RTM_NEWLINK payload into an Interface
 pub fn parse_netlink_interface_details(payload: &[u8], interface: &mut Interface) -> Option<i32> {
     let (ifinfo, attrs) = parse_ifinfomsg(payload)?;
 
@@ -133,56 +116,4 @@ pub fn parse_netlink_interface_details(payload: &[u8], interface: &mut Interface
     }
 
     Some(ifinfo.ifi_index)
-}
-
-/// parses interface driver
-pub fn parse_interface_driver(path: &Path) -> std::io::Result<Option<String>> {
-    let path = path.join("device").join("driver");
-
-    match fs::read_link(path) {
-        Ok(target) => Ok(target
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())),
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(err) => Err(err),
-    }
-}
-
-/// parses interface index
-pub fn parse_interface_index(path: &Path) -> std::io::Result<i32> {
-    let index_str = fs::read_to_string(path.join("ifindex"))?;
-
-    index_str
-        .trim()
-        .parse::<i32>()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
-}
-
-/// parses interface kind
-pub fn parse_interface_kind(path: &Path) -> std::io::Result<InterfaceKind> {
-    let ty = fs::read_to_string(path.join("type"))?;
-    let ty = ty.trim().parse::<u32>().unwrap_or_default();
-
-    Ok(match ty {
-        ARPHRD_ETHER => InterfaceKind::Ethernet,
-        ARPHRD_PPP => InterfaceKind::Ppp,
-        ARPHRD_IPGRE | ARPHRD_IP6GRE | ARPHRD_SIT | ARPHRD_TUNNEL6 => InterfaceKind::Tunnel,
-        ARPHRD_LOOPBACK => InterfaceKind::Loopback,
-        ARPHRD_RAWIP => InterfaceKind::RawIp,
-        other => InterfaceKind::Other(other),
-    })
-}
-
-/// parses interface link speed (bps)
-pub fn parse_interface_speed(path: &Path) -> std::io::Result<Option<u64>> {
-    let path = path.join("speed");
-
-    match fs::read_to_string(path) {
-        Ok(speed) => Ok(speed
-            .trim()
-            .parse::<u64>()
-            .ok()
-            .map(|speed| speed * 1_000_000)),
-        Err(_) => Ok(None),
-    }
 }

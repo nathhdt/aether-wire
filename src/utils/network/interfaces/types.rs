@@ -25,6 +25,29 @@ pub struct Interface {
     pub addresses: Vec<InterfaceAddress>,
 }
 
+impl Interface {
+    pub(crate) fn new(name: String) -> Self {
+        Self {
+            index: 0,
+            name,
+            kind: InterfaceKind::Other(0),
+            class: InterfaceClass::Virtual,
+            driver: None,
+            speed: None,
+
+            mtu: None,
+            operstate: None,
+            rx_queues: None,
+            tx_queues: None,
+            xdp_features: None,
+            xdp_attached: None,
+            xdp_prog_id: None,
+
+            addresses: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InterfaceKind {
     Ethernet,

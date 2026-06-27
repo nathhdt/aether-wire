@@ -18,9 +18,10 @@ use super::netlink::{
 
 use error::InterfaceError;
 use parser::{
-    parse_interface_class, parse_interface_driver, parse_interface_index, parse_interface_kind,
-    parse_interface_speed, parse_netlink_ifindex, parse_netlink_interface_address,
-    parse_netlink_interface_details,
+    netlink::{
+        extract_netlink_ifindex, parse_netlink_interface_address, parse_netlink_interface_details,
+    },
+    sysfs::parse_sysfs_interface,
 };
 use types::Interface;
 
@@ -32,31 +33,10 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
         return Err(InterfaceError::InterfaceNotFound);
     }
 
+    let mut interface = Interface::new(name.to_owned());
+
     // sysfs
-    let index = parse_interface_index(&path)?;
-    let kind = parse_interface_kind(&path)?;
-    let class = parse_interface_class(&path);
-    let driver = parse_interface_driver(&path)?;
-    let speed = parse_interface_speed(&path)?;
-
-    let mut interface = Interface {
-        index,
-        name: name.to_owned(),
-        kind,
-        class,
-        driver,
-        speed,
-
-        mtu: None,
-        operstate: None,
-        rx_queues: None,
-        tx_queues: None,
-        xdp_features: None,
-        xdp_attached: None,
-        xdp_prog_id: None,
-
-        addresses: Vec::new(),
-    };
+    parse_sysfs_interface(&path, &mut interface)?;
 
     // netlink (RTM_GETLINK)
     let response = request(&build_getlink_request(interface.index, 1337))?;
@@ -66,7 +46,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
             continue;
         }
 
-        if let Some(idx) = parse_netlink_ifindex(payload)
+        if let Some(idx) = extract_netlink_ifindex(payload)
             && idx == interface.index
         {
             parse_netlink_interface_details(payload, &mut interface);
@@ -98,31 +78,12 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
         let name = entry.file_name().to_string_lossy().into_owned();
         let path = entry.path();
 
+        let mut interface = Interface::new(name);
+
         // sysfs
-        let index = parse_interface_index(&path)?;
-        let kind = parse_interface_kind(&path)?;
-        let class = parse_interface_class(&path);
-        let driver = parse_interface_driver(&path)?;
-        let speed = parse_interface_speed(&path)?;
+        parse_sysfs_interface(&path, &mut interface)?;
 
-        interfaces.push(Interface {
-            index,
-            name,
-            kind,
-            class,
-            driver,
-            speed,
-
-            mtu: None,
-            operstate: None,
-            rx_queues: None,
-            tx_queues: None,
-            xdp_features: None,
-            xdp_attached: None,
-            xdp_prog_id: None,
-
-            addresses: Vec::new(),
-        });
+        interfaces.push(interface);
     }
 
     let index_map: HashMap<i32, usize> = interfaces
@@ -139,7 +100,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
             continue;
         }
 
-        if let Some(idx) = parse_netlink_ifindex(payload)
+        if let Some(idx) = extract_netlink_ifindex(payload)
             && let Some(&i) = index_map.get(&idx)
         {
             parse_netlink_interface_details(payload, &mut interfaces[i]);
@@ -154,7 +115,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
             continue;
         }
 
-        if let Some(idx) = parse_netlink_ifindex(payload)
+        if let Some(idx) = extract_netlink_ifindex(payload)
             && let Some(&i) = index_map.get(&idx)
         {
             parse_netlink_interface_address(payload, &mut interfaces[i]);
