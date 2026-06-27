@@ -21,33 +21,19 @@ pub const fn rta_align(len: usize) -> usize {
     (len + RTA_ALIGNTO - 1) & !(RTA_ALIGNTO - 1)
 }
 
-#[allow(unused)]
 #[inline]
-pub fn nlmsg_payload_len(hdr: &NlMsgHdr) -> usize {
-    hdr.nlmsg_len as usize - NlMsgHdr::SIZE
-}
-
-#[allow(unused)]
-#[inline]
-pub fn rta_payload_len(attr: &RtAttr) -> usize {
-    attr.rta_len as usize - RtAttr::SIZE
-}
-
-/// reads a nlmsghdr from a byte buffer
-#[allow(unused)]
-pub fn parse_nlmsg_header(buf: &[u8]) -> Option<NlMsgHdr> {
-    if buf.len() < NlMsgHdr::SIZE {
+fn read_struct<T: Copy>(buf: &[u8], pos: usize) -> Option<T> {
+    let end = pos.checked_add(core::mem::size_of::<T>())?;
+    if end > buf.len() {
         return None;
     }
-    Some(unsafe { core::ptr::read_unaligned(buf.as_ptr() as *const NlMsgHdr) })
+
+    Some(unsafe { core::ptr::read_unaligned(buf.as_ptr().add(pos) as *const T) })
 }
 
 /// reads an ifinfomsg from a RTM_NEWLINK payload
 pub fn parse_ifinfomsg(payload: &[u8]) -> Option<(IfInfoMsg, &[u8])> {
-    if payload.len() < IfInfoMsg::SIZE {
-        return None;
-    }
-    let hdr = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfInfoMsg) };
+    let hdr = read_struct(payload, 0)?;
     Some((hdr, &payload[IfInfoMsg::SIZE..]))
 }
 
@@ -67,12 +53,7 @@ impl<'a> Iterator for NlMsgIter<'a> {
     type Item = (u16, &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos + NlMsgHdr::SIZE > self.buf.len() {
-            return None;
-        }
-
-        let hdr: NlMsgHdr =
-            unsafe { core::ptr::read_unaligned(self.buf[self.pos..].as_ptr() as *const NlMsgHdr) };
+        let hdr: NlMsgHdr = read_struct(self.buf, self.pos)?;
 
         if hdr.nlmsg_type == NLMSG_DONE {
             return None;
@@ -106,12 +87,7 @@ impl<'a> Iterator for RtAttrIter<'a> {
     type Item = (u16, &'a [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos + RtAttr::SIZE > self.buf.len() {
-            return None;
-        }
-
-        let attr: RtAttr =
-            unsafe { core::ptr::read_unaligned(self.buf[self.pos..].as_ptr() as *const RtAttr) };
+        let attr: RtAttr = read_struct(self.buf, self.pos)?;
 
         let attr_len = attr.rta_len as usize;
         if attr_len < RtAttr::SIZE || self.pos + attr_len > self.buf.len() {
@@ -127,22 +103,13 @@ impl<'a> Iterator for RtAttrIter<'a> {
 
 /// returns the error code if the buffer contains a nlmsgerr structure
 pub fn parse_nlmsg_error(buf: &[u8]) -> Option<i32> {
-    if buf.len() < NlMsgHdr::SIZE {
-        return None;
-    }
-
-    let hdr: NlMsgHdr = unsafe { core::ptr::read_unaligned(buf.as_ptr() as *const NlMsgHdr) };
+    let hdr: NlMsgHdr = read_struct(buf, 0)?;
 
     if hdr.nlmsg_type != NLMSG_ERROR {
         return None;
     }
 
-    if buf.len() < NlMsgHdr::SIZE + NlMsgErr::SIZE {
-        return None;
-    }
-
-    let err: NlMsgErr =
-        unsafe { core::ptr::read_unaligned(buf[NlMsgHdr::SIZE..].as_ptr() as *const NlMsgErr) };
+    let err: NlMsgErr = read_struct(buf, NlMsgHdr::SIZE)?;
 
     if err.error != 0 {
         Some(err.error)
@@ -155,14 +122,7 @@ pub fn parse_nlmsg_error(buf: &[u8]) -> Option<i32> {
 pub fn recv_is_done(buf: &[u8]) -> bool {
     let mut pos = 0;
 
-    loop {
-        if pos + NlMsgHdr::SIZE > buf.len() {
-            break;
-        }
-
-        let hdr: NlMsgHdr =
-            unsafe { core::ptr::read_unaligned(buf[pos..].as_ptr() as *const NlMsgHdr) };
-
+    while let Some(hdr) = read_struct::<NlMsgHdr>(buf, pos) {
         if hdr.nlmsg_type == NLMSG_DONE || hdr.nlmsg_type == NLMSG_ERROR {
             return true;
         }
