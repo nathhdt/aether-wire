@@ -16,15 +16,14 @@ pub fn check_memory() -> Result<Vec<Check>> {
 
     checks.push(Check {
         label: "bpf_jit_enable".into(),
-        value: bpf_jit_enable.clone().unwrap_or_else(|| "unknown".into()),
+        value: bpf_jit_enable.clone().unwrap_or_else(|| "0".into()),
         status: match bpf_jit_enable.as_deref() {
             Some("1") | Some("2") => Status::Ok,
             _ => Status::Warn,
         },
         note: match bpf_jit_enable.as_deref() {
-            Some("0") => Some("eBPF JIT disabled".into()),
-            None => Some("unable to read sysctl".into()),
-            _ => None,
+            Some("1") | Some("2") => None,
+            _ => Some("eBPF JIT disabled".into()),
         },
     });
 
