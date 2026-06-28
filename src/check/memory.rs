@@ -8,23 +8,66 @@ use crate::utils::system::sysctl;
 
 use super::{Check, Status};
 
+/// eBPF JIT compiler state (net.core.bpf_jit_enable)
+enum BpfJit {
+    Disabled,
+    Enabled,
+    EnabledDebug,
+    Unknown(String),
+    Unreadable,
+}
+
+impl BpfJit {
+    fn read() -> Self {
+        match sysctl::read("net.core.bpf_jit_enable") {
+            Ok(value) => match value.as_str() {
+                "0" => Self::Disabled,
+                "1" => Self::Enabled,
+                "2" => Self::EnabledDebug,
+                other => Self::Unknown(other.to_owned()),
+            },
+            Err(_) => Self::Unreadable,
+        }
+    }
+
+    fn value(&self) -> String {
+        match self {
+            Self::Disabled => "0".into(),
+            Self::Enabled => "1".into(),
+            Self::EnabledDebug => "2".into(),
+            Self::Unknown(value) => value.clone(),
+            Self::Unreadable => "unknown".into(),
+        }
+    }
+
+    fn status(&self) -> Status {
+        match self {
+            Self::Enabled | Self::EnabledDebug => Status::Ok,
+            _ => Status::Warn,
+        }
+    }
+
+    fn note(&self) -> Option<String> {
+        match self {
+            Self::Enabled | Self::EnabledDebug => None,
+            Self::Disabled => Some("eBPF JIT disabled".into()),
+            Self::Unknown(_) => Some("unexpected sysctl value".into()),
+            Self::Unreadable => Some("unable to read sysctl".into()),
+        }
+    }
+}
+
 pub fn check_memory() -> Result<Vec<Check>> {
     let mut checks = Vec::new();
 
     // bpf_jit_enable
-    let bpf_jit_enable = sysctl::read("net.core.bpf_jit_enable").ok();
+    let bpf_jit = BpfJit::read();
 
     checks.push(Check {
         label: "bpf_jit_enable".into(),
-        value: bpf_jit_enable.clone().unwrap_or_else(|| "0".into()),
-        status: match bpf_jit_enable.as_deref() {
-            Some("1") | Some("2") => Status::Ok,
-            _ => Status::Warn,
-        },
-        note: match bpf_jit_enable.as_deref() {
-            Some("1") | Some("2") => None,
-            _ => Some("eBPF JIT disabled".into()),
-        },
+        value: bpf_jit.value(),
+        status: bpf_jit.status(),
+        note: bpf_jit.note(),
     });
 
     // hugepages
