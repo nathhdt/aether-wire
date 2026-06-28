@@ -5,7 +5,7 @@ mod validator;
 use anyhow::Result;
 
 use crate::cli::commands::server::ServerConfig;
-use crate::err_info;
+use crate::log_info;
 
 pub fn run(config: ServerConfig) -> Result<()> {
     validator::validate_config(&config)?;
@@ -15,9 +15,9 @@ pub fn run(config: ServerConfig) -> Result<()> {
         .map(|ip| ip.to_string())
         .unwrap_or_else(|| "all addresses".to_string());
 
-    err_info!("benchmarking server");
-    err_info!("    listen:            {}:{}", listen_addr, config.port);
-    err_info!("    interface:         {}", config.iface);
+    log_info!("benchmarking server");
+    log_info!("    listen:            {}:{}", listen_addr, config.port);
+    log_info!("    interface:         {}", config.iface);
 
     Ok(())
 }

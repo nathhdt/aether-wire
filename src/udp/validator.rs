@@ -4,7 +4,7 @@ use anyhow::Result;
 use std::net::IpAddr;
 
 use crate::cli::commands::udp::UdpConfig;
-use crate::err_warn;
+use crate::log_warn;
 use crate::protocol::constants::{
     ETHERNET_IPV4_UDP_OVERHEAD_BYTES, ETHERNET_IPV6_UDP_OVERHEAD_BYTES,
     IPV4_UDP_MAX_PAYLOAD_LENGTH_BYTES, IPV6_UDP_MAX_PAYLOAD_LENGTH_BYTES,
@@ -124,7 +124,7 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         .unwrap_or(u32::MAX);
 
     if config.streams as u32 > cpu_count {
-        err_warn!(
+        log_warn!(
             "streams ({}) exceeds CPU count ({}), expect context switching",
             config.streams,
             cpu_count
@@ -141,7 +141,7 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         let frame_size = config.length as u32 + overhead;
 
         if frame_size > mtu {
-            err_warn!(
+            log_warn!(
                 "frame size ({} bytes) exceeds MTU on '{}' ({} bytes), packets will be fragmented",
                 frame_size,
                 config.iface,
