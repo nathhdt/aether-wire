@@ -56,13 +56,15 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
         }
 
         let addr = if msg.ifa_family == AF_INET && attr_data.len() >= 4 {
-            IpAddr::V4(Ipv4Addr::from(
-                <[u8; 4]>::try_from(&attr_data[..4]).unwrap(),
-            ))
+            let Ok(bytes) = <[u8; 4]>::try_from(&attr_data[..4]) else {
+                continue;
+            };
+            IpAddr::V4(Ipv4Addr::from(bytes))
         } else if msg.ifa_family == AF_INET6 && attr_data.len() >= 16 {
-            IpAddr::V6(Ipv6Addr::from(
-                <[u8; 16]>::try_from(&attr_data[..16]).unwrap(),
-            ))
+            let Ok(bytes) = <[u8; 16]>::try_from(&attr_data[..16]) else {
+                continue;
+            };
+            IpAddr::V6(Ipv6Addr::from(bytes))
         } else {
             continue;
         };
