@@ -111,6 +111,9 @@ pub fn check_kernel() -> Result<Vec<Check>> {
                             (true, None)
                         }
                     }
+                    KernelFlagValue::NotPresent => {
+                        (false, Some("not present in kernel config".into()))
+                    }
                     _ => (false, None),
                 };
 
@@ -127,6 +130,7 @@ pub fn check_kernel() -> Result<Vec<Check>> {
                     KernelFlagValue::Module => "m".into(),
                     KernelFlagValue::No => "n".into(),
                     KernelFlagValue::Value(v) => v,
+                    KernelFlagValue::NotPresent => "absent".into(),
                 };
 
                 Check {

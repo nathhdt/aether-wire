@@ -34,6 +34,7 @@ pub enum KernelFlagValue {
     Module,
     No,
     Value(String),
+    NotPresent,
 }
 
 fn find_kernel_config_path() -> Result<String, KernelConfigError> {
@@ -86,5 +87,5 @@ pub fn get_kernel_flag(flag: &str) -> Result<KernelFlagValue, KernelConfigError>
         line.clear();
     }
 
-    Ok(KernelFlagValue::No)
+    Ok(KernelFlagValue::NotPresent)
 }
