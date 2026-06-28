@@ -25,6 +25,9 @@ use parser::{
 };
 use types::Interface;
 
+/// chosen Netlink seqnum
+const NETLINK_SEQ: u32 = 1;
+
 /// returns a network interface
 pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     let path = Path::new("/sys/class/net").join(name);
@@ -39,7 +42,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     parse_sysfs_interface(&path, &mut interface)?;
 
     // netlink (RTM_GETLINK)
-    let response = request(&build_getlink_request(interface.index, 1337))?;
+    let response = request(&build_getlink_request(interface.index, NETLINK_SEQ))?;
 
     for (msg_type, payload) in NlMsgIter::new(&response) {
         if msg_type != RTM_NEWLINK {
@@ -55,7 +58,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     }
 
     // netlink (RTM_GETADDR)
-    let response = request(&build_getaddr_dump_request(1337))?;
+    let response = request(&build_getaddr_dump_request(NETLINK_SEQ))?;
 
     for (msg_type, payload) in NlMsgIter::new(&response) {
         if msg_type != RTM_NEWADDR {
@@ -93,7 +96,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
         .collect();
 
     // netlink (RTM_GETLINK)
-    let response = request(&build_getlink_dump_request(1337))?;
+    let response = request(&build_getlink_dump_request(NETLINK_SEQ))?;
 
     for (msg_type, payload) in NlMsgIter::new(&response) {
         if msg_type != RTM_NEWLINK {
@@ -108,7 +111,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
     }
 
     // netlink (RTM_GETADDR)
-    let response = request(&build_getaddr_dump_request(1337))?;
+    let response = request(&build_getaddr_dump_request(NETLINK_SEQ))?;
 
     for (msg_type, payload) in NlMsgIter::new(&response) {
         if msg_type != RTM_NEWADDR {
