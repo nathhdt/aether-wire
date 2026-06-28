@@ -19,7 +19,8 @@ use super::netlink::{
 use error::InterfaceError;
 use parser::{
     netlink::{
-        extract_netlink_ifindex, parse_netlink_interface_address, parse_netlink_interface_details,
+        extract_netlink_addr_ifindex, extract_netlink_ifindex, parse_netlink_interface_address,
+        parse_netlink_interface_details,
     },
     sysfs::parse_sysfs_interface,
 };
@@ -118,7 +119,7 @@ pub fn get_all_interfaces() -> Result<Vec<Interface>, InterfaceError> {
             continue;
         }
 
-        if let Some(idx) = extract_netlink_ifindex(payload)
+        if let Some(idx) = extract_netlink_addr_ifindex(payload)
             && let Some(&i) = index_map.get(&idx)
         {
             parse_netlink_interface_address(payload, &mut interfaces[i]);

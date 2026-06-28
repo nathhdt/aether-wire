@@ -19,6 +19,16 @@ pub fn extract_netlink_ifindex(payload: &[u8]) -> Option<i32> {
     Some(ifinfo.ifi_index)
 }
 
+/// extracts the ifindex from a RTM_NEWADDR payload
+pub fn extract_netlink_addr_ifindex(payload: &[u8]) -> Option<i32> {
+    if payload.len() < IfAddrMsg::SIZE {
+        return None;
+    }
+
+    let msg: IfAddrMsg = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfAddrMsg) };
+    Some(msg.ifa_index as i32)
+}
+
 /// parses a RTM_NEWADDR payload into an Interface
 pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface) {
     if payload.len() < IfAddrMsg::SIZE {
