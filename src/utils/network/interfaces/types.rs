@@ -67,6 +67,6 @@ pub enum InterfaceClass {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterfaceAddress {
     pub addr: IpAddr,
-    #[allow(unused)]
+    #[allow(dead_code)]
     pub prefix_len: u8,
 }
