@@ -20,15 +20,15 @@ pub fn extract_netlink_ifindex(payload: &[u8]) -> Option<i32> {
 }
 
 /// parses a RTM_NEWADDR payload into an Interface
-pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface) -> Option<i32> {
+pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface) {
     if payload.len() < IfAddrMsg::SIZE {
-        return None;
+        return;
     }
 
     let msg: IfAddrMsg = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfAddrMsg) };
 
     if msg.ifa_index as i32 != interface.index {
-        return None;
+        return;
     }
 
     let attrs = &payload[IfAddrMsg::SIZE..];
@@ -46,11 +46,13 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
         }
 
         let addr = if msg.ifa_family == AF_INET && attr_data.len() >= 4 {
-            let bytes: [u8; 4] = attr_data[..4].try_into().ok()?;
-            IpAddr::V4(Ipv4Addr::from(bytes))
+            IpAddr::V4(Ipv4Addr::from(
+                <[u8; 4]>::try_from(&attr_data[..4]).unwrap(),
+            ))
         } else if msg.ifa_family == AF_INET6 && attr_data.len() >= 16 {
-            let bytes: [u8; 16] = attr_data[..16].try_into().ok()?;
-            IpAddr::V6(Ipv6Addr::from(bytes))
+            IpAddr::V6(Ipv6Addr::from(
+                <[u8; 16]>::try_from(&attr_data[..16]).unwrap(),
+            ))
         } else {
             continue;
         };
@@ -60,15 +62,15 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
             prefix_len: msg.ifa_prefixlen,
         });
 
-        return Some(msg.ifa_index as i32);
+        return;
     }
-
-    None
 }
 
 /// parses a RTM_NEWLINK payload into an Interface
-pub fn parse_netlink_interface_details(payload: &[u8], interface: &mut Interface) -> Option<i32> {
-    let (ifinfo, attrs) = parse_ifinfomsg(payload)?;
+pub fn parse_netlink_interface_details(payload: &[u8], interface: &mut Interface) {
+    let Some((_, attrs)) = parse_ifinfomsg(payload) else {
+        return;
+    };
 
     for (attr_type, attr_data) in RtAttrIter::new(attrs) {
         match attr_type {
@@ -114,6 +116,4 @@ pub fn parse_netlink_interface_details(payload: &[u8], interface: &mut Interface
             _ => {}
         }
     }
-
-    Some(ifinfo.ifi_index)
 }
