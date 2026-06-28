@@ -22,24 +22,12 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         anyhow::bail!("interface '{}' is not up", config.iface);
     }
 
-    // requested bandwidth must not exceed interface speed
-    if let Some(speed) = iface.speed
-        && config.bandwidth > speed
-    {
-        anyhow::bail!(
-            "requested bandwidth ({}) exceeds interface '{}' speed ({})",
-            human_bps(config.bandwidth),
-            config.iface,
-            human_bps(speed)
-        );
-    }
-
     // interface must have at least one address
     if iface.addresses.is_empty() {
         anyhow::bail!("interface '{}' has no configured addresses", config.iface);
     }
 
-    // --source-ip address must be configured on the chosen interface
+    // --source-ip address must be configured on the interface
     if let Some(source_addr) = config.source_addr
         && !iface.addresses.iter().any(|a| a.addr == source_addr)
     {
@@ -50,9 +38,9 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
         );
     }
 
+    // select server address compatible with source/interface address
     let server_addrs = resolve(&config.server)?;
 
-    // select server address compatible with source/interface address
     let server_addr = if let Some(source_addr) = config.source_addr {
         server_addrs
             .iter()
@@ -82,6 +70,18 @@ pub fn validate_config(config: &UdpConfig) -> Result<()> {
                 )
             })?
     };
+
+    // requested bandwidth must not exceed interface speed
+    if let Some(speed) = iface.speed
+        && config.bandwidth > speed
+    {
+        anyhow::bail!(
+            "requested bandwidth ({}) exceeds interface '{}' speed ({})",
+            human_bps(config.bandwidth),
+            config.iface,
+            human_bps(speed)
+        );
+    }
 
     // UDP payload length must not exceed the protocol maximum
     let max_payload = match server_addr {
