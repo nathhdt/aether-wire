@@ -65,3 +65,8 @@ pub struct RtAttr {
 impl RtAttr {
     pub const SIZE: usize = core::mem::size_of::<Self>();
 }
+
+// stay padding-free wire-format structs for raw serialization
+const _: () = assert!(NlMsgHdr::SIZE == 16);
+const _: () = assert!(IfInfoMsg::SIZE == 16);
+const _: () = assert!(IfAddrMsg::SIZE == 8);
