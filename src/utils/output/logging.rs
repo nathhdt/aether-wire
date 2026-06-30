@@ -44,7 +44,7 @@ fn local_timestamp() -> String {
     )
 }
 
-pub(crate) fn log(level: LogLevel, args: fmt::Arguments<'_>) {
+pub fn log(level: LogLevel, args: fmt::Arguments<'_>) {
     eprintln!("{} - {} - {}", local_timestamp(), level, args);
 }
 

@@ -26,7 +26,7 @@ pub struct Interface {
 }
 
 impl Interface {
-    pub(crate) fn new(name: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             index: 0,
             name,
