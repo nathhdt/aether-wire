@@ -1,7 +1,7 @@
 //! command line parsing module
 
 use crate::{
-    protocol::constants::AW_UDP_PAYLOAD_MIN_LENGTH_BYTES,
+    protocol::constants::AW_HEADER_LENGTH_BYTES,
     utils::{constants::benchmark::MAX_BANDWIDTH_BPS, format::human_bps},
 };
 
@@ -76,10 +76,10 @@ pub fn parse_udp_payload_length(s: &str) -> Result<u16, String> {
         .parse()
         .map_err(|_| format!("invalid UDP payload length: {}", s))?;
 
-    if length < AW_UDP_PAYLOAD_MIN_LENGTH_BYTES {
+    if length < AW_HEADER_LENGTH_BYTES {
         return Err(format!(
             "UDP payload length must be at least {} bytes",
-            AW_UDP_PAYLOAD_MIN_LENGTH_BYTES
+            AW_HEADER_LENGTH_BYTES
         ));
     }
 

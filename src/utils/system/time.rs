@@ -3,6 +3,7 @@
 use rustix::time::{ClockId, clock_gettime};
 
 /// returns current CLOCK_MONOTONIC
+#[allow(dead_code)]
 pub fn monotonic_now_ns() -> u64 {
     let ts = clock_gettime(ClockId::Monotonic);
 
