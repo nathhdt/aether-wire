@@ -6,41 +6,12 @@ pub mod kernel;
 pub mod memory;
 pub mod print;
 pub mod privileges;
+pub mod types;
 
 use anyhow::Result;
 
 use crate::check::config::CheckConfig;
 use crate::cli::commands::check::CheckCliArgs;
-
-pub enum Status {
-    Ok,
-    Warn,
-    Fail,
-    Info,
-}
-
-impl Status {
-    fn symbol(&self) -> &'static str {
-        match self {
-            Status::Ok => "✓",
-            Status::Warn => "⚠",
-            Status::Fail => "✗",
-            Status::Info => " ",
-        }
-    }
-}
-
-pub struct Check {
-    pub label: String,
-    pub value: String,
-    pub status: Status,
-    pub note: Option<String>,
-}
-
-pub struct InterfaceChecks {
-    pub interface: String,
-    pub checks: Vec<Check>,
-}
 
 /// run system compatibility check
 pub fn run(args: CheckCliArgs) -> Result<()> {

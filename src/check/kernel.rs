@@ -9,7 +9,7 @@ use crate::utils::kernel::flags::{KernelConfigError, KernelFlagValue, get_kernel
 use crate::utils::kernel::modules::{KernelModuleError, is_in_proc_modules};
 use crate::utils::kernel::version::KernelVersion;
 
-use super::{Check, Status};
+use super::types::{Check, Status};
 
 struct FlagCheck {
     flag: &'static str,

@@ -5,7 +5,7 @@ use anyhow::Result;
 use crate::utils::format::human_bytes;
 use crate::utils::system::host::{MemlockLimitValue, get_memlock_limit};
 
-use super::{Check, Status};
+use super::types::{Check, Status};
 
 pub fn check_privileges() -> Result<Vec<Check>> {
     let mut checks = Vec::new();

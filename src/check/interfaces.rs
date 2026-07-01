@@ -14,7 +14,7 @@ use crate::utils::network::{
     },
 };
 
-use super::{Check, InterfaceChecks, Status};
+use super::types::{Check, InterfaceChecks, Status};
 
 /// interface operational state
 enum OperState {

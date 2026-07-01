@@ -6,7 +6,7 @@ use crate::utils::format::human_bytes;
 use crate::utils::system::host::get_hugepages_info;
 use crate::utils::system::sysctl;
 
-use super::{Check, Status};
+use super::types::{Check, Status};
 
 /// eBPF JIT compiler state (net.core.bpf_jit_enable)
 enum BpfJit {

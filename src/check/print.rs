@@ -1,6 +1,6 @@
 //! print utilities for the check module
 
-use crate::check::{Check, InterfaceChecks};
+use super::types::{Check, InterfaceChecks};
 
 /// section print
 pub fn print_section(title: &str, checks: &[Check]) {
