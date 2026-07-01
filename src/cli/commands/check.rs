@@ -6,11 +6,11 @@ use clap::Args;
 use crate::check;
 
 #[derive(Debug)]
-pub struct CheckConfig {
+pub struct CheckCliArgs {
     pub iface: Option<String>,
 }
 
-impl From<CheckArgs> for CheckConfig {
+impl From<CheckArgs> for CheckCliArgs {
     fn from(args: CheckArgs) -> Self {
         Self { iface: args.iface }
     }

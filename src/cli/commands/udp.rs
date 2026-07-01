@@ -8,24 +8,24 @@ use crate::cli::parsing::{parse_bandwidth, parse_duration, parse_udp_payload_len
 use crate::udp;
 
 #[derive(Debug)]
-pub struct UdpConfig {
-    pub server: String,
-    pub port: u16,
-    pub iface: String,
-    pub source_addr: Option<IpAddr>,
+pub struct UdpCliArgs {
+    pub server_host: String,
+    pub server_port: u16,
+    pub client_iface: String,
+    pub client_source_addr: Option<IpAddr>,
     pub bandwidth: u64,
     pub length: u16,
     pub duration_secs: u64,
     pub streams: u16,
 }
 
-impl From<UdpArgs> for UdpConfig {
+impl From<UdpArgs> for UdpCliArgs {
     fn from(args: UdpArgs) -> Self {
         Self {
-            server: args.server,
-            port: args.port,
-            iface: args.iface,
-            source_addr: args.source_addr,
+            server_host: args.server,
+            server_port: args.port,
+            client_iface: args.iface,
+            client_source_addr: args.source_addr,
             bandwidth: args.bandwidth,
             length: args.length,
             duration_secs: args.duration_secs,

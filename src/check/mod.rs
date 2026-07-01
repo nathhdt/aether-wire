@@ -1,5 +1,6 @@
 //! aether-wire check entrypoint
 
+pub mod config;
 pub mod interfaces;
 pub mod kernel;
 pub mod memory;
@@ -8,7 +9,8 @@ pub mod privileges;
 
 use anyhow::Result;
 
-use crate::cli::commands::check::CheckConfig;
+use crate::check::config::CheckConfig;
+use crate::cli::commands::check::CheckCliArgs;
 
 pub enum Status {
     Ok,
@@ -41,9 +43,10 @@ pub struct InterfaceChecks {
 }
 
 /// run system compatibility check
-pub fn run(config: CheckConfig) -> Result<()> {
-    // check if interface exists first
-    let interfaces = interfaces::check_interfaces(config.iface.as_deref())?;
+pub fn run(args: CheckCliArgs) -> Result<()> {
+    let config = CheckConfig::try_from(args)?;
+
+    let interfaces = interfaces::check_interfaces(config.iface.as_ref())?;
     let kernel = kernel::check_kernel()?;
     let privileges = privileges::check_privileges()?;
     let memory = memory::check_memory()?;

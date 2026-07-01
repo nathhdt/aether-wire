@@ -5,8 +5,8 @@ use anyhow::Result;
 use crate::utils::network::{
     interfaces::{
         constants::{IF_OPER_DORMANT, IF_OPER_DOWN, IF_OPER_LOWERLAYERDOWN, IF_OPER_UP},
-        get_all_interfaces, get_interface,
-        types::{InterfaceClass, InterfaceKind},
+        get_all_interfaces,
+        types::{Interface, InterfaceClass, InterfaceKind},
     },
     netlink::constants::{
         NETDEV_XDP_ACT_BASIC, NETDEV_XDP_ACT_RX_SG, NETDEV_XDP_ACT_XSK_ZEROCOPY, XDP_ATTACHED_DRV,
@@ -55,11 +55,11 @@ impl OperState {
     }
 }
 
-pub fn check_interfaces(iface_filter: Option<&str>) -> Result<Vec<InterfaceChecks>> {
+pub fn check_interfaces(iface_filter: Option<&Interface>) -> Result<Vec<InterfaceChecks>> {
     let mut interfaces_checks = Vec::new();
 
     let interfaces = match iface_filter {
-        Some(name) => vec![get_interface(name)?],
+        Some(interface) => vec![interface.clone()],
         None => get_all_interfaces()?,
     };
 

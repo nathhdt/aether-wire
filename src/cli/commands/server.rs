@@ -7,18 +7,18 @@ use std::net::IpAddr;
 use crate::server;
 
 #[derive(Debug)]
-pub struct ServerConfig {
-    pub iface: String,
-    pub port: u16,
+pub struct ServerCliArgs {
+    pub local_iface: String,
+    pub local_port: u16,
     pub local_addr: Option<IpAddr>,
 }
 
-impl From<ServerArgs> for ServerConfig {
+impl From<ServerArgs> for ServerCliArgs {
     fn from(args: ServerArgs) -> Self {
         Self {
-            iface: args.iface,
-            port: args.port,
-            local_addr: args.local_addr,
+            local_iface: args.iface,
+            local_port: args.port,
+            local_addr: args.addr,
         }
     }
 }
@@ -58,7 +58,7 @@ pub struct ServerArgs {
         value_name = "ip",
         help = "local IP address to use [default: first address on selected interface]"
     )]
-    local_addr: Option<IpAddr>,
+    addr: Option<IpAddr>,
 }
 
 impl ServerArgs {
