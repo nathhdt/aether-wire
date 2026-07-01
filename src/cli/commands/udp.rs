@@ -4,8 +4,9 @@ use anyhow::Result;
 use clap::{Args, value_parser};
 use std::net::IpAddr;
 
-use crate::cli::parsing::{parse_bandwidth, parse_duration, parse_udp_payload_length};
 use crate::udp;
+
+use super::super::parsing::{parse_bandwidth, parse_duration, parse_udp_payload_length};
 
 #[derive(Debug)]
 pub struct UdpCliArgs {

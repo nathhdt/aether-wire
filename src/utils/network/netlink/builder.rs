@@ -1,6 +1,6 @@
 //! Netlink requests builder module
 
-use crate::utils::network::netlink::{
+use super::{
     constants::{NLM_F_DUMP, NLM_F_REQUEST, RTM_GETADDR, RTM_GETLINK},
     types::{IfAddrMsg, IfInfoMsg, NlMsgHdr},
 };

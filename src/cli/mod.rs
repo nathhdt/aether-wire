@@ -1,8 +1,8 @@
 //! aether-wire command line interface
 
 pub mod commands;
-pub mod parsing;
 
+mod parsing;
 mod run;
 
 use anyhow::Result;

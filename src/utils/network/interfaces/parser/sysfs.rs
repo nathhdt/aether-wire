@@ -2,7 +2,7 @@
 
 use std::{fs, path::Path};
 
-use crate::utils::network::interfaces::{
+use super::super::{
     constants::{
         ARPHRD_ETHER, ARPHRD_IP6GRE, ARPHRD_IPGRE, ARPHRD_LOOPBACK, ARPHRD_PPP, ARPHRD_RAWIP,
         ARPHRD_SIT, ARPHRD_TUNNEL6,

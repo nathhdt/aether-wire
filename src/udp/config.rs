@@ -9,11 +9,15 @@ use crate::protocol::constants::{
     ETHERNET_IPV4_UDP_OVERHEAD_BYTES, ETHERNET_IPV6_UDP_OVERHEAD_BYTES,
     IPV4_UDP_MAX_PAYLOAD_LENGTH_BYTES, IPV6_UDP_MAX_PAYLOAD_LENGTH_BYTES,
 };
-use crate::utils::format::human_bps;
-use crate::utils::network::interfaces::constants::IF_OPER_UP;
-use crate::utils::network::interfaces::get_interface;
-use crate::utils::network::interfaces::types::Interface;
-use crate::utils::network::resolve::resolve;
+use crate::utils::{
+    format::human_bps,
+    network::{
+        interfaces::constants::IF_OPER_UP,
+        interfaces::get_interface,
+        interfaces::types::Interface,
+        resolve::resolve,
+    }
+};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]

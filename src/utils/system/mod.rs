@@ -2,4 +2,5 @@
 
 pub mod host;
 pub mod sysctl;
-pub mod time;
+
+mod time;

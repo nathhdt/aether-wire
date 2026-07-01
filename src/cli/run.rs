@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::process::exit;
 
-use crate::cli::Cli;
+use super::Cli;
 
 pub fn run() {
     if let Err(e) = try_run() {

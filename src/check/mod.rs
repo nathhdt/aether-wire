@@ -1,17 +1,18 @@
 //! aether-wire check entrypoint
 
-pub mod config;
-pub mod interfaces;
-pub mod kernel;
-pub mod memory;
-pub mod print;
-pub mod privileges;
-pub mod types;
+mod config;
+mod interfaces;
+mod kernel;
+mod memory;
+mod print;
+mod privileges;
+mod types;
 
 use anyhow::Result;
 
-use crate::check::config::CheckConfig;
 use crate::cli::commands::check::CheckCliArgs;
+
+use config::CheckConfig;
 
 /// run system compatibility check
 pub fn run(args: CheckCliArgs) -> Result<()> {

@@ -3,12 +3,12 @@
 pub mod builder;
 pub mod constants;
 pub mod parser;
-pub mod socket;
 pub mod types;
 
-use std::io::IoSliceMut;
+mod socket;
 
 use rustix::net::{RecvAncillaryBuffer, RecvFlags, ReturnFlags, SendFlags, recvmsg, send};
+use std::io::IoSliceMut;
 
 use parser::{parse_nlmsg_error, recv_is_done};
 use socket::open_netlink_socket;

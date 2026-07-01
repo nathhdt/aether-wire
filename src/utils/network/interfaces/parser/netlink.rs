@@ -2,8 +2,6 @@
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use crate::utils::network::interfaces::constants::{AF_INET, AF_INET6};
-use crate::utils::network::interfaces::types::{Interface, InterfaceAddress};
 use crate::utils::network::netlink::{
     constants::{
         IFA_ADDRESS, IFA_LOCAL, IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE,
@@ -12,6 +10,9 @@ use crate::utils::network::netlink::{
     parser::{RtAttrIter, parse_ifinfomsg},
     types::IfAddrMsg,
 };
+
+use super::super::constants::{AF_INET, AF_INET6};
+use super::super::types::{Interface, InterfaceAddress};
 
 /// extracts the ifindex from a RTM_NEWLINK payload
 pub fn extract_netlink_ifindex(payload: &[u8]) -> Option<i32> {

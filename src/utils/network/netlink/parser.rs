@@ -1,12 +1,7 @@
 //! Netlink parsing module
 
-use crate::utils::network::netlink::{
-    constants::{NLA_TYPE_MASK, NLMSG_DONE},
-    types::{IfInfoMsg, NlMsgHdr, RtAttr},
-};
-
-use super::constants::{NLM_F_MULTI, NLMSG_ERROR};
-use super::types::NlMsgErr;
+use super::constants::{NLA_TYPE_MASK, NLM_F_MULTI, NLMSG_DONE, NLMSG_ERROR};
+use super::types::{IfInfoMsg, NlMsgErr, NlMsgHdr, RtAttr};
 
 pub const NLMSG_ALIGNTO: usize = 4;
 pub const RTA_ALIGNTO: usize = 4;

@@ -2,7 +2,7 @@
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-use crate::protocol::constants::IP_PROTO_UDP;
+use super::super::constants::IP_PROTO_UDP;
 
 use super::utils::{finalize_udp, sum16};
 

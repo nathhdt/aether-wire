@@ -2,21 +2,15 @@
 
 pub mod constants;
 pub mod error;
-pub mod parser;
 pub mod types;
 
+mod parser;
+
+use error::InterfaceError;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use super::netlink::{
-    builder::{build_getaddr_dump_request, build_getlink_dump_request, build_getlink_request},
-    constants::{RTM_NEWADDR, RTM_NEWLINK},
-    parser::NlMsgIter,
-    request,
-};
-
-use error::InterfaceError;
 use parser::{
     netlink::{
         extract_netlink_addr_ifindex, extract_netlink_ifindex, parse_netlink_interface_address,
@@ -25,6 +19,13 @@ use parser::{
     sysfs::parse_sysfs_interface,
 };
 use types::Interface;
+
+use super::netlink::{
+    builder::{build_getaddr_dump_request, build_getlink_dump_request, build_getlink_request},
+    constants::{RTM_NEWADDR, RTM_NEWLINK},
+    parser::NlMsgIter,
+    request,
+};
 
 /// chosen Netlink seqnum
 const NETLINK_SEQ: u32 = 1;
