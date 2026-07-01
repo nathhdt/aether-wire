@@ -1,4 +1,4 @@
-//! UDP benchmark configuration validator
+//! UDP benchmark configuration module
 
 use anyhow::Result;
 use std::net::IpAddr;
