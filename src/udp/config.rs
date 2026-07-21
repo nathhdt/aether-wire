@@ -12,11 +12,9 @@ use crate::protocol::constants::{
 use crate::utils::{
     format::human_bps,
     network::{
-        interfaces::constants::IF_OPER_UP,
-        interfaces::get_interface,
-        interfaces::types::Interface,
+        interfaces::constants::IF_OPER_UP, interfaces::get_interface, interfaces::types::Interface,
         resolve::resolve,
-    }
+    },
 };
 
 #[allow(dead_code)]
