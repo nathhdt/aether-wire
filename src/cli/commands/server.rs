@@ -11,6 +11,10 @@ pub struct ServerCliArgs {
     pub local_iface: String,
     pub local_port: u16,
     pub local_addr: Option<IpAddr>,
+
+    pub mgmt_iface: Option<String>,
+    pub mgmt_port: Option<u16>,
+    pub mgmt_addr: Option<IpAddr>,
 }
 
 impl From<ServerArgs> for ServerCliArgs {
@@ -19,6 +23,10 @@ impl From<ServerArgs> for ServerCliArgs {
             local_iface: args.iface,
             local_port: args.port,
             local_addr: args.addr,
+
+            mgmt_iface: args.mgmt_iface,
+            mgmt_port: args.mgmt_port,
+            mgmt_addr: args.mgmt_addr,
         }
     }
 }
@@ -59,6 +67,30 @@ pub struct ServerArgs {
         help = "local IP address to use [default: first address on selected interface]"
     )]
     addr: Option<IpAddr>,
+
+    #[arg(
+        long = "mgmt-iface",
+        value_name = "interface",
+        help = "network interface to use for management traffic [default: same as --iface]"
+    )]
+    mgmt_iface: Option<String>,
+
+    #[arg(
+        long = "mgmt-port",
+        value_name = "port",
+        value_parser = value_parser!(u16).range(1..),
+        requires = "mgmt_iface",
+        help = "management port to listen on [default: same as --port]"
+    )]
+    mgmt_port: Option<u16>,
+
+    #[arg(
+        long = "mgmt-ip",
+        value_name = "ip",
+        requires = "mgmt_iface",
+        help = "local management IP address to use [default: first address on selected management interface]"
+    )]
+    mgmt_addr: Option<IpAddr>,
 }
 
 impl ServerArgs {

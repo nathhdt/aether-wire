@@ -9,6 +9,7 @@ mod parser;
 use error::InterfaceError;
 use std::collections::HashMap;
 use std::fs;
+use std::net::IpAddr;
 use std::path::Path;
 
 use parser::{
@@ -35,7 +36,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     let path = Path::new("/sys/class/net").join(name);
 
     if !path.exists() {
-        return Err(InterfaceError::InterfaceNotFound);
+        return Err(InterfaceError::NotFound(name.to_owned()));
     }
 
     let mut interface = Interface::new(name.to_owned());
@@ -71,6 +72,33 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
     }
 
     Ok(interface)
+}
+
+/// returns an interface ensuring it is up and has at least one configured address
+pub fn get_benchmark_ready_interface(name: &str) -> Result<Interface, InterfaceError> {
+    let interface = get_interface(name)?;
+
+    if interface.operstate != Some(constants::IF_OPER_UP) {
+        return Err(InterfaceError::NotUp(name.to_owned()));
+    }
+
+    if interface.addresses.is_empty() {
+        return Err(InterfaceError::NoAddresses(name.to_owned()));
+    }
+
+    Ok(interface)
+}
+
+/// checks that an IP address is configured on an interface
+pub fn is_addr_configured(iface: &Interface, addr: IpAddr) -> Result<(), InterfaceError> {
+    if iface.addresses.iter().any(|a| a.addr == addr) {
+        Ok(())
+    } else {
+        Err(InterfaceError::AddrNotConfigured {
+            iface: iface.name.clone(),
+            addr,
+        })
+    }
 }
 
 /// returns all network interfaces

@@ -14,6 +14,12 @@ pub struct UdpCliArgs {
     pub server_port: u16,
     pub client_iface: String,
     pub client_source_addr: Option<IpAddr>,
+
+    pub mgmt_server_host: Option<String>,
+    pub mgmt_server_port: Option<u16>,
+    pub mgmt_client_iface: Option<String>,
+    pub mgmt_client_source_addr: Option<IpAddr>,
+
     pub bandwidth: u64,
     pub length: u16,
     pub duration_secs: u64,
@@ -27,6 +33,12 @@ impl From<UdpArgs> for UdpCliArgs {
             server_port: args.port,
             client_iface: args.iface,
             client_source_addr: args.source_addr,
+
+            mgmt_server_host: args.mgmt_server,
+            mgmt_server_port: args.mgmt_port,
+            mgmt_client_iface: args.mgmt_iface,
+            mgmt_client_source_addr: args.mgmt_source_addr,
+
             bandwidth: args.bandwidth,
             length: args.length,
             duration_secs: args.duration_secs,
@@ -68,7 +80,7 @@ pub struct UdpArgs {
         short = 'i',
         long = "iface",
         value_name = "interface",
-        help = "network interface to use"
+        help = "local network interface to use"
     )]
     iface: String,
 
@@ -79,6 +91,36 @@ pub struct UdpArgs {
         help = "source IP address to use [default: first address on selected interface]"
     )]
     source_addr: Option<IpAddr>,
+
+    #[arg(
+        long = "mgmt-server",
+        value_name = "host",
+        help = "target management server hostname or IP address [default: same as --server]"
+    )]
+    mgmt_server: Option<String>,
+
+    #[arg(
+        long = "mgmt-port",
+        value_name = "port",
+        value_parser = value_parser!(u16).range(1..),
+        help = "target management server port [default: same as --port]"
+    )]
+    mgmt_port: Option<u16>,
+
+    #[arg(
+        long = "mgmt-iface",
+        value_name = "interface",
+        help = "local network interface to use for management traffic [default: same as --iface]"
+    )]
+    mgmt_iface: Option<String>,
+
+    #[arg(
+        long = "mgmt-source-ip",
+        value_name = "ip",
+        requires = "mgmt_iface",
+        help = "source IP address to use for management traffic [default: first address on selected management interface]"
+    )]
+    mgmt_source_addr: Option<IpAddr>,
 
     #[arg(
         short = 'b',
