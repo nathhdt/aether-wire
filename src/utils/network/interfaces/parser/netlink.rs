@@ -7,8 +7,8 @@ use crate::utils::network::netlink::{
         IFA_ADDRESS, IFA_LOCAL, IFLA_MTU, IFLA_NUM_RX_QUEUES, IFLA_NUM_TX_QUEUES, IFLA_OPERSTATE,
         IFLA_XDP, IFLA_XDP_ATTACHED, IFLA_XDP_FEATURES, IFLA_XDP_PROG_ID,
     },
-    parser::{RtAttrIter, parse_ifinfomsg},
-    types::IfAddrMsg,
+    parser::{RtAttrIter, parse_msg_struct},
+    types::{IfAddrMsg, IfInfoMsg},
 };
 
 use super::super::constants::{AF_INET, AF_INET6};
@@ -16,33 +16,25 @@ use super::super::types::{Interface, InterfaceAddress};
 
 /// extracts the ifindex from a RTM_NEWLINK payload
 pub fn extract_netlink_ifindex(payload: &[u8]) -> Option<i32> {
-    let (ifinfo, _) = parse_ifinfomsg(payload)?;
+    let (ifinfo, _) = parse_msg_struct::<IfInfoMsg>(payload)?;
     Some(ifinfo.ifi_index)
 }
 
 /// extracts the ifindex from a RTM_NEWADDR payload
 pub fn extract_netlink_addr_ifindex(payload: &[u8]) -> Option<i32> {
-    if payload.len() < IfAddrMsg::SIZE {
-        return None;
-    }
-
-    let msg: IfAddrMsg = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfAddrMsg) };
+    let (msg, _) = parse_msg_struct::<IfAddrMsg>(payload)?;
     Some(msg.ifa_index as i32)
 }
 
 /// parses a RTM_NEWADDR payload into an Interface
 pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface) {
-    if payload.len() < IfAddrMsg::SIZE {
+    let Some((msg, attrs)) = parse_msg_struct::<IfAddrMsg>(payload) else {
         return;
-    }
-
-    let msg: IfAddrMsg = unsafe { core::ptr::read_unaligned(payload.as_ptr() as *const IfAddrMsg) };
+    };
 
     if msg.ifa_index as i32 != interface.index {
         return;
     }
-
-    let attrs = &payload[IfAddrMsg::SIZE..];
 
     // IFA_LOCAL for IPv4, IFA_ADDRESS for IPv6
     let target_attr = if msg.ifa_family == AF_INET6 {
@@ -81,7 +73,7 @@ pub fn parse_netlink_interface_address(payload: &[u8], interface: &mut Interface
 
 /// parses a RTM_NEWLINK payload into an Interface
 pub fn parse_netlink_interface_details(payload: &[u8], interface: &mut Interface) {
-    let Some((_, attrs)) = parse_ifinfomsg(payload) else {
+    let Some((_, attrs)) = parse_msg_struct::<IfInfoMsg>(payload) else {
         return;
     };
 

@@ -1,7 +1,7 @@
 //! Netlink parsing module
 
 use super::constants::{NLA_TYPE_MASK, NLM_F_MULTI, NLMSG_DONE, NLMSG_ERROR};
-use super::types::{IfInfoMsg, NlMsgErr, NlMsgHdr, RtAttr};
+use super::types::{NlMsgErr, NlMsgHdr, RtAttr};
 
 pub const NLMSG_ALIGNTO: usize = 4;
 pub const RTA_ALIGNTO: usize = 4;
@@ -26,10 +26,10 @@ fn read_struct<T: Copy>(buf: &[u8], pos: usize) -> Option<T> {
     Some(unsafe { core::ptr::read_unaligned(buf.as_ptr().add(pos) as *const T) })
 }
 
-/// reads an ifinfomsg from a RTM_NEWLINK payload
-pub fn parse_ifinfomsg(payload: &[u8]) -> Option<(IfInfoMsg, &[u8])> {
-    let hdr = read_struct(payload, 0)?;
-    Some((hdr, &payload[IfInfoMsg::SIZE..]))
+/// reads a message struct from payload start and returns the remaining attribute bytes
+pub fn parse_msg_struct<T: Copy>(payload: &[u8]) -> Option<(T, &[u8])> {
+    let msg = read_struct(payload, 0)?;
+    Some((msg, &payload[core::mem::size_of::<T>()..]))
 }
 
 /// iterates over nlmsghdr messages in a buffer
