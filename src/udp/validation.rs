@@ -13,7 +13,7 @@ use crate::protocol::constants::{
 use crate::utils::{
     format::human_bps,
     network::{
-        interfaces::{is_addr_configured, get_benchmark_ready_interface, types::Interface},
+        interfaces::{get_benchmark_ready_interface, is_addr_configured, types::Interface},
         resolve::resolve,
     },
 };

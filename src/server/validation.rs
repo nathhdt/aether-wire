@@ -5,7 +5,7 @@ use std::net::IpAddr;
 
 use crate::cli::commands::server::ServerCliArgs;
 use crate::utils::network::interfaces::{
-    is_addr_configured, get_benchmark_ready_interface, types::Interface,
+    get_benchmark_ready_interface, is_addr_configured, types::Interface,
 };
 
 #[allow(dead_code)]
