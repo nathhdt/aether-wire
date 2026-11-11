@@ -2,13 +2,13 @@
 
 /// adds 16-bit big-endian words in 'data' to 'acc'
 pub fn sum16(data: &[u8], mut acc: u32) -> u32 {
-    let mut chunks = data.chunks_exact(2);
+    let (chunks, remainder) = data.as_chunks::<2>();
 
-    for chunk in &mut chunks {
-        acc += u16::from_be_bytes([chunk[0], chunk[1]]) as u32;
+    for chunk in chunks {
+        acc += u16::from_be_bytes(*chunk) as u32;
     }
 
-    if let [last] = chunks.remainder() {
+    if let [last] = remainder {
         acc += u16::from_be_bytes([*last, 0]) as u32;
     }
 
