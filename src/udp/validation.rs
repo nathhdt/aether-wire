@@ -31,7 +31,7 @@ pub struct UdpConfig {
     pub mgmt_server_addr: IpAddr,
     pub mgmt_server_port: u16,
     pub mgmt_client_iface: Interface,
-    pub mgmt_client_source_addr: Option<IpAddr>,
+    pub mgmt_client_source_addr: IpAddr,
 
     pub bandwidth: u64,
     pub length: u16,
@@ -236,11 +236,21 @@ impl TryFrom<UdpCliArgs> for UdpConfig {
             is_addr_configured(&mgmt_client_iface, source_addr)?;
         }
 
+        // resolves management source address
+        let mgmt_client_source_addr = match args.mgmt_client_source_addr {
+            Some(addr) => Some(addr),
+            None if mgmt_client_iface_name == args.client_iface => args
+                .client_source_addr
+                .or_else(|| mgmt_client_iface.addresses.first().map(|a| a.addr)),
+            None => mgmt_client_iface.addresses.first().map(|a| a.addr),
+        }
+        .ok_or_else(|| anyhow!("no address available on interface '{mgmt_client_iface_name}'"))?;
+
         // select management server address compatible with source/interface address
         let (mgmt_server_hostname, mgmt_server_addr) = resolve_compatible_server_addr(
             &mgmt_server_host,
             &mgmt_client_iface,
-            args.mgmt_client_source_addr,
+            Some(mgmt_client_source_addr),
             EndpointKind::ManagementServer,
         )?;
 
@@ -271,7 +281,7 @@ impl TryFrom<UdpCliArgs> for UdpConfig {
             mgmt_server_addr,
             mgmt_server_port,
             mgmt_client_iface,
-            mgmt_client_source_addr: args.mgmt_client_source_addr,
+            mgmt_client_source_addr,
 
             bandwidth: args.bandwidth,
             length: args.length,
