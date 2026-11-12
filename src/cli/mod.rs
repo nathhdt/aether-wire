@@ -7,7 +7,7 @@ mod run;
 
 use anyhow::Result;
 use clap::builder::Styles;
-use clap::{CommandFactory, Parser};
+use clap::{ArgAction, CommandFactory, Parser};
 
 pub use commands::Commands;
 pub use run::run;
@@ -34,6 +34,14 @@ options:
 pub struct Cli {
     #[arg(short = 'v', long = "version", help = "print version")]
     version: bool,
+
+    #[arg(
+        short = 'h',
+        long = "help",
+        action = ArgAction::Help,
+        hide = true
+    )]
+    help: Option<bool>,
 
     #[command(subcommand)]
     command: Option<Commands>,

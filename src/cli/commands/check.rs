@@ -1,7 +1,7 @@
 //! check subcommand arguments and execution
 
 use anyhow::Result;
-use clap::Args;
+use clap::{ArgAction, Args};
 
 use crate::check;
 
@@ -32,6 +32,14 @@ pub struct CheckArgs {
         help = "network interface to check (default: all)"
     )]
     iface: Option<String>,
+
+    #[arg(
+        short = 'h',
+        long = "help",
+        action = ArgAction::Help,
+        hide = true
+    )]
+    help: Option<bool>,
 }
 
 impl CheckArgs {

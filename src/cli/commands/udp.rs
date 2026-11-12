@@ -1,7 +1,7 @@
 //! udp subcommand arguments and execution
 
 use anyhow::Result;
-use clap::{Args, value_parser};
+use clap::{ArgAction, Args, value_parser};
 use std::net::IpAddr;
 
 use crate::udp;
@@ -159,6 +159,14 @@ pub struct UdpArgs {
         help = "number of parallel UDP streams"
     )]
     streams: u16,
+
+    #[arg(
+        short = 'h',
+        long = "help",
+        action = ArgAction::Help,
+        hide = true
+    )]
+    help: Option<bool>,
 }
 
 impl UdpArgs {

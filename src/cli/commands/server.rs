@@ -1,7 +1,7 @@
 //! server subcommand arguments and execution
 
 use anyhow::Result;
-use clap::{Args, value_parser};
+use clap::{ArgAction, Args, value_parser};
 use std::net::IpAddr;
 
 use crate::server;
@@ -91,6 +91,14 @@ pub struct ServerArgs {
         help = "local management IP address to use [default: first address on selected management interface]"
     )]
     mgmt_addr: Option<IpAddr>,
+
+    #[arg(
+        short = 'h',
+        long = "help",
+        action = ArgAction::Help,
+        hide = true
+    )]
+    help: Option<bool>,
 }
 
 impl ServerArgs {
