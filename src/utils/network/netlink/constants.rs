@@ -39,9 +39,9 @@ pub const XDP_ATTACHED_HW: u8 = 3;
 pub const XDP_ATTACHED_MULTI: u8 = 4;
 
 /// IFLA_XDP_FEATURES flag bits
-pub const NETDEV_XDP_ACT_BASIC: u32 = 1 << 0;
-pub const NETDEV_XDP_ACT_XSK_ZEROCOPY: u32 = 1 << 3;
-pub const NETDEV_XDP_ACT_RX_SG: u32 = 1 << 5;
+pub const NETDEV_XDP_ACT_BASIC: u64 = 1 << 0;
+pub const NETDEV_XDP_ACT_XSK_ZEROCOPY: u64 = 1 << 3;
+pub const NETDEV_XDP_ACT_RX_SG: u64 = 1 << 5;
 
 /// Netlink attribute type flags
 pub const NLA_F_NESTED: u16 = 1 << 15;

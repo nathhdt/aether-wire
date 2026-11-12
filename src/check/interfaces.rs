@@ -104,13 +104,13 @@ pub fn check_interfaces(iface_filter: Option<&Interface>) -> Result<Vec<Interfac
             .unwrap_or(OperState::Unknown);
         let xdp_basic = interface
             .xdp_features
-            .map(|f| f & NETDEV_XDP_ACT_BASIC as u64 != 0);
+            .map(|f| f & NETDEV_XDP_ACT_BASIC != 0);
         let xdp_zerocopy = interface
             .xdp_features
-            .map(|f| f & NETDEV_XDP_ACT_XSK_ZEROCOPY as u64 != 0);
+            .map(|f| f & NETDEV_XDP_ACT_XSK_ZEROCOPY != 0);
         let xdp_multi_buffer = interface
             .xdp_features
-            .map(|f| f & NETDEV_XDP_ACT_RX_SG as u64 != 0);
+            .map(|f| f & NETDEV_XDP_ACT_RX_SG != 0);
 
         let netlink_checks = vec![
             Check {
