@@ -191,20 +191,6 @@ impl TryFrom<UdpCliArgs> for UdpConfig {
     type Error = anyhow::Error;
 
     fn try_from(args: UdpCliArgs) -> Result<Self> {
-        // management plan options base validation
-        if (args.mgmt_server_host.is_some()
-            || args.mgmt_server_port.is_some()
-            || args.mgmt_client_iface.is_some()
-            || args.mgmt_client_source_addr.is_some())
-            && (args.mgmt_server_host.is_none()
-                || args.mgmt_server_port.is_none()
-                || args.mgmt_client_iface.is_none())
-        {
-            bail!(
-                "'--mgmt-server', '--mgmt-port' and '--mgmt-iface' options must be specified together"
-            );
-        }
-
         // benchmark interface validation
         let client_iface = get_ready_interface(&args.client_iface)?;
 

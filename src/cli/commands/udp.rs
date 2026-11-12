@@ -95,6 +95,7 @@ pub struct UdpArgs {
     #[arg(
         long = "mgmt-server",
         value_name = "host",
+        requires_all = ["mgmt_port", "mgmt_iface"],
         help = "target management server hostname or IP address [default: same as --server]"
     )]
     mgmt_server: Option<String>,
@@ -103,6 +104,7 @@ pub struct UdpArgs {
         long = "mgmt-port",
         value_name = "port",
         value_parser = value_parser!(u16).range(1..),
+        requires_all = ["mgmt_server", "mgmt_iface"],
         help = "target management server port [default: same as --port]"
     )]
     mgmt_port: Option<u16>,
@@ -110,6 +112,7 @@ pub struct UdpArgs {
     #[arg(
         long = "mgmt-iface",
         value_name = "interface",
+        requires_all = ["mgmt_server", "mgmt_port"],
         help = "local network interface to use for management traffic [default: same as --iface]"
     )]
     mgmt_iface: Option<String>,
