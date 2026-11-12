@@ -13,7 +13,7 @@ use crate::protocol::constants::{
 use crate::utils::{
     format::human_bps,
     network::{
-        interfaces::{get_benchmark_ready_interface, is_addr_configured, types::Interface},
+        interfaces::{get_ready_interface, is_addr_configured, types::Interface},
         resolve::resolve,
     },
 };
@@ -206,7 +206,7 @@ impl TryFrom<UdpCliArgs> for UdpConfig {
         }
 
         // benchmark interface validation
-        let client_iface = get_benchmark_ready_interface(&args.client_iface)?;
+        let client_iface = get_ready_interface(&args.client_iface)?;
 
         // if no management server host provided then use benchmark server host
         let mgmt_server_host: String = args
@@ -228,7 +228,7 @@ impl TryFrom<UdpCliArgs> for UdpConfig {
             client_iface.clone()
         } else {
             // management interface validation
-            get_benchmark_ready_interface(&mgmt_client_iface_name)?
+            get_ready_interface(&mgmt_client_iface_name)?
         };
 
         // --mgmt-source-ip address must be configured on the interface

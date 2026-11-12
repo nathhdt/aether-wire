@@ -75,7 +75,7 @@ pub fn get_interface(name: &str) -> Result<Interface, InterfaceError> {
 }
 
 /// returns an interface ensuring it is up and has at least one configured address
-pub fn get_benchmark_ready_interface(name: &str) -> Result<Interface, InterfaceError> {
+pub fn get_ready_interface(name: &str) -> Result<Interface, InterfaceError> {
     let interface = get_interface(name)?;
 
     if interface.operstate != Some(constants::IF_OPER_UP) {

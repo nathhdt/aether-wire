@@ -5,7 +5,7 @@ use std::net::IpAddr;
 
 use crate::cli::commands::server::ServerCliArgs;
 use crate::utils::network::interfaces::{
-    get_benchmark_ready_interface, is_addr_configured, types::Interface,
+    get_ready_interface, is_addr_configured, types::Interface,
 };
 
 #[allow(dead_code)]
@@ -30,7 +30,7 @@ impl TryFrom<ServerCliArgs> for ServerConfig {
         }
 
         // check base interface requirements for benchmark
-        let local_iface = get_benchmark_ready_interface(&args.local_iface)?;
+        let local_iface = get_ready_interface(&args.local_iface)?;
 
         // --local-ip address must be configured on the interface
         if let Some(local_addr) = args.local_addr {
@@ -47,7 +47,7 @@ impl TryFrom<ServerCliArgs> for ServerConfig {
             local_iface.clone()
         } else {
             // check base interface requirements for management
-            get_benchmark_ready_interface(&mgmt_iface_name)?
+            get_ready_interface(&mgmt_iface_name)?
         };
 
         // --mgmt-ip address must be configured on the interface
