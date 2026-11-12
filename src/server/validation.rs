@@ -1,6 +1,6 @@
 //! server configuration validation module
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 use std::net::IpAddr;
 
 use crate::cli::commands::server::ServerCliArgs;
@@ -17,7 +17,7 @@ pub struct ServerConfig {
 
     pub mgmt_iface: Interface,
     pub mgmt_port: u16,
-    pub mgmt_addr: Option<IpAddr>,
+    pub mgmt_addr: IpAddr,
 }
 
 impl TryFrom<ServerCliArgs> for ServerConfig {
@@ -50,10 +50,20 @@ impl TryFrom<ServerCliArgs> for ServerConfig {
             get_ready_interface(&mgmt_iface_name)?
         };
 
-        // --mgmt-ip address must be configured on the interface
+        // --mgmt-ip address must be configured on the management interface
         if let Some(mgmt_addr) = args.mgmt_addr {
             is_addr_configured(&mgmt_iface, mgmt_addr)?;
         }
+
+        // resolves the management address
+        let mgmt_addr = match args.mgmt_addr {
+            Some(addr) => Some(addr),
+            None if mgmt_iface_name == args.local_iface => args
+                .local_addr
+                .or_else(|| mgmt_iface.addresses.first().map(|a| a.addr)),
+            None => mgmt_iface.addresses.first().map(|a| a.addr),
+        }
+        .ok_or_else(|| anyhow!("no address available on interface '{mgmt_iface_name}'"))?;
 
         let mgmt_port = args.mgmt_port.unwrap_or(args.local_port);
 
@@ -64,7 +74,7 @@ impl TryFrom<ServerCliArgs> for ServerConfig {
 
             mgmt_iface,
             mgmt_port,
-            mgmt_addr: args.mgmt_addr,
+            mgmt_addr,
         })
     }
 }
