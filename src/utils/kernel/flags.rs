@@ -28,7 +28,7 @@ impl From<std::io::Error> for KernelConfigError {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug)]
 pub enum KernelFlagValue {
     Yes,
     Module,
