@@ -88,7 +88,7 @@ pub struct ServerArgs {
         long = "mgmt-ip",
         value_name = "ip",
         requires = "mgmt_iface",
-        help = "local management IP address to use [default: first address on selected management interface]"
+        help = "local management IP address to use [default: --local-ip or first interface IP]"
     )]
     mgmt_addr: Option<IpAddr>,
 

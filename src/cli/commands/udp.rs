@@ -121,7 +121,7 @@ pub struct UdpArgs {
         long = "mgmt-source-ip",
         value_name = "ip",
         requires = "mgmt_iface",
-        help = "source IP address to use for management traffic [default: first address on selected management interface]"
+        help = "source IP address to use for management traffic [default: --source-ip or first interface IP]"
     )]
     mgmt_source_addr: Option<IpAddr>,
 
